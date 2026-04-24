@@ -46,7 +46,11 @@ const Navbar = () => {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 text-white font-bold text-base leading-tight">
-          <span className="text-2xl">✝</span>
+          <img
+            src="/logos/logos doan thieu nhi MT.jpg"
+            alt="Logo Xứ Đoàn Mẫu Tâm"
+            className="w-9 h-9 rounded-full object-cover border-2 border-white/40 shrink-0"
+          />
           <span className="hidden sm:block">
             Xứ Đoàn
             <span className="block text-xs font-normal opacity-80">Anrê Phú Yên – Mẫu Tâm</span>
