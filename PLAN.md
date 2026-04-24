@@ -11,7 +11,7 @@
 | 2 | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
 | 3 | Frontend UI cơ bản | ✅ Hoàn thành |
 | 4 | Tính năng Điểm danh | ✅ Hoàn thành |
-| 5 | Tính năng Bảng điểm | ⬜ Chưa bắt đầu |
+| 5 | Tính năng Bảng điểm | ✅ Hoàn thành |
 | 6 | Tính năng Tin tức & Thông báo | ⬜ Chưa bắt đầu |
 | 7 | Export Excel / PDF | ⬜ Chưa bắt đầu |
 | 8 | Kiểm thử & Deployment | ⬜ Chưa bắt đầu |
@@ -213,13 +213,18 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 5 — Tính năng Bảng điểm `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 5 — Tính năng Bảng điểm `✅ Hoàn thành`
 
-- [ ] Bảng điểm theo lớp: cột Miệng, 15 phút, 1 tiết
-- [ ] Form nhập điểm cho từng học sinh
-- [ ] Tính điểm trung bình tự động
-- [ ] Phân loại: Giỏi / Khá / Trung bình / Yếu
-- [ ] Xem điểm read-only với User / lớp khác
+- [x] Bảng điểm theo lớp: cột Miệng (×1), 15 phút (×1), 1 tiết (×2), scroll ngang
+- [x] Cột tên sticky left khi scroll
+- [x] Modal nhập điểm: chọn loại, nhập điểm 0–10 (bước 0.5), ghi chú
+- [x] Xoá điểm từng ô — nút × hiện khi hover
+- [x] Tính TBM tự động theo hệ số (miệng×1, 15p×1, 1tiết×2)
+- [x] Phân loại: Xuất sắc ≥9 / Giỏi ≥8 / Khá ≥6.5 / TB ≥5 / Yếu <5
+- [x] Màu điểm: xanh lá ≥8, xanh dương ≥5, đỏ <5
+- [x] Hàng thống kê cuối: TB từng loại, TBM lớp, phân bố học lực
+- [x] Chọn học kỳ 1 / 2 — load lại dữ liệu
+- [x] Chế độ read-only khi không có quyền (không hiện cột thao tác)
 
 ---
 
