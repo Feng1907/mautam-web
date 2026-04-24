@@ -10,7 +10,7 @@
 | 1 | Database schema & quan hệ dữ liệu | ✅ Hoàn thành |
 | 2 | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
 | 3 | Frontend UI cơ bản | ✅ Hoàn thành |
-| 4 | Tính năng Điểm danh | ⬜ Chưa bắt đầu |
+| 4 | Tính năng Điểm danh | ✅ Hoàn thành |
 | 5 | Tính năng Bảng điểm | ⬜ Chưa bắt đầu |
 | 6 | Tính năng Tin tức & Thông báo | ⬜ Chưa bắt đầu |
 | 7 | Export Excel / PDF | ⬜ Chưa bắt đầu |
@@ -199,13 +199,17 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 4 — Tính năng Điểm danh `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 4 — Tính năng Điểm danh `✅ Hoàn thành`
 
-- [ ] Giao diện lưới điểm danh (hàng = học sinh, cột = Chúa Nhật)
-- [ ] Scroll ngang khi nhiều tuần
-- [ ] Toggle check-in trực tiếp trên lưới (chỉ HT lớp mình)
-- [ ] Hiển thị tổng số buổi có mặt / vắng theo từng học sinh
-- [ ] Chọn năm học để xem lại dữ liệu cũ
+- [x] Giao diện lưới điểm danh (hàng = học sinh, cột = Chúa Nhật)
+- [x] Scroll ngang khi nhiều tuần, cột tên sticky bên trái
+- [x] Toggle check-in trực tiếp — optimistic update, rollback nếu lỗi server
+- [x] Chế độ xem read-only nếu không có quyền (badge cảnh báo)
+- [x] Cột tổng kết: Có mặt / Vắng / % chuyên cần (màu xanh/vàng/đỏ theo ngưỡng)
+- [x] Hàng tổng kết cuối bảng: sĩ số có mặt theo từng ngày
+- [x] Highlight cột ngày hôm nay
+- [x] Chọn năm học để xem lại dữ liệu cũ
+- [x] Spinner loading + thông báo khi lớp chưa có đoàn sinh / Chúa Nhật
 
 ---
 
