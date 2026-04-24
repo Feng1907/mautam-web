@@ -124,6 +124,30 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
+// PUT /api/auth/profile  (cập nhật thông tin cá nhân + avatar)
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { hoTen, soDienThoai, avatar } = req.body;
+
+    // avatar là base64 string hoặc URL — giới hạn 2MB base64 (~1.5MB ảnh)
+    if (avatar && avatar.startsWith('data:') && avatar.length > 2 * 1024 * 1024)
+      return res.status(400).json({ success: false, message: 'Ảnh quá lớn, vui lòng chọn ảnh dưới 1.5MB' });
+
+    const updateData = {};
+    if (hoTen?.trim())     updateData.hoTen = hoTen.trim();
+    if (soDienThoai !== undefined) updateData.soDienThoai = soDienThoai;
+    if (avatar !== undefined)      updateData.avatar = avatar;
+
+    const user = await require('../models/User')
+      .findByIdAndUpdate(req.user._id, updateData, { new: true, runValidators: true })
+      .select('-matKhau');
+
+    res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res, next) => {
   try {

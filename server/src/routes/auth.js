@@ -4,6 +4,7 @@ const {
   getMe,
   signup,
   register,
+  updateProfile,
   changePassword,
   forgotPassword,
 } = require('../controllers/authController');
@@ -13,6 +14,7 @@ router.post('/login',           login);
 router.post('/signup',          signup);                          // Đăng ký công khai
 router.get('/me',               checkAuth, getMe);
 router.post('/register',        checkAuth, requireAdmin, register); // Admin tạo HT
+router.put('/profile',          checkAuth, updateProfile);
 router.put('/change-password',  checkAuth, changePassword);
 router.post('/forgot-password', forgotPassword);
 

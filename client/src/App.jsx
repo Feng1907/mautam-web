@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './store/AuthContext';
 import Navbar        from './components/Navbar';
 import Footer        from './components/Footer';
@@ -14,6 +14,7 @@ import NewsDetail     from './pages/NewsDetail';
 import Liturgy        from './pages/Liturgy';
 import ClassList      from './pages/ClassList';
 import ClassDetail    from './pages/ClassDetail';
+import Profile        from './pages/Profile';
 
 import AdminLayout    from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -21,6 +22,13 @@ import AdminPosts     from './pages/admin/AdminPosts';
 import AdminUsers     from './pages/admin/AdminUsers';
 import AdminClasses   from './pages/admin/AdminClasses';
 import AdminExport    from './pages/admin/AdminExport';
+
+// Footer ẩn trong khu vực /admin
+const ConditionalFooter = () => {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/admin')) return null;
+  return <Footer />;
+};
 
 const App = () => (
   <AuthProvider>
@@ -38,6 +46,9 @@ const App = () => (
         <Route path="/tin-tuc/:id"     element={<NewsDetail />} />
 
         {/* Yêu cầu đăng nhập */}
+        <Route path="/ho-so" element={
+          <RouteGuard><Profile /></RouteGuard>
+        } />
         <Route path="/lop-hoc" element={
           <RouteGuard><ClassList /></RouteGuard>
         } />
@@ -49,14 +60,14 @@ const App = () => (
         <Route path="/admin" element={
           <RouteGuard roles={['admin']}><AdminLayout /></RouteGuard>
         }>
-          <Route index        element={<AdminDashboard />} />
-          <Route path="bai-viet"    element={<AdminPosts />} />
-          <Route path="nguoi-dung"  element={<AdminUsers />} />
-          <Route path="lop-hoc"     element={<AdminClasses />} />
-          <Route path="export"      element={<AdminExport />} />
+          <Route index               element={<AdminDashboard />} />
+          <Route path="bai-viet"     element={<AdminPosts />} />
+          <Route path="nguoi-dung"   element={<AdminUsers />} />
+          <Route path="lop-hoc"      element={<AdminClasses />} />
+          <Route path="export"       element={<AdminExport />} />
         </Route>
       </Routes>
-      <Footer />
+      <ConditionalFooter />
     </BrowserRouter>
   </AuthProvider>
 );

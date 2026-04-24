@@ -1,59 +1,55 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 const MENU = [
-  { to: '/admin',          label: '📊 Tổng quan',  end: true },
-  { to: '/admin/bai-viet', label: '📝 Bài viết' },
-  { to: '/admin/nguoi-dung', label: '👥 Người dùng' },
-  { to: '/admin/lop-hoc',  label: '🏫 Lớp học' },
-  { to: '/admin/export',   label: '📥 Export' },
+  { to: '/admin',            label: 'TỔNG QUAN',    icon: '◈', end: true },
+  { to: '/admin/bai-viet',   label: 'BÀI VIẾT',     icon: '✦' },
+  { to: '/admin/nguoi-dung', label: 'NGƯỜI DÙNG',   icon: '◉' },
+  { to: '/admin/lop-hoc',    label: 'LỚP HỌC',      icon: '▣' },
+  { to: '/admin/export',     label: 'EXPORT',        icon: '⬇' },
 ];
 
 const AdminLayout = () => {
   const linkCls = ({ isActive }) =>
-    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
+    `flex items-center gap-3 px-4 py-2.5 text-xs font-bold tracking-widest transition rounded-lg ${
       isActive
-        ? 'bg-red-700 text-white'
-        : 'text-gray-600 hover:bg-gray-100'
+        ? 'text-red-600 bg-red-50'
+        : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
     }`;
 
   return (
-    <main className="flex-1 page-container">
-      <div className="flex gap-2 items-center mb-6">
-        <span className="text-red-700 font-bold text-lg">⚙</span>
-        <h1 className="text-xl font-bold text-gray-800">Trang quản trị</h1>
+    <div className="flex-1 flex min-h-0 bg-gray-50">
+      {/* ── Sidebar dọc ── */}
+      <aside className="hidden md:flex flex-col w-52 shrink-0 bg-white border-r border-gray-100 pt-8 pb-4 gap-0.5">
+        <p className="px-4 pb-3 text-[10px] font-black tracking-[0.2em] text-gray-300 uppercase">
+          Menu
+        </p>
+        {MENU.map(m => (
+          <NavLink key={m.to} to={m.to} end={m.end} className={linkCls}>
+            <span className="text-base leading-none">{m.icon}</span>
+            {m.label}
+          </NavLink>
+        ))}
+      </aside>
+
+      {/* ── Mobile tab bar ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex">
+        {MENU.map(m => (
+          <NavLink key={m.to} to={m.to} end={m.end}
+            className={({ isActive }) =>
+              `flex-1 flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition ${
+                isActive ? 'text-red-600' : 'text-gray-400'
+              }`}>
+            <span className="text-lg leading-none">{m.icon}</span>
+            <span className="truncate w-full text-center px-1">{m.label}</span>
+          </NavLink>
+        ))}
       </div>
 
-      <div className="flex gap-6 items-start">
-        {/* Sidebar */}
-        <aside className="hidden md:flex flex-col gap-1 w-44 shrink-0">
-          {MENU.map(m => (
-            <NavLink key={m.to} to={m.to} end={m.end} className={linkCls}>
-              {m.label}
-            </NavLink>
-          ))}
-        </aside>
-
-        {/* Mobile tab bar */}
-        <div className="md:hidden flex gap-1 mb-4 overflow-x-auto w-full">
-          {MENU.map(m => (
-            <NavLink
-              key={m.to} to={m.to} end={m.end}
-              className={({ isActive }) =>
-                `shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                  isActive ? 'bg-red-700 text-white border-red-700' : 'text-gray-600 border-gray-300'
-                }`}
-            >
-              {m.label}
-            </NavLink>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <Outlet />
-        </div>
-      </div>
-    </main>
+      {/* ── Vùng nội dung ── */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-6 pb-20 md:pb-6">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 
