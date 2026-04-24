@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     matKhau: { type: String, required: true, select: false },
     vaiTro: { type: String, enum: ['admin', 'giaoly', 'user'], default: 'user' },
+    // Chức vụ trong xứ đoàn — chỉ có ý nghĩa khi vaiTro='giaoly'
+    chucVu: { type: String, enum: ['huynhtruong', 'dutruong', null], default: null },
     // Lớp được phân công — chỉ có ý nghĩa với vaiTro='giaoly'
     lopPhuTrach: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Class' }],
     soDienThoai: { type: String, trim: true },

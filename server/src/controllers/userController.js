@@ -1,11 +1,12 @@
 const User = require('../models/User');
 
-// GET /api/users  (Admin only — danh sách tất cả giáo lý viên)
+// GET /api/users  (Admin only)
 exports.getAll = async (req, res, next) => {
   try {
-    const { vaiTro } = req.query;
+    const { vaiTro, chucVu } = req.query;
     const filter = {};
     if (vaiTro) filter.vaiTro = vaiTro;
+    if (chucVu) filter.chucVu = chucVu;
 
     const users = await User.find(filter)
       .select('-matKhau')

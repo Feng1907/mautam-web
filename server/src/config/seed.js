@@ -46,19 +46,39 @@ async function seed() {
     DS_LOP.map((l) => ({ ...l, namHoc: namHoc._id }))
   );
 
-  // 3. Tạo tài khoản Admin mặc định
-  console.log('Tạo tài khoản admin...');
-  await User.create({
-    hoTen: 'Admin Xứ Đoàn',
-    email: 'admin@mautam.com',
-    matKhau: 'Admin@123',
-    vaiTro: 'admin',
-  });
+  // 3. Tạo tài khoản mẫu
+  console.log('Tạo tài khoản mẫu...');
+  await User.insertMany([
+    {
+      hoTen: 'Admin Xứ Đoàn',
+      email: 'admin@mautam.com',
+      matKhau: 'Admin@123',
+      vaiTro: 'admin',
+    },
+    {
+      hoTen: 'Nguyễn Huynh Trưởng A',
+      email: 'huynhtruong@mautam.com',
+      matKhau: 'HT@12345',
+      vaiTro: 'giaoly',
+      chucVu: 'huynhtruong',
+      phaiBatDauDoiMatKhau: true,
+    },
+    {
+      hoTen: 'Trần Dự Trưởng B',
+      email: 'dutruong@mautam.com',
+      matKhau: 'DT@12345',
+      vaiTro: 'giaoly',
+      chucVu: 'dutruong',
+      phaiBatDauDoiMatKhau: true,
+    },
+  ]);
 
   console.log('\n✅ Seed hoàn thành!');
-  console.log(`   Năm học: ${namHoc.ten}`);
-  console.log(`   Số lớp : ${lops.length}`);
-  console.log(`   Login  : admin@mautam.com / Admin@123`);
+  console.log(`   Năm học    : ${namHoc.ten}`);
+  console.log(`   Số lớp     : ${lops.length}`);
+  console.log(`   Admin      : admin@mautam.com / Admin@123`);
+  console.log(`   HuynhTrưởng: huynhtruong@mautam.com / HT@12345`);
+  console.log(`   DựTrưởng   : dutruong@mautam.com / DT@12345`);
   process.exit(0);
 }
 

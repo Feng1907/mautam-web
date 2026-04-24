@@ -2,28 +2,56 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
+// ── Cấu hình nhãn & màu ─────────────────────────────────────────────────────
 const VAI_TRO_LABEL = {
-  admin:  { label: 'Admin',          cls: 'badge-red'   },
-  giaoly: { label: 'Giáo lý viên',   cls: 'badge-blue'  },
-  user:   { label: 'Phụ huynh/User', cls: 'badge-gray'  },
+  admin:  { label: 'Admin',        cls: 'badge-red'  },
+  giaoly: { label: 'Giáo lý viên', cls: 'badge-blue' },
+  user:   { label: 'Phụ huynh',    cls: 'badge-gray' },
 };
 
-const emptyForm = { hoTen: '', email: '', vaiTro: 'giaoly', soDienThoai: '' };
+const CHUC_VU_LABEL = {
+  huynhtruong: { label: 'Huynh trưởng', cls: 'bg-green-100 text-green-800 inline-block text-xs font-semibold px-2 py-0.5 rounded-full' },
+  dutruong:    { label: 'Dự trưởng',    cls: 'bg-sky-100   text-sky-800   inline-block text-xs font-semibold px-2 py-0.5 rounded-full' },
+};
 
+// Các tab lọc
+const TABS = [
+  { key: '',             label: 'Tất cả' },
+  { key: 'admin',        label: 'Admin',        vaiTro: 'admin'  },
+  { key: 'huynhtruong',  label: 'Huynh trưởng', vaiTro: 'giaoly', chucVu: 'huynhtruong' },
+  { key: 'dutruong',     label: 'Dự trưởng',    vaiTro: 'giaoly', chucVu: 'dutruong'    },
+  { key: 'giaoly_other', label: 'GLV khác',      vaiTro: 'giaoly' },
+  { key: 'user',         label: 'Phụ huynh',    vaiTro: 'user'   },
+];
+
+const emptyForm = { hoTen: '', email: '', vaiTro: 'giaoly', chucVu: 'huynhtruong', soDienThoai: '' };
+
+// ── Form tạo / sửa ────────────────────────────────────────────────────────────
 const UserForm = ({ initial, onSave, onCancel }) => {
-  const [form, setForm]     = useState(initial || emptyForm);
+  const [form,   setForm]   = useState(() => initial
+    ? { hoTen: initial.hoTen, email: initial.email, vaiTro: initial.vaiTro,
+        chucVu: initial.chucVu || '', soDienThoai: initial.soDienThoai || '' }
+    : emptyForm
+  );
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState('');
   const isEdit = !!initial?._id;
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        // chucVu chỉ có nghĩa với giaoly, reset về null nếu không phải
+        chucVu: form.vaiTro === 'giaoly' ? (form.chucVu || null) : null,
+      };
       const res = isEdit
-        ? await api.put(`/users/${initial._id}`, form)
-        : await api.post('/auth/register', form);
+        ? await api.put(`/users/${initial._id}`, payload)
+        : await api.post('/auth/register', payload);
       onSave(res.data.data || res.data.user);
     } catch (err) {
       setError(err.response?.data?.message || 'Lưu thất bại');
@@ -38,9 +66,10 @@ const UserForm = ({ initial, onSave, onCancel }) => {
         <h3 className="font-bold text-gray-800 mb-4">
           {isEdit ? 'Chỉnh sửa tài khoản' : 'Tạo tài khoản mới'}
         </h3>
+
         {!isEdit && (
-          <p className="text-xs text-blue-600 bg-blue-50 rounded px-3 py-2 mb-4">
-            Hệ thống sẽ tự tạo mật khẩu tạm và gửi qua email.
+          <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded px-3 py-2 mb-4">
+            Hệ thống tự tạo mật khẩu tạm và gửi qua email.
           </p>
         )}
         {error && (
@@ -48,31 +77,48 @@ const UserForm = ({ initial, onSave, onCancel }) => {
             {error}
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Họ tên *</label>
             <input className="input" value={form.hoTen}
-              onChange={e => setForm(f => ({ ...f, hoTen: e.target.value }))} required />
+              onChange={e => set('hoTen', e.target.value)} required autoFocus />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
             <input type="email" className="input" value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Vai trò</label>
-            <select className="input" value={form.vaiTro}
-              onChange={e => setForm(f => ({ ...f, vaiTro: e.target.value }))}>
-              <option value="giaoly">Giáo lý viên</option>
-              <option value="admin">Admin</option>
-              <option value="user">Phụ huynh/User</option>
-            </select>
+              onChange={e => set('email', e.target.value)} required />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Số điện thoại</label>
             <input className="input" placeholder="0xxxxxxxxx" value={form.soDienThoai}
-              onChange={e => setForm(f => ({ ...f, soDienThoai: e.target.value }))} />
+              onChange={e => set('soDienThoai', e.target.value)} />
           </div>
+
+          {/* Vai trò hệ thống */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Vai trò hệ thống</label>
+            <select className="input" value={form.vaiTro}
+              onChange={e => set('vaiTro', e.target.value)}>
+              <option value="giaoly">Giáo lý viên</option>
+              <option value="admin">Admin</option>
+              <option value="user">Phụ huynh / User</option>
+            </select>
+          </div>
+
+          {/* Chức vụ — chỉ hiện khi là giaoly */}
+          {form.vaiTro === 'giaoly' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Chức vụ</label>
+              <select className="input" value={form.chucVu}
+                onChange={e => set('chucVu', e.target.value)}>
+                <option value="huynhtruong">Huynh trưởng</option>
+                <option value="dutruong">Dự trưởng</option>
+                <option value="">Chưa xác định</option>
+              </select>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving} className="btn-primary flex-1">
               {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Tạo tài khoản'}
@@ -85,20 +131,38 @@ const UserForm = ({ initial, onSave, onCancel }) => {
   );
 };
 
+// ── Trang chính ───────────────────────────────────────────────────────────────
 const AdminUsers = () => {
-  const [users,   setUsers]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [form,    setForm]    = useState(null);
-  const [vaiTro,  setVaiTro]  = useState('');
+  const [users,    setUsers]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [form,     setForm]     = useState(null);
+  const [activeTab, setActiveTab] = useState('');
   const [deleting, setDeleting] = useState(null);
+
+  // Xây params từ tab
+  const tabParams = () => {
+    const t = TABS.find(t => t.key === activeTab);
+    if (!t) return {};
+    const p = {};
+    if (t.vaiTro) p.vaiTro = t.vaiTro;
+    // Tab "GLV khác": giaoly nhưng KHÔNG có chucVu cụ thể (lọc phía FE)
+    if (t.chucVu)  p.chucVu = t.chucVu;
+    return p;
+  };
 
   const load = useCallback(() => {
     setLoading(true);
-    api.get('/users', { params: { vaiTro: vaiTro || undefined } })
-      .then(r => setUsers(r.data.data))
+    api.get('/users', { params: tabParams() })
+      .then(r => {
+        let data = r.data.data;
+        // Tab "GLV khác": lọc ra những người giaoly chưa có chucVu
+        if (activeTab === 'giaoly_other')
+          data = data.filter(u => !u.chucVu);
+        setUsers(data);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [vaiTro]);
+  }, [activeTab]); // eslint-disable-line
 
   useEffect(() => { load(); }, [load]);
 
@@ -122,6 +186,14 @@ const AdminUsers = () => {
     } finally { setDeleting(null); }
   };
 
+  // Đổi chức vụ nhanh không cần mở form
+  const handleChucVu = async (user, newChucVu) => {
+    try {
+      const res = await api.put(`/users/${user._id}`, { chucVu: newChucVu });
+      setUsers(prev => prev.map(u => u._id === user._id ? res.data.data : u));
+    } catch { alert('Cập nhật thất bại.'); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -129,13 +201,17 @@ const AdminUsers = () => {
         <button onClick={() => setForm({})} className="btn-primary">+ Tạo tài khoản</button>
       </div>
 
-      {/* Bộ lọc */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {[['', 'Tất cả'], ['admin', 'Admin'], ['giaoly', 'Giáo lý viên'], ['user', 'Phụ huynh']].map(([v, l]) => (
-          <button key={v} onClick={() => setVaiTro(v)}
-            className={`text-xs px-3 py-1 rounded-full border transition font-medium ${
-              vaiTro === v ? 'bg-red-700 text-white border-red-700' : 'text-gray-600 border-gray-300 hover:border-red-400'
-            }`}>{l}</button>
+      {/* Tabs lọc */}
+      <div className="flex gap-1.5 mb-5 flex-wrap">
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
+              activeTab === t.key
+                ? 'bg-red-700 text-white border-red-700'
+                : 'text-gray-600 border-gray-300 hover:border-red-400'
+            }`}>
+            {t.label}
+          </button>
         ))}
       </div>
 
@@ -144,30 +220,73 @@ const AdminUsers = () => {
           {users.length === 0 && (
             <p className="text-center text-gray-400 py-12">Không có người dùng nào.</p>
           )}
+
           {users.map(u => {
             const vt = VAI_TRO_LABEL[u.vaiTro] || VAI_TRO_LABEL.user;
+            const cv = u.chucVu ? CHUC_VU_LABEL[u.chucVu] : null;
+
             return (
-              <div key={u._id} className="card flex items-center justify-between gap-4 flex-wrap">
+              <div key={u._id} className="card flex items-center justify-between gap-4 flex-wrap py-3">
+                {/* Avatar + thông tin */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0">
                     {u.hoTen?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-800 text-sm">{u.hoTen}</p>
+                    {/* Tên + badges */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-gray-800 text-sm">{u.hoTen}</span>
                       <span className={vt.cls}>{vt.label}</span>
+                      {cv && <span className={cv.cls}>{cv.label}</span>}
                       {u.phaiBatDauDoiMatKhau && (
-                        <span className="badge-red">Chưa đổi MK</span>
+                        <span className="bg-orange-100 text-orange-700 inline-block text-xs font-semibold px-2 py-0.5 rounded-full">
+                          Chưa đổi MK
+                        </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500">{u.email}</p>
+
+                    {/* Email + SĐT */}
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {u.email}
+                      {u.soDienThoai && <span className="ml-2 text-gray-400">· {u.soDienThoai}</span>}
+                    </p>
+
+                    {/* Lớp phụ trách */}
                     {u.lopPhuTrach?.length > 0 && (
                       <p className="text-xs text-blue-600 mt-0.5">
-                        Phụ trách: {u.lopPhuTrach.map(l => l.tenLop).join(', ')}
+                        📚 {u.lopPhuTrach.map(l => l.tenLop).join(', ')}
                       </p>
+                    )}
+
+                    {/* Dropdown đổi chức vụ nhanh — chỉ với giaoly */}
+                    {u.vaiTro === 'giaoly' && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-xs text-gray-400">Chức vụ:</span>
+                        {['huynhtruong', 'dutruong', ''].map(cv => {
+                          const lbl = cv === 'huynhtruong' ? 'HT'
+                            : cv === 'dutruong' ? 'DT' : '—';
+                          const active = (u.chucVu || '') === cv;
+                          return (
+                            <button key={cv}
+                              onClick={() => handleChucVu(u, cv || null)}
+                              className={`text-xs px-2 py-0.5 rounded border transition font-medium ${
+                                active
+                                  ? cv === 'huynhtruong' ? 'bg-green-600 text-white border-green-600'
+                                    : cv === 'dutruong' ? 'bg-sky-600 text-white border-sky-600'
+                                    : 'bg-gray-400 text-white border-gray-400'
+                                  : 'text-gray-500 border-gray-300 hover:border-gray-500'
+                              }`}
+                            >
+                              {lbl}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>
+
+                {/* Thao tác */}
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => setForm(u)} className="btn-ghost py-1! px-3! text-xs!">Sửa</button>
                   <button
