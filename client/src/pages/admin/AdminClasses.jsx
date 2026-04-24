@@ -4,8 +4,11 @@ import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const NGANH_COLOR = {
-  ChienNon: 'badge-gray', AuNhi: 'badge-blue', ThieuNhi: 'badge-green',
-  NghiaSi: 'badge-red', HiepSi: 'bg-purple-100 text-purple-700 inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
+  ChienNon: 'bg-pink-100   text-pink-700   inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
+  AuNhi:    'bg-green-100  text-green-700  inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
+  ThieuNhi: 'bg-blue-100   text-blue-700   inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
+  NghiaSi:  'bg-yellow-100 text-yellow-700 inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
+  HiepSi:   'bg-amber-100  text-amber-800  inline-block text-xs font-semibold px-2 py-0.5 rounded-full',
 };
 const NGANH_LABEL = {
   ChienNon: 'Chiên Non', AuNhi: 'Ấu Nhi', ThieuNhi: 'Thiếu Nhi',

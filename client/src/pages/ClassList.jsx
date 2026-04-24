@@ -4,11 +4,11 @@ import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const NGANH_COLOR = {
-  ChienNon:  'bg-yellow-100 text-yellow-700 border-yellow-200',
-  AuNhi:     'bg-blue-100   text-blue-700   border-blue-200',
-  ThieuNhi:  'bg-green-100  text-green-700  border-green-200',
-  NghiaSi:   'bg-red-100    text-red-700    border-red-200',
-  HiepSi:    'bg-purple-100 text-purple-700 border-purple-200',
+  ChienNon: 'bg-pink-100   text-pink-700   border-pink-200',
+  AuNhi:    'bg-green-100  text-green-700  border-green-200',
+  ThieuNhi: 'bg-blue-100   text-blue-700   border-blue-200',
+  NghiaSi:  'bg-yellow-100 text-yellow-700 border-yellow-200',
+  HiepSi:   'bg-amber-100  text-amber-800  border-amber-200',
 };
 
 const NGANH_LABEL = {

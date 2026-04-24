@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 
 const NGANH = [
-  { ten: 'Chiên Non',  mau: 'bg-yellow-400', mo_ta: 'Khai Tâm' },
-  { ten: 'Ấu Nhi',    mau: 'bg-blue-400',   mo_ta: 'XT 1, XT 2A/2B, XT 3A/3B' },
-  { ten: 'Thiếu Nhi', mau: 'bg-green-500',  mo_ta: 'Thêm Sức 1, Thêm Sức 2' },
-  { ten: 'Nghĩa Sĩ',  mau: 'bg-red-500',    mo_ta: 'Sống Đạo 1, 2, 3' },
-  { ten: 'Hiệp Sĩ',   mau: 'bg-purple-500', mo_ta: 'Hiệp Sĩ' },
+  { ten: 'Chiên Non',  mau: 'bg-pink-400',   mo_ta: 'Khai Tâm' },
+  { ten: 'Ấu Nhi',    mau: 'bg-green-500',  mo_ta: 'XT 1, XT 2A/2B, XT 3A/3B' },
+  { ten: 'Thiếu Nhi', mau: 'bg-blue-500',   mo_ta: 'Thêm Sức 1, Thêm Sức 2' },
+  { ten: 'Nghĩa Sĩ',  mau: 'bg-yellow-400', mo_ta: 'Sống Đạo 1, 2, 3' },
+  { ten: 'Hiệp Sĩ',   mau: 'bg-amber-700',  mo_ta: 'Hiệp Sĩ' },
 ];
 
 const Home = () => {
