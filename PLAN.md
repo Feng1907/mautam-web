@@ -8,7 +8,7 @@
 |-----------|----------|------------|
 | 0 | Khởi tạo project & cấu trúc mã nguồn | ✅ Hoàn thành |
 | 1 | Database schema & quan hệ dữ liệu | ✅ Hoàn thành |
-| 2 | Backend API (Auth, RBAC, CRUD) | ⬜ Chưa bắt đầu |
+| 2 | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
 | 3 | Frontend UI cơ bản | ⬜ Chưa bắt đầu |
 | 4 | Tính năng Điểm danh | ⬜ Chưa bắt đầu |
 | 5 | Tính năng Bảng điểm | ⬜ Chưa bắt đầu |
@@ -125,44 +125,55 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 2 — Backend API `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 2 — Backend API `✅ Hoàn thành`
 
 #### Auth & Tài khoản
-- [ ] `POST /api/auth/login` — JWT, 7 ngày
-- [ ] `GET  /api/auth/me`
-- [ ] `POST /api/auth/register` — Admin tạo tài khoản cho HT
-- [ ] `PUT  /api/auth/change-password` — đổi mật khẩu lần đầu
-- [ ] `POST /api/auth/forgot-password` — reset qua email (nodemailer)
+- [x] `POST /api/auth/login` — JWT, 7 ngày
+- [x] `GET  /api/auth/me`
+- [x] `POST /api/auth/register` — Admin tạo tài khoản + gửi email mật khẩu tạm
+- [x] `PUT  /api/auth/change-password` — đổi mật khẩu, tắt flag phaiBatDauDoiMatKhau
+- [x] `POST /api/auth/forgot-password` — reset qua email (nodemailer)
+
+#### Quản lý năm học
+- [x] `GET  /api/namhoc` — danh sách năm học
+- [x] `POST /api/namhoc` — Admin tạo năm học mới
+- [x] `PUT  /api/namhoc/:id/activate` — Admin kích hoạt năm học (auto tắt năm cũ)
 
 #### Quản lý lớp & nhân sự
-- [ ] `GET    /api/classes` — danh sách lớp theo năm học
-- [ ] `POST   /api/classes` — Admin tạo lớp mới
-- [ ] `PUT    /api/classes/:id/assign` — Admin phân công HT vào lớp
-- [ ] `GET    /api/classes/:id` — chi tiết lớp
+- [x] `GET    /api/classes` — danh sách lớp theo năm học (mặc định năm đang hoạt động)
+- [x] `POST   /api/classes` — Admin tạo lớp mới
+- [x] `PUT    /api/classes/:id/assign` — Admin phân công HT/DT, đồng bộ lopPhuTrach
+- [x] `GET    /api/classes/:id` — chi tiết lớp
+
+#### Quản lý người dùng
+- [x] `GET    /api/users` — Admin xem danh sách (lọc theo vaiTro)
+- [x] `PUT    /api/users/:id` — Admin cập nhật thông tin
+- [x] `DELETE /api/users/:id` — Admin xoá (không tự xoá mình)
 
 #### Đoàn sinh
-- [ ] `GET    /api/students/:lopId` — danh sách theo lớp
-- [ ] `POST   /api/students` — thêm đoàn sinh
-- [ ] `PUT    /api/students/:id` — cập nhật
-- [ ] `DELETE /api/students/:id` — soft delete (inactive)
+- [x] `GET    /api/students/:lopId` — danh sách theo lớp
+- [x] `GET    /api/students/:lopId/:id` — chi tiết đoàn sinh
+- [x] `POST   /api/students` — thêm đoàn sinh
+- [x] `PUT    /api/students/:id` — cập nhật (không đổi lớp qua route này)
+- [x] `DELETE /api/students/:id` — soft delete (inactive)
 
 #### Điểm danh
-- [ ] `GET  /api/attendance/:lopId` — toàn bộ bản ghi lớp
-- [ ] `POST /api/attendance` — upsert (tạo hoặc cập nhật)
-- [ ] `GET  /api/attendance/sundays?startDate&endDate` — tự sinh danh sách Chúa Nhật
+- [x] `GET  /api/attendance/:lopId` — toàn bộ bản ghi lớp theo năm học
+- [x] `POST /api/attendance` — upsert (tạo hoặc cập nhật), tự lấy namHoc đang hoạt động
+- [x] `GET  /api/attendance/sundays` — tự sinh danh sách Chúa Nhật theo năm học
 
 #### Bảng điểm
-- [ ] `GET    /api/grades/:lopId`
-- [ ] `POST   /api/grades`
-- [ ] `PUT    /api/grades/:id`
-- [ ] `DELETE /api/grades/:id`
+- [x] `GET    /api/grades/:lopId` — lọc được theo namHocId và hocKy
+- [x] `POST   /api/grades` — tự gắn namHoc đang hoạt động
+- [x] `PUT    /api/grades/:id` — không cho đổi student/lop/namHoc
+- [x] `DELETE /api/grades/:id`
 
 #### Tin tức
-- [ ] `GET    /api/posts` — public
-- [ ] `GET    /api/posts/:id`
-- [ ] `POST   /api/posts` — Admin only
-- [ ] `PUT    /api/posts/:id`
-- [ ] `DELETE /api/posts/:id`
+- [x] `GET    /api/posts` — public, phân trang, lọc loại, ẩn thông báo hết hạn
+- [x] `GET    /api/posts/:id`
+- [x] `POST   /api/posts` — Admin only, gửi email khi thongbaokhan
+- [x] `PUT    /api/posts/:id`
+- [x] `DELETE /api/posts/:id`
 
 #### Export
 - [ ] `GET /api/export/attendance/:lopId` — Excel chuyên cần

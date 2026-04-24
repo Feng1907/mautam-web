@@ -9,11 +9,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/students', require('./routes/students'));
+app.use('/api/auth',       require('./routes/auth'));
+app.use('/api/users',      require('./routes/users'));
+app.use('/api/namhoc',     require('./routes/namhoc'));
+app.use('/api/classes',    require('./routes/classes'));
+app.use('/api/students',   require('./routes/students'));
 app.use('/api/attendance', require('./routes/attendance'));
-app.use('/api/grades', require('./routes/grades'));
-app.use('/api/posts', require('./routes/posts'));
+app.use('/api/grades',     require('./routes/grades'));
+app.use('/api/posts',      require('./routes/posts'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
