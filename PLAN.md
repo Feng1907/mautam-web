@@ -14,7 +14,7 @@
 | 5 | Tính năng Bảng điểm | ✅ Hoàn thành |
 | 6 | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
 | 7 | Export Excel / PDF | ✅ Hoàn thành |
-| 8 | Kiểm thử & Deployment | ⬜ Chưa bắt đầu |
+| 8 | Kiểm thử & Deployment | 🔄 Đang thực hiện |
 
 ---
 
@@ -259,16 +259,46 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 8 — Kiểm thử & Deployment `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 8 — Kiểm thử & Deployment `🔄 Đang thực hiện`
 
-- [ ] Kiểm thử RBAC: HT không thể sửa lớp khác
-- [ ] Kiểm thử luồng đăng nhập / reset mật khẩu
-- [ ] Kiểm thử export file
-- [ ] Cấu hình MongoDB Atlas (production)
-- [ ] Deploy Backend lên Render
-- [ ] Deploy Frontend lên Vercel
-- [ ] Cấu hình biến môi trường production
-- [ ] Kiểm thử end-to-end trên môi trường production
+#### Chuẩn bị code (✅ Xong)
+- [x] `vercel.json`: rewrite SPA routes về index.html
+- [x] `render.yaml`: khai báo service, buildCommand, startCommand
+- [x] `api.js`: dùng `VITE_API_URL` env khi production, fallback `/api` proxy khi dev
+- [x] `app.js`: CORS hỗ trợ nhiều origin (dev + prod), limit body 5mb
+- [x] `index.js`: trust proxy, graceful shutdown SIGTERM/SIGINT
+- [x] `errorHandler.js`: xử lý Mongoose ValidationError, duplicate key, JWT errors
+- [x] `.env.example` cả server lẫn client cập nhật đầy đủ
+
+#### Bước 1 — MongoDB Atlas (⬜ Bạn tự làm)
+- [ ] Tạo tài khoản tại mongodb.com/atlas → Free M0 Cluster
+- [ ] Tạo Database User (username/password)
+- [ ] Network Access: thêm IP `0.0.0.0/0` (allow all — Render dùng IP động)
+- [ ] Copy Connection String: `mongodb+srv://...`
+
+#### Bước 2 — Deploy Backend lên Render (⬜ Bạn tự làm)
+- [ ] Tạo tài khoản render.com → New Web Service
+- [ ] Connect GitHub repo `Feng1907/mautam-web`
+- [ ] Root Directory: `server` | Build: `npm install` | Start: `npm start`
+- [ ] Điền Environment Variables (xem bảng bên dưới)
+- [ ] Deploy → copy URL dạng `https://mautam-api.onrender.com`
+
+#### Bước 3 — Deploy Frontend lên Vercel (⬜ Bạn tự làm)
+- [ ] Tạo tài khoản vercel.com → New Project
+- [ ] Connect GitHub repo `Feng1907/mautam-web`
+- [ ] Root Directory: `client` | Build: `npm run build` | Output: `dist`
+- [ ] Thêm Environment Variable: `VITE_API_URL=https://mautam-api.onrender.com/api`
+- [ ] Deploy → copy URL dạng `https://mautam.vercel.app`
+
+#### Bước 4 — Cập nhật CORS trên Render (⬜ Bạn tự làm)
+- [ ] Render dashboard → Environment → `CLIENT_URL=https://mautam.vercel.app`
+- [ ] Redeploy backend
+
+#### Bước 5 — Kiểm thử production (⬜ Bạn tự làm)
+- [ ] Truy cập URL Vercel → trang chủ hiển thị
+- [ ] Đăng nhập admin, tạo Huynh trưởng, phân công lớp
+- [ ] Điểm danh, nhập điểm, export Excel
+- [ ] Đăng tin tức, kiểm tra UrgentBanner
 
 ---
 

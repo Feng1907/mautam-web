@@ -1,11 +1,26 @@
 const express = require('express');
-const cors = require('cors');
+const cors    = require('cors');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
-app.use(express.json());
+// CORS: cho phép CLIENT_URL (có thể nhiều origin cách nhau dấu phẩy)
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Cho phép requests không có origin (Postman, mobile app)
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} không được phép`));
+  },
+  credentials: true,
+}));
+
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes

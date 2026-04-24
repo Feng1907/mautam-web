@@ -1,18 +1,18 @@
 import axios from 'axios';
 
+// Production: VITE_API_URL=https://your-app.onrender.com/api
+// Development: Vite proxy /api → localhost:5000
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
 });
 
-// Đính kèm token vào mỗi request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Tự động logout khi token hết hạn
 api.interceptors.response.use(
   (res) => res,
   (err) => {
