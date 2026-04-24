@@ -30,7 +30,38 @@ exports.getMe = async (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// POST /api/auth/register  (Admin tạo tài khoản cho Huynh trưởng)
+// POST /api/auth/signup  (Đăng ký công khai — mặc định vaiTro='user')
+exports.signup = async (req, res, next) => {
+  try {
+    const { hoTen, email, matKhau, soDienThoai } = req.body;
+
+    if (!hoTen || !email || !matKhau)
+      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ họ tên, email và mật khẩu' });
+
+    if (matKhau.length < 6)
+      return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+
+    const existing = await User.findOne({ email });
+    if (existing)
+      return res.status(400).json({ success: false, message: 'Email này đã được đăng ký' });
+
+    const user = await User.create({
+      hoTen,
+      email,
+      matKhau,
+      soDienThoai,
+      vaiTro: 'user',  // Đăng ký công khai luôn là user thường
+    });
+
+    const token = signToken(user._id);
+    user.matKhau = undefined;
+    res.status(201).json({ success: true, token, user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/auth/register  (Admin tạo tài khoản cho Huynh trưởng — gửi email MK tạm)
 exports.register = async (req, res, next) => {
   try {
     const { hoTen, email, vaiTro, soDienThoai } = req.body;
@@ -39,7 +70,6 @@ exports.register = async (req, res, next) => {
     if (existing)
       return res.status(400).json({ success: false, message: 'Email đã được sử dụng' });
 
-    // Tạo mật khẩu tạm ngẫu nhiên 8 ký tự
     const matKhauTam = crypto.randomBytes(4).toString('hex');
 
     const user = await User.create({
@@ -51,7 +81,6 @@ exports.register = async (req, res, next) => {
       phaiBatDauDoiMatKhau: true,
     });
 
-    // Gửi email thông báo tài khoản
     await sendEmail({
       to: email,
       subject: 'Tài khoản Xứ Đoàn Anrê Phú Yên - Mẫu Tâm',
@@ -77,6 +106,9 @@ exports.changePassword = async (req, res, next) => {
     const { matKhauCu, matKhauMoi } = req.body;
     if (!matKhauCu || !matKhauMoi)
       return res.status(400).json({ success: false, message: 'Vui lòng nhập đủ thông tin' });
+
+    if (matKhauMoi.length < 6)
+      return res.status(400).json({ success: false, message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
 
     const user = await User.findById(req.user._id).select('+matKhau');
     if (!(await user.kiemTraMatKhau(matKhauCu)))

@@ -76,6 +76,14 @@ const Login = () => {
               Đặt lại tại đây
             </Link>
           </p>
+          <div className="border-t border-gray-100 mt-4 pt-4 text-center">
+            <p className="text-sm text-gray-500">
+              Chưa có tài khoản?{' '}
+              <Link to="/dang-ky" className="text-red-700 hover:underline font-medium">
+                Đăng ký ngay
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </main>

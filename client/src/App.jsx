@@ -7,6 +7,7 @@ import UrgentBanner  from './components/UrgentBanner';
 
 import Home           from './pages/Home';
 import Login          from './pages/Login';
+import Signup         from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import News           from './pages/News';
 import NewsDetail     from './pages/NewsDetail';
@@ -30,6 +31,7 @@ const App = () => (
         {/* Public */}
         <Route path="/"                element={<Home />} />
         <Route path="/login"           element={<Login />} />
+        <Route path="/dang-ky"         element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/gio-le"          element={<Liturgy />} />
         <Route path="/tin-tuc"         element={<News />} />
