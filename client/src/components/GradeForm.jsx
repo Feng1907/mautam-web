@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
+import ExportButton from './ExportButton';
 
 const LOAI_DIEM = [
   { key: 'mieng',  label: 'Miệng',   he_so: 1 },
@@ -185,12 +186,19 @@ const GradeForm = ({ lopId, students, canEdit }) => {
             ))}
           </div>
         </div>
-        <div className="flex gap-3 text-xs text-gray-500">
-          {LOAI_DIEM.map(l => (
-            <span key={l.key}>
-              <span className="font-medium text-gray-700">{l.label}</span> ×{l.he_so}
-            </span>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex gap-3 text-xs text-gray-500">
+            {LOAI_DIEM.map(l => (
+              <span key={l.key}>
+                <span className="font-medium text-gray-700">{l.label}</span> ×{l.he_so}
+              </span>
+            ))}
+          </div>
+          <ExportButton
+            url={`/api/export/grades/${lopId}?hocKy=${hocKy}`}
+            fileName={`BangDiem_HK${hocKy}.xlsx`}
+            label="Xuất Excel"
+          />
         </div>
       </div>
 

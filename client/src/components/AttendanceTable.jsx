@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
+import ExportButton from './ExportButton';
 
 // Rút gọn ngày 'YYYY-MM-DD' → 'DD/MM'
 const shortDate = (d) => {
@@ -118,9 +119,19 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
             ))}
           </select>
         </div>
-        <div className="flex gap-4 text-sm text-gray-500">
-          <span>Tổng buổi: <strong className="text-gray-700">{sundays.length}</strong></span>
-          <span>Đoàn sinh: <strong className="text-gray-700">{students.length}</strong></span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-gray-500">
+            Tổng buổi: <strong className="text-gray-700">{sundays.length}</strong>
+            &nbsp;·&nbsp;
+            Đoàn sinh: <strong className="text-gray-700">{students.length}</strong>
+          </span>
+          {selNamHoc && (
+            <ExportButton
+              url={`/api/export/attendance/${lopId}?namHocId=${selNamHoc._id}`}
+              fileName={`ChuyenCan_${lopId}_${selNamHoc.ten}.xlsx`}
+              label="Xuất Excel"
+            />
+          )}
         </div>
       </div>
 

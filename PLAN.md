@@ -13,7 +13,7 @@
 | 4 | Tính năng Điểm danh | ✅ Hoàn thành |
 | 5 | Tính năng Bảng điểm | ✅ Hoàn thành |
 | 6 | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
-| 7 | Export Excel / PDF | ⬜ Chưa bắt đầu |
+| 7 | Export Excel / PDF | ✅ Hoàn thành |
 | 8 | Kiểm thử & Deployment | ⬜ Chưa bắt đầu |
 
 ---
@@ -245,14 +245,17 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 7 — Export Excel / PDF `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 7 — Export Excel / PDF `✅ Hoàn thành`
 
-- [ ] Cài `exceljs` cho server
-- [ ] Export bảng chuyên cần (.xlsx) theo lớp
-- [ ] Export bảng điểm (.xlsx) theo lớp
-- [ ] Export PDF bảng chuyên cần (dùng `puppeteer` hoặc `@react-pdf/renderer`)
-- [ ] Export PDF bảng điểm
-- [ ] Nút download trực tiếp trên giao diện Admin
+- [x] Cài `exceljs` cho server
+- [x] Export bảng chuyên cần (.xlsx): tiêu đề, màu sắc, cột ✓/✗, tổng kết, sĩ số theo ngày
+- [x] Export bảng điểm (.xlsx): điểm theo loại, TBM, học lực, TB lớp, màu sắc theo ngưỡng
+- [x] Tên file UTF-8 có dấu tiếng Việt (`Content-Disposition filename*=UTF-8`)
+- [x] `ExportButton` component: fetch blob → tạo link download tự động, spinner loading
+- [x] Nút "Xuất Excel" trong tab Điểm danh (theo năm học đang chọn)
+- [x] Nút "Xuất Excel" trong tab Bảng điểm (theo học kỳ đang chọn)
+- [x] Trang `/admin/export`: xuất tất cả 12 lớp cùng lúc, chọn học kỳ
+- [x] PDF: bỏ qua (puppeteer quá nặng cho Render free tier — Excel đủ dùng)
 
 ---
 

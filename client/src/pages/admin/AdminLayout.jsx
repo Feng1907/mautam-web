@@ -5,6 +5,7 @@ const MENU = [
   { to: '/admin/bai-viet', label: '📝 Bài viết' },
   { to: '/admin/nguoi-dung', label: '👥 Người dùng' },
   { to: '/admin/lop-hoc',  label: '🏫 Lớp học' },
+  { to: '/admin/export',   label: '📥 Export' },
 ];
 
 const AdminLayout = () => {

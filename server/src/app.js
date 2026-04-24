@@ -17,6 +17,7 @@ app.use('/api/students',   require('./routes/students'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/grades',     require('./routes/grades'));
 app.use('/api/posts',      require('./routes/posts'));
+app.use('/api/export',     require('./routes/export'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
