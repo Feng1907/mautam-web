@@ -6,7 +6,8 @@ const NAV_LINKS = [
   { to: '/',         label: 'Trang chủ' },
   { to: '/gio-le',   label: 'Giờ lễ' },
   { to: '/tin-tuc',  label: 'Tin tức' },
-  { to: '/lop-hoc',  label: 'Lớp học', authRequired: true },
+  { to: '/lop-hoc',  label: 'Lớp học',   authRequired: true },
+  { to: '/admin',    label: '⚙ Quản trị', adminOnly: true },
 ];
 
 const Navbar = () => {
@@ -31,7 +32,10 @@ const Navbar = () => {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.filter(l => !l.authRequired || user).map(l => (
+          {NAV_LINKS.filter(l =>
+  (!l.authRequired || user) &&
+  (!l.adminOnly || user?.vaiTro === 'admin')
+).map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}>
               {l.label}
             </NavLink>
@@ -71,7 +75,10 @@ const Navbar = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-red-800 px-4 pb-4 flex flex-col gap-3">
-          {NAV_LINKS.filter(l => !l.authRequired || user).map(l => (
+          {NAV_LINKS.filter(l =>
+  (!l.authRequired || user) &&
+  (!l.adminOnly || user?.vaiTro === 'admin')
+).map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}
               onClick={() => setMenuOpen(false)}>
               {l.label}

@@ -12,7 +12,7 @@
 | 3 | Frontend UI cơ bản | ✅ Hoàn thành |
 | 4 | Tính năng Điểm danh | ✅ Hoàn thành |
 | 5 | Tính năng Bảng điểm | ✅ Hoàn thành |
-| 6 | Tính năng Tin tức & Thông báo | ⬜ Chưa bắt đầu |
+| 6 | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
 | 7 | Export Excel / PDF | ⬜ Chưa bắt đầu |
 | 8 | Kiểm thử & Deployment | ⬜ Chưa bắt đầu |
 
@@ -228,11 +228,20 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 6 — Tin tức & Thông báo `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 6 — Tin tức & Thông báo `✅ Hoàn thành`
 
-- [ ] Admin đăng bài tin tức, chỉnh sửa, xoá
-- [ ] Thông báo khẩn — hiển thị banner nổi bật trên tất cả trang
-- [ ] Gửi email thông báo khẩn qua `nodemailer`
+- [x] Admin đăng bài mới: tiêu đề, loại, tóm tắt, nội dung HTML, ảnh đại diện, hạn hiển thị
+- [x] Toggle đăng/gỡ bài trực tiếp từ danh sách (không cần mở form)
+- [x] Chỉnh sửa bài viết — tái sử dụng PostForm
+- [x] Xoá bài viết có xác nhận
+- [x] Lọc bài theo loại: Tin tức / Thông báo / Khẩn
+- [x] Thông báo khẩn — UrgentBanner nổi bật đỏ ngay dưới Navbar, có nút đóng (sessionStorage)
+- [x] Gửi email hàng loạt qua nodemailer khi đăng thongbaokhan (backend phase 2)
+- [x] Trang Admin tổng quan: stat cards (lớp/giáo lý viên/bài viết) + bài viết mới nhất + quick actions
+- [x] Trang Admin quản lý người dùng: tạo tài khoản gửi email MK tạm, sửa, xoá, lọc vai trò
+- [x] Trang Admin quản lý lớp: phân công Huynh trưởng + Dự trưởng qua modal checkbox
+- [x] Navbar hiện link ⚙ Quản trị chỉ với admin
+- [x] AdminLayout với sidebar (desktop) + tab bar (mobile), nested routes
 
 ---
 
