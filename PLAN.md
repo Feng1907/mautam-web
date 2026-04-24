@@ -9,7 +9,7 @@
 | 0 | Khởi tạo project & cấu trúc mã nguồn | ✅ Hoàn thành |
 | 1 | Database schema & quan hệ dữ liệu | ✅ Hoàn thành |
 | 2 | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
-| 3 | Frontend UI cơ bản | ⬜ Chưa bắt đầu |
+| 3 | Frontend UI cơ bản | ✅ Hoàn thành |
 | 4 | Tính năng Điểm danh | ⬜ Chưa bắt đầu |
 | 5 | Tính năng Bảng điểm | ⬜ Chưa bắt đầu |
 | 6 | Tính năng Tin tức & Thông báo | ⬜ Chưa bắt đầu |
@@ -183,15 +183,19 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 3 — Frontend UI cơ bản `⬜ Chưa bắt đầu`
+### GIAI ĐOẠN 3 — Frontend UI cơ bản `✅ Hoàn thành`
 
-- [ ] Layout tổng thể (Navbar, Footer, màu sắc thương hiệu)
-- [ ] Trang Home — giới thiệu xứ đoàn, châm ngôn Quan thầy
-- [ ] Trang Giờ Lễ — lịch cố định + Lời Chúa (nhập thủ công hoặc API)
-- [ ] Trang Tin Tức — danh sách bài viết + chi tiết
-- [ ] Trang Đăng nhập — form + xử lý lỗi
-- [ ] Trang Danh sách lớp — hiển thị 12 lớp theo ngành
-- [ ] Route Guard — redirect nếu chưa đăng nhập / không đủ quyền
+- [x] Layout tổng thể — Navbar responsive (mobile menu), Footer, màu đỏ thương hiệu
+- [x] Trang Home — hero, 5 ngành TNTT, giới thiệu Quan thầy, quick links
+- [x] Trang Giờ Lễ — lịch lễ cố định + khung Lời Chúa (cập nhật thủ công)
+- [x] Trang Tin Tức — danh sách + lọc theo loại + phân trang
+- [x] Trang Chi tiết bài viết
+- [x] Trang Đăng nhập — form, xử lý lỗi, redirect về trang trước khi login
+- [x] Trang Quên mật khẩu
+- [x] Trang Danh sách lớp — gom nhóm theo ngành, màu sắc từng ngành
+- [x] Trang Chi tiết lớp — 3 tab: Danh sách / Điểm danh / Bảng điểm
+- [x] Route Guard — redirect /login nếu chưa đăng nhập, kiểm tra vai trò
+- [x] Build production thành công (274ms, không lỗi)
 
 ---
 
