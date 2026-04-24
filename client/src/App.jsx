@@ -22,6 +22,7 @@ import AdminPosts     from './pages/admin/AdminPosts';
 import AdminUsers     from './pages/admin/AdminUsers';
 import AdminClasses   from './pages/admin/AdminClasses';
 import AdminExport    from './pages/admin/AdminExport';
+import AdminNamHoc    from './pages/admin/AdminNamHoc';
 
 // Footer ẩn trong khu vực /admin
 const ConditionalFooter = () => {
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="bai-viet"     element={<AdminPosts />} />
           <Route path="nguoi-dung"   element={<AdminUsers />} />
           <Route path="lop-hoc"      element={<AdminClasses />} />
+          <Route path="nam-hoc"      element={<AdminNamHoc />} />
           <Route path="export"       element={<AdminExport />} />
         </Route>
       </Routes>

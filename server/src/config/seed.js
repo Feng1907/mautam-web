@@ -31,12 +31,18 @@ async function seed() {
     User.deleteMany({}),
   ]);
 
-  // 1. Tạo năm học
-  console.log('Tạo năm học 2024-2025...');
-  const namHoc = await NamHoc.create({
+  // 1. Tạo năm học — tạo cả năm cũ lẫn năm hiện tại để test
+  console.log('Tạo năm học...');
+  await NamHoc.create({
     ten: '2024-2025',
     ngayBatDau: new Date('2024-09-01'),
-    ngayKetThuc: new Date('2025-06-30'),
+    ngayKetThuc: new Date('2025-06-29'),
+    dangHoatDong: false,
+  });
+  const namHoc = await NamHoc.create({
+    ten: '2025-2026',
+    ngayBatDau: new Date('2025-09-07'),  // Chúa Nhật đầu tiên tháng 9/2025
+    ngayKetThuc: new Date('2026-06-28'), // Chúa Nhật cuối tháng 6/2026
     dangHoatDong: true,
   });
 
@@ -74,7 +80,7 @@ async function seed() {
   ]);
 
   console.log('\n✅ Seed hoàn thành!');
-  console.log(`   Năm học    : ${namHoc.ten}`);
+  console.log(`   Năm học    : ${namHoc.ten} (đang hoạt động)`);
   console.log(`   Số lớp     : ${lops.length}`);
   console.log(`   Admin      : admin@mautam.com / Admin@123`);
   console.log(`   HuynhTrưởng: huynhtruong@mautam.com / HT@12345`);

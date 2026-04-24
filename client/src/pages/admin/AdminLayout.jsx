@@ -5,6 +5,7 @@ const MENU = [
   { to: '/admin/bai-viet',   label: 'BÀI VIẾT',     icon: '✦' },
   { to: '/admin/nguoi-dung', label: 'NGƯỜI DÙNG',   icon: '◉' },
   { to: '/admin/lop-hoc',    label: 'LỚP HỌC',      icon: '▣' },
+  { to: '/admin/nam-hoc',    label: 'NĂM HỌC',       icon: '📆' },
   { to: '/admin/export',     label: 'EXPORT',        icon: '⬇' },
 ];
 
