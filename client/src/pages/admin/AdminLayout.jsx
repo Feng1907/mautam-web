@@ -1,15 +1,18 @@
 import { NavLink, Outlet } from 'react-router-dom';
-
-const MENU = [
-  { to: '/admin',            label: 'TỔNG QUAN',    icon: '◈', end: true },
-  { to: '/admin/bai-viet',   label: 'BÀI VIẾT',     icon: '✦' },
-  { to: '/admin/nguoi-dung', label: 'NGƯỜI DÙNG',   icon: '◉' },
-  { to: '/admin/lop-hoc',    label: 'LỚP HỌC',      icon: '▣' },
-  { to: '/admin/nam-hoc',    label: 'NĂM HỌC',       icon: '📆' },
-  { to: '/admin/export',     label: 'EXPORT',        icon: '⬇' },
-];
+import { useTranslation } from 'react-i18next';
 
 const AdminLayout = () => {
+  const { t } = useTranslation();
+
+  const MENU = [
+    { to: '/admin',            labelKey: 'admin.menu.overview',   icon: '◈', end: true },
+    { to: '/admin/bai-viet',   labelKey: 'admin.menu.posts',      icon: '✦' },
+    { to: '/admin/nguoi-dung', labelKey: 'admin.menu.users',      icon: '◉' },
+    { to: '/admin/lop-hoc',    labelKey: 'admin.menu.classes',    icon: '▣' },
+    { to: '/admin/nam-hoc',    labelKey: 'admin.menu.schoolYear', icon: '📆' },
+    { to: '/admin/export',     labelKey: 'admin.menu.export',     icon: '⬇' },
+  ];
+
   const linkCls = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-2.5 text-xs font-bold tracking-widest transition rounded-lg ${
       isActive
@@ -19,7 +22,7 @@ const AdminLayout = () => {
 
   return (
     <div className="flex-1 flex min-h-0 bg-gray-50">
-      {/* ── Sidebar dọc ── */}
+      {/* Sidebar dọc */}
       <aside className="hidden md:flex flex-col w-52 shrink-0 bg-white border-r border-gray-100 pt-8 pb-4 gap-0.5">
         <p className="px-4 pb-3 text-[10px] font-black tracking-[0.2em] text-gray-300 uppercase">
           Menu
@@ -27,12 +30,12 @@ const AdminLayout = () => {
         {MENU.map(m => (
           <NavLink key={m.to} to={m.to} end={m.end} className={linkCls}>
             <span className="text-base leading-none">{m.icon}</span>
-            {m.label}
+            {t(m.labelKey)}
           </NavLink>
         ))}
       </aside>
 
-      {/* ── Mobile tab bar ── */}
+      {/* Mobile tab bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex">
         {MENU.map(m => (
           <NavLink key={m.to} to={m.to} end={m.end}
@@ -41,12 +44,12 @@ const AdminLayout = () => {
                 isActive ? 'text-red-600' : 'text-gray-400'
               }`}>
             <span className="text-lg leading-none">{m.icon}</span>
-            <span className="truncate w-full text-center px-1">{m.label}</span>
+            <span className="truncate w-full text-center px-1">{t(m.labelKey)}</span>
           </NavLink>
         ))}
       </div>
 
-      {/* ── Vùng nội dung ── */}
+      {/* Vùng nội dung */}
       <main className="flex-1 min-w-0 overflow-y-auto p-6 pb-20 md:pb-6">
         <Outlet />
       </main>

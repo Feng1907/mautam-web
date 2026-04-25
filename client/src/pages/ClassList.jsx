@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -72,6 +73,7 @@ const NGANH_META = {
 };
 
 const ClassList = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ const ClassList = () => {
 
   return (
     <main className="flex-1 page-container">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Danh Sách Lớp</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">{t('classList.title')}</h1>
 
       {/* Block selector tabs */}
       <div className="flex gap-2 flex-wrap mb-6">
@@ -117,13 +119,13 @@ const ClassList = () => {
                   : `${m.bg} ${m.border} ${m.text} hover:scale-102 hover:shadow`,
               ].join(' ')}
             >
-              <span className="text-xl font-black tracking-tight">{m.short}</span>
-              <span className="text-[11px] font-medium mt-0.5 leading-none">{m.label}</span>
+              <span className="text-xl font-black tracking-tight">{t(`nganh.short.${nganh}`, m.short)}</span>
+              <span className="text-[11px] font-medium mt-0.5 leading-none">{t(`nganh.${nganh}`, m.label)}</span>
               <span className={[
                 'text-[10px] mt-1 px-2 py-0.5 rounded-full',
                 isActive ? 'bg-white/25' : `${m.bg} border ${m.border}`,
               ].join(' ')}>
-                {byNganh[nganh]?.length ?? 0} lớp
+                {byNganh[nganh]?.length ?? 0} {t('classList.classes')}
               </span>
             </button>
           );
@@ -132,7 +134,7 @@ const ClassList = () => {
 
       {/* Class grid */}
       {activeLops.length === 0 ? (
-        <p className="text-center text-gray-400 py-16">Chưa có lớp nào trong ngành này.</p>
+        <p className="text-center text-gray-400 py-16">{t('classList.noClassInGroup')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {activeLops.map(lop => {
@@ -162,7 +164,7 @@ const ClassList = () => {
                       ) : (
                         <span className="flex items-center gap-1">
                           <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-100 text-gray-400 text-[9px] font-bold">?</span>
-                          <span className="text-[10px] text-gray-300 italic">Chưa phân công</span>
+                          <span className="text-[10px] text-gray-300 italic">{t('classList.unassigned')}</span>
                         </span>
                       )}
                     </div>

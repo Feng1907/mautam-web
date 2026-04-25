@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Clock, Shirt, BookOpen, Calendar, ChevronRight, Quote } from 'lucide-react';
 
 // ─── Dữ liệu tĩnh ────────────────────────────────────────────────────────────
@@ -9,12 +10,31 @@ const LICH_LE = [
   { ngay: 'Chúa Nhật',   gio: ['05:30', '09:00', '17:00', '18:30'] },
 ];
 
-const LE_THANG = [
-  { ngay: '02/04', ten: 'Thứ Năm Tuần Thánh',   mauKey: 'trang', noiBat: false },
-  { ngay: '03/04', ten: 'Thứ Sáu Tuần Thánh',   mauKey: 'do',    noiBat: false },
-  { ngay: '05/04', ten: 'ĐẠI LỄ PHỤC SINH',      mauKey: 'trang', noiBat: true  },
-  { ngay: '12/04', ten: 'CN II Phục Sinh',        mauKey: 'trang', noiBat: false },
-  { ngay: '25/04', ten: 'Thánh Máccô',            mauKey: 'do',    noiBat: false },
+// mauKey: trang | do | tim | xanh | den | hong
+// cap: 'dai' = ĐẠI LỄ (vàng đồng) | 'trong' = LỄ TRỌNG (đỏ) | undefined = thường
+// icon: emoji icon nhỏ theo mùa/ý nghĩa
+const importantFeasts = [
+  { ngay: '01/04', ten: 'Thứ Tư Tuần Thánh',            mauKey: 'tim',   icon: '🕊️' },
+  { ngay: '02/04', ten: 'Thứ Năm Tuần Thánh',           mauKey: 'trang', icon: '🍞',  cap: 'trong' },
+  { ngay: '03/04', ten: 'Thứ Sáu Tuần Thánh',           mauKey: 'do',    icon: '✝️',  cap: 'trong' },
+  { ngay: '04/04', ten: 'Thứ Bảy Tuần Thánh',           mauKey: 'trang', icon: '🕯️' },
+  { ngay: '05/04', ten: 'ĐẠI LỄ PHỤC SINH',             mauKey: 'trang', icon: '🌿',  cap: 'dai'   },
+  { ngay: '06/04', ten: 'Chúa Nhật Phục Sinh',          mauKey: 'trang', icon: '🌿',  cap: 'dai'   },
+  { ngay: '07/04', ten: 'Thứ Hai Bát Nhật Phục Sinh',   mauKey: 'trang', icon: '🌿' },
+  { ngay: '08/04', ten: 'Thứ Ba Bát Nhật Phục Sinh',    mauKey: 'trang', icon: '🌿' },
+  { ngay: '09/04', ten: 'Thứ Tư Bát Nhật Phục Sinh',   mauKey: 'trang', icon: '🌿' },
+  { ngay: '10/04', ten: 'Thứ Năm Bát Nhật Phục Sinh',  mauKey: 'trang', icon: '🌿' },
+  { ngay: '11/04', ten: 'Thứ Sáu Bát Nhật Phục Sinh',  mauKey: 'trang', icon: '🌿' },
+  { ngay: '12/04', ten: 'Thứ Bảy Bát Nhật Phục Sinh',  mauKey: 'trang', icon: '🌿' },
+  { ngay: '13/04', ten: 'CN II Phục Sinh — Lòng Chúa Thương Xót', mauKey: 'trang', icon: '💧', cap: 'trong' },
+  { ngay: '20/04', ten: 'CN III Phục Sinh',             mauKey: 'trang', icon: '🌿' },
+  { ngay: '23/04', ten: 'Thánh Georgiô, Tử đạo',       mauKey: 'do',    icon: '⚔️',  cap: 'nho'   },
+  { ngay: '24/04', ten: 'Thánh Fidelis Sigmaringen',    mauKey: 'do',    icon: '✝️',  cap: 'nho'   },
+  { ngay: '25/04', ten: 'Thánh Máccô, Thánh Sử',       mauKey: 'do',    icon: '📖',  cap: 'kinh'  },
+  { ngay: '27/04', ten: 'CN IV Phục Sinh — Chúa Chiên Lành', mauKey: 'trang', icon: '🐑', cap: 'trong' },
+  { ngay: '28/04', ten: 'Thánh Phêrô Chanel',           mauKey: 'do',    icon: '✝️',  cap: 'nho'   },
+  { ngay: '29/04', ten: 'Thánh Catarina Siena',         mauKey: 'trang', icon: '✨',  cap: 'trong' },
+  { ngay: '30/04', ten: 'Thánh Piô V, Giáo Hoàng',     mauKey: 'trang', icon: '👑',  cap: 'nho'   },
 ];
 
 const QUOTE = {
@@ -91,7 +111,9 @@ const detectLiturgy = (tenLe = '') => {
       t.includes('ba ngôi')   || t.includes('mình máu'))            return { mauKey: 'trang', loai: 'Lễ Trọng'    };
   if (t.includes('tử đạo') || t.includes('hiện xuống') ||
       t.includes('thánh giá'))                                      return { mauKey: 'do',    loai: 'Lễ Trọng'    };
-  if (t.includes('thánh') || t.includes('chúa nhật'))              return { mauKey: 'trang', loai: 'Lễ Kính'     };
+  if (t.includes('thánh sử') || t.includes('tông đồ') ||
+      t.includes('tiến sĩ'))                                        return { mauKey: 'trang', loai: 'Lễ Kính'     };
+  if (t.includes('thánh') || t.includes('chúa nhật'))              return { mauKey: 'trang', loai: 'Lễ Nhớ'      };
   return { mauKey: 'xanh', loai: 'Lễ Thường' };
 };
 
@@ -106,13 +128,15 @@ const useNow = () => {
   return now;
 };
 
-const THU_VN = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
-
-const formatVN = (date) => ({
-  thu:  THU_VN[date.getDay()],
-  ngay: `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`,
-  gio:  date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-});
+// Định dạng ngày tự động theo locale — dùng Intl thay chuỗi hardcode
+const formatDate = (date, locale) => {
+  const lang = locale?.startsWith('en') ? 'en-US' : 'vi-VN';
+  return {
+    thu:  date.toLocaleDateString(lang, { weekday: 'long' }),
+    ngay: date.toLocaleDateString(lang, { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    gio:  date.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+  };
+};
 
 // ─── Fetch phụng vụ ──────────────────────────────────────────────────────────
 
@@ -130,72 +154,101 @@ const fetchLoiChua = async () => {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+// loaiKey: key tra cứu trong t('liturgy.types.*')
+const LOAI_KEY_MAP = {
+  'Lễ Trọng':    'leTrong',
+  'Lễ Đặc Biệt': 'leDacBiet',
+  'Mùa Chay':    'muaChay',
+  'Mùa Vọng':    'muaVong',
+  'Lễ Kính':     'leKinh',
+  'Lễ Nhớ':      'leNho',
+  'Lễ Thường':   'leThuong',
+};
+const LOAI_CLS = {
+  leTrong:   'bg-red-100 text-red-700',
+  leDacBiet: 'bg-purple-100 text-purple-700',
+  muaChay:   'bg-purple-50 text-purple-600',
+  muaVong:   'bg-purple-50 text-purple-600',
+  leKinh:    'bg-blue-100 text-blue-600',
+  leNho:     'bg-gray-100 text-gray-500',
+  leThuong:  'bg-gray-100 text-gray-500',
+};
+
 const LoaiBadge = ({ loai }) => {
-  const cls =
-    loai === 'Lễ Trọng'    ? 'bg-red-100 text-red-700' :
-    loai === 'Lễ Đặc Biệt' ? 'bg-purple-100 text-purple-700' :
-    loai === 'Mùa Chay'    ? 'bg-purple-50 text-purple-600' :
-    loai === 'Mùa Vọng'    ? 'bg-purple-50 text-purple-600' :
-    loai === 'Lễ Kính'     ? 'bg-blue-50 text-blue-600' :
-    'bg-gray-100 text-gray-500';
+  const { t } = useTranslation();
+  const key = LOAI_KEY_MAP[loai] || 'leThuong';
   return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cls}`}>
-      {loai}
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${LOAI_CLS[key]}`}>
+      {t(`liturgy.types.${key}`)}
     </span>
   );
 };
 
-// Cột trái — card màu áo + tên lễ
 const LiturgyCards = ({ mauKey, loai, tenLe, loading }) => {
+  const { t } = useTranslation();
   const mau = MAU_AO[mauKey] || MAU_AO.xanh;
   return (
     <div className="grid grid-cols-2 gap-3 mb-4">
-      {/* Màu áo */}
       <div className={`rounded-2xl p-4 flex items-center gap-3 ${mau.card}`}>
         <div className={`w-11 h-11 rounded-full shrink-0 ${mau.dot} flex items-center justify-center shadow-sm`}>
           <Shirt size={20} className={mau.icon} />
         </div>
         <div>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-60 ${mau.text}`}>Áo lễ</p>
-          <p className={`font-bold text-sm mt-0.5 ${mau.text}`}>{mau.label}</p>
+          <p className={`text-[10px] font-semibold uppercase tracking-wider opacity-60 ${mau.text}`}>
+            {t('liturgy.vestmentLabel')}
+          </p>
+          <p className={`font-bold text-sm mt-0.5 ${mau.text}`}>
+            {t(`liturgy.colors.${mauKey}`, mau.label)}
+          </p>
         </div>
       </div>
 
-      {/* Loại lễ */}
       <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col justify-center gap-1.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Phụng vụ hôm nay</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+          {t('liturgy.todayLabel')}
+        </p>
         {loading ? (
-          <p className="text-xs text-gray-300 italic">Đang tải…</p>
+          <p className="text-xs text-gray-300 italic">{t('liturgy.loading')}</p>
         ) : tenLe ? (
           <>
             <p className="font-bold text-gray-800 text-sm leading-tight">{tenLe}</p>
             <LoaiBadge loai={loai} />
           </>
         ) : (
-          <p className="text-xs text-gray-400 italic">Không tải được dữ liệu</p>
+          <p className="text-xs text-gray-400 italic">{t('liturgy.noData')}</p>
         )}
       </div>
     </div>
   );
 };
 
-// Bảng giờ lễ
 const MassSchedule = ({ now }) => {
+  const { t } = useTranslation();
   const isChaNhat = now.getDay() === 0;
   const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  const LICH_TRANSLATED = [
+    { key: 'weekdays', label: t('liturgy.weekdays'), gio: ['05:30', '18:00'] },
+    { key: 'sunday',   label: t('liturgy.sunday'),   gio: ['05:30', '09:00', '17:00', '18:30'] },
+  ];
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-        <Clock size={13} /> Giờ lễ cố định
+        <Clock size={13} /> {t('liturgy.scheduleTitle')}
       </h3>
       <div className="flex flex-col gap-2.5">
-        {LICH_LE.map(l => {
-          const isCurrent = isChaNhat ? l.ngay === 'Chúa Nhật' : l.ngay === 'Ngày thường';
+        {LICH_TRANSLATED.map(l => {
+          const isCurrent = isChaNhat ? l.key === 'sunday' : l.key === 'weekdays';
           return (
-            <div key={l.ngay} className="flex items-center gap-2 flex-wrap">
+            <div key={l.key} className="flex items-center gap-2 flex-wrap">
               <span className={`text-xs font-semibold w-24 shrink-0 ${isCurrent ? 'text-gray-800' : 'text-gray-400'}`}>
-                {l.ngay}
-                {isCurrent && <span className="ml-1 text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">hôm nay</span>}
+                {l.label}
+                {isCurrent && (
+                  <span className="ml-1 text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">
+                    {t('liturgy.todayBadge')}
+                  </span>
+                )}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {l.gio.map(g => {
@@ -204,9 +257,9 @@ const MassSchedule = ({ now }) => {
                   return (
                     <span key={g} className={[
                       'font-mono text-xs font-semibold px-2.5 py-1 rounded-full border',
-                      isPast ? 'bg-gray-50 text-gray-300 border-gray-100 line-through' :
+                      isPast    ? 'bg-gray-50 text-gray-300 border-gray-100 line-through' :
                       isCurrent ? 'bg-red-50 text-red-700 border-red-100' :
-                      'bg-gray-50 text-gray-400 border-gray-100',
+                                  'bg-gray-50 text-gray-400 border-gray-100',
                     ].join(' ')}>{g}</span>
                   );
                 })}
@@ -219,61 +272,92 @@ const MassSchedule = ({ now }) => {
   );
 };
 
-// Gospel preview card
-const GospelCard = ({ tinMung, loading, onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full text-left bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 hover:shadow-md hover:from-amber-100 hover:to-orange-100 transition-all group"
-  >
-    <div className="flex items-center justify-between mb-2">
-      <div className="flex items-center gap-2 text-amber-700">
-        <BookOpen size={16} />
-        <span className="text-xs font-bold uppercase tracking-wider">Lời Chúa hôm nay</span>
+const GospelCard = ({ tinMung, loading, onClick }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 hover:shadow-md hover:from-amber-100 hover:to-orange-100 transition-all group"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 text-amber-700">
+          <BookOpen size={16} />
+          <span className="text-xs font-bold uppercase tracking-wider">{t('liturgy.gospelTitle')}</span>
+        </div>
+        <span className="text-amber-400 group-hover:translate-x-1 transition-transform">
+          <ChevronRight size={16} />
+        </span>
       </div>
-      <span className="text-amber-400 group-hover:translate-x-1 transition-transform">
-        <ChevronRight size={16} />
+      {loading ? (
+        <p className="text-sm text-amber-300 italic">{t('liturgy.loading')}</p>
+      ) : tinMung ? (
+        <p className="text-sm font-semibold text-amber-800 leading-snug">{tinMung}</p>
+      ) : (
+        <p className="text-sm text-amber-600 italic">{t('liturgy.gospelFallback')}</p>
+      )}
+      <span className="mt-3 inline-block text-xs font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full">
+        {t('liturgy.gospelCta')}
       </span>
-    </div>
-    {loading ? (
-      <p className="text-sm text-amber-300 italic">Đang tải…</p>
-    ) : tinMung ? (
-      <p className="text-sm font-semibold text-amber-800 leading-snug">{tinMung}</p>
-    ) : (
-      <p className="text-sm text-amber-600 italic">Bấm để đọc bài đọc hôm nay</p>
-    )}
-    <span className="mt-3 inline-block text-xs font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full">
-      Đọc chi tiết →
-    </span>
-  </button>
-);
+    </button>
+  );
+};
 
-// Sidebar — lịch lễ tháng
-const Sidebar = () => (
+// ─── FeastItem ────────────────────────────────────────────────────────────────
+
+const CAP_CONFIG = {
+  dai:   { label: 'ĐẠI LỄ',   rowCls: 'bg-amber-50 border border-amber-200 hover:bg-amber-100',  dateCls: 'text-amber-600',  nameCls: 'font-bold text-amber-800',    badge: 'bg-amber-400 text-white'   },
+  trong: { label: 'LỄ TRỌNG', rowCls: 'bg-red-50 border border-red-100 hover:bg-red-100',         dateCls: 'text-red-500',    nameCls: 'font-semibold text-red-800',  badge: 'bg-red-500 text-white'     },
+  kinh:  { label: 'LỄ KÍNH',  rowCls: 'bg-blue-50 border border-blue-100 hover:bg-blue-100',      dateCls: 'text-blue-500',   nameCls: 'font-semibold text-blue-800', badge: 'bg-blue-400 text-white'    },
+  nho:   { label: 'LỄ NHỚ',   rowCls: 'hover:bg-gray-50',                                         dateCls: 'text-gray-400',   nameCls: 'text-gray-600',               badge: 'bg-gray-200 text-gray-500' },
+};
+const ROW_DEFAULT = 'hover:bg-gray-50';
+
+const FeastItem = ({ le }) => {
+  const { t } = useTranslation();
+  const cap     = le.cap ? CAP_CONFIG[le.cap] : null;
+  const rowCls  = cap ? cap.rowCls  : ROW_DEFAULT;
+  const dateCls = cap ? cap.dateCls : 'text-gray-400';
+  const nameCls = cap ? cap.nameCls : 'text-gray-700';
+
+  return (
+    <li className={`flex items-center gap-2 rounded-xl px-2.5 py-2 transition-colors ${rowCls}`}>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${MAU_DOT_SMALL[le.mauKey]}`} />
+      <span className={`text-[10px] font-mono font-bold w-9 shrink-0 ${dateCls}`}>{le.ngay}</span>
+      <span className="text-sm leading-none shrink-0">{le.icon}</span>
+      <span className={`text-[11px] leading-tight flex-1 min-w-0 ${nameCls}`}>{le.ten}</span>
+      {cap && (
+        <span className={`text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 ${cap.badge}`}>
+          {t(`liturgy.caps.${le.cap}`, cap.label)}
+        </span>
+      )}
+    </li>
+  );
+};
+
+const Sidebar = () => {
+  const { t } = useTranslation();
+  return (
   <aside className="flex flex-col gap-4">
-    {/* Lịch lễ tháng */}
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+
+    {/* Lịch lễ tháng — scrollable */}
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-        <Calendar size={13} /> Lễ quan trọng tháng 4/2026
+        <Calendar size={13} /> {t('liturgy.feastWidget')}
       </h3>
-      <ul className="flex flex-col gap-2">
-        {LE_THANG.map(le => (
-          <li key={le.ngay} className={[
-            'flex items-center gap-2.5 rounded-xl px-3 py-2',
-            le.noiBat ? 'bg-amber-50 border border-amber-200' : 'hover:bg-gray-50',
-          ].join(' ')}>
-            <span className={`w-2 h-2 rounded-full shrink-0 ${MAU_DOT_SMALL[le.mauKey]}`} />
-            <span className="text-[11px] font-mono font-semibold text-gray-500 w-10 shrink-0">{le.ngay}</span>
-            <span className={`text-xs leading-tight ${le.noiBat ? 'font-bold text-amber-800' : 'font-medium text-gray-700'}`}>
-              {le.ten}
-            </span>
-            {le.noiBat && (
-              <span className="ml-auto text-[9px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full shrink-0">
-                ĐẠI LỄ
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+
+      {/* Wrapper với shadow top/bottom */}
+      <div className="relative">
+        {/* shadow top */}
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-linear-to-b from-white to-transparent z-10 rounded-t-xl" />
+
+        {/* danh sách cuộn */}
+        <ul className="scrollbar-thin flex flex-col gap-1 overflow-y-auto max-h-96 pr-1 py-1">
+          {importantFeasts.map(le => <FeastItem key={le.ngay + le.ten} le={le} />)}
+        </ul>
+
+        {/* shadow bottom */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-linear-to-t from-white to-transparent z-10 rounded-b-xl" />
+      </div>
     </div>
 
     {/* Quote */}
@@ -283,14 +367,16 @@ const Sidebar = () => (
       <p className="text-xs text-red-300 mt-3 font-semibold">{QUOTE.nguon}</p>
     </div>
   </aside>
-);
+  );
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const GioLe = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const now = useNow();
-  const { thu, ngay, gio } = formatVN(now);
+  const { thu, ngay, gio } = formatDate(now, i18n.language);
 
   const [loiChua, setLoiChua] = useState(null);
   const [loadingLC, setLoadingLC] = useState(true);
@@ -310,14 +396,21 @@ const GioLe = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Dashboard Phụng Vụ</p>
-            <h1 className="text-2xl font-bold text-gray-900">{thu}, {ngay}</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 mb-1">
+              {t('liturgy.pageSubtitle')}
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+              {thu}
+            </h1>
+            <p className="text-base text-gray-500 font-medium mt-0.5">{ngay}</p>
           </div>
-          <div className="flex items-center gap-2 bg-white text-gray-800 px-5 py-2.5 rounded-2xl border border-gray-200 shadow-sm">
-            <Clock size={16} className="text-red-600" />
-            <span className="font-mono font-bold text-xl tracking-widest text-red-700">{gio}</span>
+          <div className="flex items-center gap-2 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm">
+            <Clock size={15} className="text-red-600 shrink-0" />
+            <span className="font-mono font-bold text-2xl tracking-widest text-red-700 tabular-nums">
+              {gio}
+            </span>
           </div>
         </div>
 

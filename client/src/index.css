@@ -35,3 +35,9 @@ body {
 .badge-gray  { @apply inline-block bg-gray-100  text-gray-600  text-xs font-semibold px-2 py-0.5 rounded-full; }
 
 .page-container { @apply max-w-5xl mx-auto px-4 py-8; }
+
+/* Custom scrollbar — dùng cho .scrollbar-thin */
+.scrollbar-thin::-webkit-scrollbar        { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb  { background-color: #e5e7eb; border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: #fca5a5; }
