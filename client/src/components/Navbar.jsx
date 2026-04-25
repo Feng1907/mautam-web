@@ -35,6 +35,7 @@ const Navbar = () => {
     { to: '/',        label: t('nav.home')    },
     { to: '/gio-le',  label: t('nav.liturgy') },
     { to: '/tin-tuc', label: t('nav.news')    },
+    { to: '/thu-vien',label: t('nav.gallery') },
     { to: '/lop-hoc', label: t('nav.classes'), authRequired: true },
     { to: '/admin',   label: t('nav.admin'),   adminOnly: true    },
   ];

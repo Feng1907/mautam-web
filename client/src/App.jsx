@@ -16,6 +16,7 @@ import LoiChua        from './pages/LoiChua';
 import ClassList      from './pages/ClassList';
 import ClassDetail    from './pages/ClassDetail';
 import Profile        from './pages/Profile';
+import Gallery        from './pages/Gallery';
 
 import AdminLayout    from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -47,6 +48,7 @@ const App = () => (
         <Route path="/loi-chua"        element={<LoiChua />} />
         <Route path="/tin-tuc"         element={<News />} />
         <Route path="/tin-tuc/:id"     element={<NewsDetail />} />
+        <Route path="/thu-vien"        element={<Gallery />} />
 
         {/* Yêu cầu đăng nhập */}
         <Route path="/ho-so" element={

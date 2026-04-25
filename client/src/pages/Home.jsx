@@ -24,28 +24,50 @@ const Home = () => {
 
   return (
     <main className="flex-1">
-      {/* Hero */}
-      <section className="bg-linear-to-br from-red-700 to-red-900 text-white py-16 px-4 text-center">
-        <p className="text-sm uppercase tracking-widest opacity-75 mb-2">{t('home.subtitle')}</p>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('home.title')}</h1>
-        <p className="italic text-white/80 text-base md:text-lg max-w-xl mx-auto mt-3">
-          {t('home.quote')}
-        </p>
-        <div className="flex justify-center gap-3 mt-8 flex-wrap">
-          <Link to="/gio-le"
-            className="bg-white text-red-700 font-semibold px-5 py-2 rounded-full hover:bg-red-50 transition text-sm">
-            {t('home.viewLiturgy')}
-          </Link>
-          <Link to="/tin-tuc"
-            className="border border-white/50 text-white font-semibold px-5 py-2 rounded-full hover:bg-white/10 transition text-sm">
-            {t('home.news')}
-          </Link>
-          {user && (
-            <Link to="/lop-hoc"
-              className="border border-white/50 text-white font-semibold px-5 py-2 rounded-full hover:bg-white/10 transition text-sm">
-              {t('home.classes')}
+      {/* Hero — parallax background */}
+      <section
+        className="relative text-white py-24 px-4 text-center overflow-hidden"
+        style={{
+          backgroundImage: 'url(/images/DAP_2149.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          minHeight: '420px',
+        }}
+      >
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-linear-to-b from-black/55 via-black/50 to-black/65 pointer-events-none" />
+
+        {/* Content */}
+        <div className="relative z-10">
+          <p className="text-xs uppercase tracking-[0.25em] text-white/70 mb-3 font-semibold">
+            {t('home.subtitle')}
+          </p>
+          <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">{t('home.title')}</h1>
+          <div className="w-12 h-0.5 bg-red-400 mx-auto mb-4 rounded-full" />
+          <p className="italic text-white/85 text-base md:text-lg max-w-xl mx-auto leading-relaxed drop-shadow">
+            {t('home.quote')}
+          </p>
+          <div className="flex justify-center gap-3 mt-10 flex-wrap">
+            <Link to="/gio-le"
+              className="bg-white text-red-700 font-semibold px-6 py-2.5 rounded-full hover:bg-red-50 transition text-sm shadow-md">
+              {t('home.viewLiturgy')}
             </Link>
-          )}
+            <Link to="/tin-tuc"
+              className="border border-white/60 text-white font-semibold px-6 py-2.5 rounded-full hover:bg-white/15 transition text-sm backdrop-blur-sm">
+              {t('home.news')}
+            </Link>
+            <Link to="/thu-vien"
+              className="border border-white/60 text-white font-semibold px-6 py-2.5 rounded-full hover:bg-white/15 transition text-sm backdrop-blur-sm">
+              {t('nav.gallery')}
+            </Link>
+            {user && (
+              <Link to="/lop-hoc"
+                className="border border-white/60 text-white font-semibold px-6 py-2.5 rounded-full hover:bg-white/15 transition text-sm backdrop-blur-sm">
+                {t('home.classes')}
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
@@ -80,7 +102,7 @@ const Home = () => {
       </section>
 
       {/* Quick links */}
-      <section className="page-container grid md:grid-cols-3 gap-4">
+      <section className="page-container grid md:grid-cols-4 gap-4">
         <Link to="/gio-le" className="card hover:shadow-md transition group">
           <div className="text-3xl mb-2">🕯️</div>
           <h3 className="font-bold text-gray-800 group-hover:text-red-700 transition">{t('home.liturgyLink')}</h3>
@@ -90,6 +112,11 @@ const Home = () => {
           <div className="text-3xl mb-2">📢</div>
           <h3 className="font-bold text-gray-800 group-hover:text-red-700 transition">{t('home.newsLink')}</h3>
           <p className="text-sm text-gray-500 mt-1">{t('home.newsDesc')}</p>
+        </Link>
+        <Link to="/thu-vien" className="card hover:shadow-md transition group">
+          <div className="text-3xl mb-2">🖼️</div>
+          <h3 className="font-bold text-gray-800 group-hover:text-red-700 transition">{t('home.galleryLink')}</h3>
+          <p className="text-sm text-gray-500 mt-1">{t('home.galleryDesc')}</p>
         </Link>
         {user ? (
           <Link to="/lop-hoc" className="card hover:shadow-md transition group">

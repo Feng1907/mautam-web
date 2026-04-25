@@ -10,6 +10,7 @@ const vi = {
     news:           'Tin tức',
     classes:        'Lớp học',
     admin:          '⚙ Quản trị',
+    gallery:        'Thư Viện',
     login:          'Đăng nhập',
     register:       'Đăng ký',
     profile:        'Hồ sơ cá nhân',
@@ -56,6 +57,8 @@ const vi = {
     newsDesc:        'Cập nhật hoạt động xứ đoàn',
     classesLink:     'Lớp Học',
     classesDesc:     'Điểm danh & bảng điểm',
+    galleryLink:     'Thư Viện Ảnh',
+    galleryDesc:     'Kỷ niệm xứ đoàn qua từng năm',
   },
   liturgy: {
     pageSubtitle:   'Phụng Vụ',
@@ -186,6 +189,7 @@ const en = {
     news:           'News',
     classes:        'Classes',
     admin:          '⚙ Admin',
+    gallery:        'Gallery',
     login:          'Log in',
     register:       'Sign up',
     profile:        'My Profile',
@@ -232,6 +236,8 @@ const en = {
     newsDesc:        'Parish youth updates',
     classesLink:     'Classes',
     classesDesc:     'Attendance & grade sheets',
+    galleryLink:     'Photo Gallery',
+    galleryDesc:     'Memories from parish youth events',
   },
   liturgy: {
     pageSubtitle:   'Liturgy',
