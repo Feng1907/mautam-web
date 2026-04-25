@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 
 const NGANH = [
-  { ten: 'Chiên Non',  mau: 'bg-pink-400',   mo_ta: 'Khai Tâm' },
-  { ten: 'Ấu Nhi',    mau: 'bg-green-500',  mo_ta: 'XT 1, XT 2A/2B, XT 3A/3B' },
-  { ten: 'Thiếu Nhi', mau: 'bg-blue-500',   mo_ta: 'Thêm Sức 1, Thêm Sức 2' },
-  { ten: 'Nghĩa Sĩ',  mau: 'bg-yellow-400', mo_ta: 'Sống Đạo 1, 2, 3' },
-  { ten: 'Hiệp Sĩ',   mau: 'bg-amber-700',  mo_ta: 'Hiệp Sĩ' },
+  { ten: 'Chiên Non',  mau: 'bg-pink-400',   mo_ta: 'Khai Tâm',               slug: 'chien-non' },
+  { ten: 'Ấu Nhi',    mau: 'bg-green-500',  mo_ta: 'XT 1, XT 2A/2B, XT 3A/3B', slug: 'au-nhi'   },
+  { ten: 'Thiếu Nhi', mau: 'bg-blue-500',   mo_ta: 'Thêm Sức 1, Thêm Sức 2', slug: 'thieu-nhi' },
+  { ten: 'Nghĩa Sĩ',  mau: 'bg-yellow-400', mo_ta: 'Sống Đạo 1, 2, 3',       slug: 'nghia-si'  },
+  { ten: 'Hiệp Sĩ',   mau: 'bg-amber-700',  mo_ta: 'Hiệp Sĩ',                slug: 'hiep-si'   },
 ];
 
 const Home = () => {
@@ -41,11 +41,15 @@ const Home = () => {
         <h2 className="text-xl font-bold text-gray-800 mb-5">5 Ngành Thiếu Nhi Thánh Thể</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {NGANH.map((n) => (
-            <div key={n.ten} className="card text-center hover:shadow-md transition">
+            <Link
+              key={n.ten}
+              to={`/lop-hoc?nganh=${n.slug}`}
+              className="card text-center hover:shadow-md hover:scale-105 hover:brightness-[1.03] active:scale-100 transition-all duration-150 cursor-pointer"
+            >
               <div className={`w-10 h-10 ${n.mau} rounded-full mx-auto mb-3`} />
               <p className="font-semibold text-sm text-gray-800">{n.ten}</p>
               <p className="text-xs text-gray-500 mt-1">{n.mo_ta}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </section>

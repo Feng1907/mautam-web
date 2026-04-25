@@ -15,6 +15,7 @@
 | 6 | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
 | 7 | Export Excel / PDF | ✅ Hoàn thành |
 | 8 | Kiểm thử & Deployment | 🔄 Đang thực hiện |
+| 9 | UX nâng cao & Trải nghiệm Phụng vụ | ✅ Hoàn thành |
 
 ---
 
@@ -256,6 +257,41 @@ mautam-website/
 - [x] Nút "Xuất Excel" trong tab Bảng điểm (theo học kỳ đang chọn)
 - [x] Trang `/admin/export`: xuất tất cả 12 lớp cùng lúc, chọn học kỳ
 - [x] PDF: bỏ qua (puppeteer quá nặng cho Render free tier — Excel đủ dùng)
+
+---
+
+### GIAI ĐOẠN 9 — UX nâng cao & Trải nghiệm Phụng vụ `✅ Hoàn thành`
+
+#### Trang Danh sách lớp — Class Explorer
+- [x] Điều hướng khối ngành bằng 5 tab lớn (Chiên Non / Ấu Nhi / Thiếu Nhi / Nghĩa Sĩ / Hiệp Sĩ), mặc định chọn Chiên Non
+- [x] Lưới 2 cột cho các lớp trong khối — lấp đầy chiều ngang
+- [x] Thẻ lớp tối giản: dải màu ngành, icon `?` xám thay cho văn bản dài khi chưa phân công
+- [x] Trang Home — 5 thẻ ngành chuyển thành `<Link>` với query param (`?nganh=chien-non`…)
+- [x] `ClassList` đọc `useSearchParams` → tự động chọn đúng tab ngành khi điều hướng từ Home
+- [x] Hiệu ứng hover phóng to + đổi độ sáng trên thẻ ngành ở Home
+
+#### Trang Giờ Lễ (/gio-le) — Dashboard Phụng Vụ
+- [x] Tách khỏi `Liturgy.jsx` thành route `/gio-le` riêng (`GioLe.jsx`)
+- [x] Layout 2 cột (`lg:grid-cols-[1fr_300px]`): cột chính + sidebar — không còn khoảng trống trên màn hình lớn
+- [x] Đồng hồ real-time cập nhật mỗi giây (hook `useNow`)
+- [x] Fetch API `loichua.net` — nhận diện tên ngày lễ
+- [x] Logic `detectLiturgy()`: phân tích tên lễ → màu áo (Trắng/Đỏ/Tím/Xanh/Đen/Hồng) + loại (Lễ Trọng / Kính / Mùa Chay…)
+- [x] Bảng giờ lễ: gạch mờ giờ đã qua, badge "hôm nay" cho ngày hiện tại
+- [x] Sidebar: lịch lễ quan trọng tháng (hard-coded Tháng 4/2026) + Quote Thánh Anrê Phú Yên
+- [x] Card Gospel Preview → `navigate('/loi-chua')` khi click
+
+#### Trang Lời Chúa (/loi-chua) — Bible Journaling Mode
+- [x] Tách thành route `/loi-chua` riêng (`LoiChua.jsx`)
+- [x] Layout 2 cột (`lg:grid-cols-[1fr_280px]`): Paper content + sidebar
+- [x] Font chữ có chân: **Lora** (nội dung) + **Playfair Display** (tiêu đề) từ Google Fonts
+- [x] Khối "Paper" màu kem `#fdfaf5` — bo góc 24px, bóng đổ nhẹ, dải màu nhấn theo phụng vụ
+- [x] 4 section: Bài đọc 1 (Scroll icon) / Đáp Ca (Music2) / Bài đọc 2 (BookOpen) / Phúc Âm (Cross)
+- [x] Sidebar: widget hình ảnh Tin Mừng + lịch mini (highlight ngày hiện tại) + box Câu vàng (Key Verse)
+- [x] Thanh **Reading Progress** cố định đầu trang (scroll-based)
+- [x] Stub **Audio Player** ("Nghe Lời Chúa") với hiệu ứng sóng âm animated
+- [x] Hiệu ứng Fade-in từng phần bằng **Framer Motion** (`motion.div`, stagger delay)
+- [x] Nút quay lại `←` về `/gio-le`
+- [x] Fallback sạch khi API lỗi
 
 ---
 

@@ -11,7 +11,8 @@ import Signup         from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import News           from './pages/News';
 import NewsDetail     from './pages/NewsDetail';
-import Liturgy        from './pages/Liturgy';
+import GioLe          from './pages/GioLe';
+import LoiChua        from './pages/LoiChua';
 import ClassList      from './pages/ClassList';
 import ClassDetail    from './pages/ClassDetail';
 import Profile        from './pages/Profile';
@@ -42,7 +43,8 @@ const App = () => (
         <Route path="/login"           element={<Login />} />
         <Route path="/dang-ky"         element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/gio-le"          element={<Liturgy />} />
+        <Route path="/gio-le"          element={<GioLe />} />
+        <Route path="/loi-chua"        element={<LoiChua />} />
         <Route path="/tin-tuc"         element={<News />} />
         <Route path="/tin-tuc/:id"     element={<NewsDetail />} />
 
