@@ -8,7 +8,7 @@ import {
 import {
   collection, addDoc, getDocs, deleteDoc, doc, query, orderBy,
 } from 'firebase/firestore';
-import { storage, db } from './firebase';
+import { storage, db } from '../firebase';
 
 const COLLECTION = 'gallery';
 
