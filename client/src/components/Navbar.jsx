@@ -28,7 +28,9 @@ const Navbar = () => {
   }, []);
 
   const linkClass = ({ isActive }) =>
-    `text-sm font-medium transition ${isActive ? 'text-red-300' : 'text-white/90 hover:text-white'}`;
+    isActive
+      ? 'relative text-sm font-medium text-[#D4AF37] pb-0.5 border-b border-[#D4AF37]'
+      : 'relative text-sm font-medium text-white/85 hover:text-white pb-0.5 border-b border-transparent hover:border-[#D4AF37] transition-colors duration-200';
 
   // Nav links built from t() — filtered by auth/role
   const NAV_LINKS = [
@@ -45,19 +47,30 @@ const Navbar = () => {
   );
 
   return (
-    <header className="bg-red-700 shadow-md sticky top-0 z-50">
+    <header className="sticky top-0 z-50 shadow-md" style={{ background: '#8B0000' }}>
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 text-white font-bold text-base leading-tight">
+        <Link to="/" className="flex items-center gap-2.5 text-white leading-tight shrink-0">
           <img
             src="/logos/logos doan thieu nhi MT.jpg"
             alt="Logo Xứ Đoàn Mẫu Tâm"
-            className="w-9 h-9 rounded-full object-cover border-2 border-white/40 shrink-0"
+            className="w-9 h-9 rounded-full object-cover shrink-0"
+            style={{ border: '2px solid rgba(212,175,55,0.6)' }}
           />
-          <span className="hidden sm:block">
-            Xứ Đoàn
-            <span className="block text-xs font-normal opacity-80">Anrê Phú Yên – Mẫu Tâm</span>
+          <span className="hidden sm:flex flex-col">
+            <span
+              className="text-sm font-bold leading-tight tracking-wide"
+              style={{ fontFamily: '"EB Garamond", Georgia, serif', color: 'white' }}
+            >
+              Xứ Đoàn
+            </span>
+            <span
+              className="text-[11px] leading-tight"
+              style={{ color: 'rgba(212,175,55,0.85)', fontFamily: '"Inter", system-ui, sans-serif' }}
+            >
+              Anrê Phú Yên · Mẫu Tâm
+            </span>
           </span>
         </Link>
 
@@ -156,7 +169,7 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-red-800 px-4 pb-4 flex flex-col gap-3">
+        <div className="md:hidden px-4 pb-4 flex flex-col gap-3" style={{ background: '#6e0000' }}>
           {visibleLinks.map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}
               onClick={() => setMenuOpen(false)}>
@@ -164,7 +177,7 @@ const Navbar = () => {
             </NavLink>
           ))}
           {/* Language switcher in mobile menu */}
-          <div className="pt-1 border-t border-red-700/50">
+          <div className="pt-1 border-t border-[#D4AF37]/20">
             <LanguageSwitcher />
           </div>
           {user ? (
