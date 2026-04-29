@@ -62,7 +62,6 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
     e.preventDefault();
     if (!form.tenThanh.trim()) return setError('Vui lòng nhập Tên Thánh');
     if (!form.hoTen.trim())    return setError('Vui lòng nhập họ tên');
-    if (!form.ngaySinh)        return setError('Vui lòng chọn ngày sinh');
     setError(''); setSaving(true);
     try {
       const payload = { ...form, lop: lopId };
@@ -124,9 +123,9 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Ngày sinh *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Ngày sinh <span className="font-normal text-gray-400">(tùy chọn)</span></label>
             <input type="date" className="input rounded-xl" value={form.ngaySinh}
-              onChange={e => set('ngaySinh', e.target.value)} required
+              onChange={e => set('ngaySinh', e.target.value)}
               max={new Date().toISOString().slice(0, 10)} />
           </div>
 
@@ -301,7 +300,9 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
                   </td>
 
                   <td className="px-4 py-3 text-gray-500 text-xs tabular-nums whitespace-nowrap">
-                    {new Date(s.ngaySinh).toLocaleDateString('vi-VN')}
+                    {s.ngaySinh
+                      ? new Date(s.ngaySinh).toLocaleDateString('vi-VN')
+                      : <span className="italic text-gray-300">Chưa cập nhật</span>}
                   </td>
 
                   <td className="px-4 py-3 text-center">

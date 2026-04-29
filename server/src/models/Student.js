@@ -4,7 +4,13 @@ const studentSchema = new mongoose.Schema(
   {
     hoTen: { type: String, required: true, trim: true },
     tenThanh: { type: String, required: true, trim: true },
-    ngaySinh: { type: Date, required: true },
+    // Ngày sinh tùy chọn — chuỗi rỗng '' hoặc undefined được set thành null tự động
+    ngaySinh: {
+      type: Date,
+      required: false,
+      default: null,
+      set: v => (v === '' || v === undefined) ? null : v,
+    },
     gioiTinh: { type: String, enum: ['Nam', 'Nu'], required: true },
     lop: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
     phuHuynh: {

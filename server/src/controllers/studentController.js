@@ -24,10 +24,16 @@ exports.getOne = async (req, res, next) => {
   }
 };
 
+// Chuẩn hóa ngaySinh: chuỗi rỗng → null để Mongoose không báo cast error
+const normalizeBody = (body) => ({
+  ...body,
+  ngaySinh: body.ngaySinh === '' ? null : (body.ngaySinh || null),
+});
+
 // POST /api/students
 exports.create = async (req, res, next) => {
   try {
-    const student = await Student.create(req.body);
+    const student = await Student.create(normalizeBody(req.body));
     res.status(201).json({ success: true, data: student });
   } catch (err) {
     next(err);
@@ -38,7 +44,7 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     // Không cho phép đổi lớp qua route này (dùng route transfer riêng)
-    const { lop, ...updateData } = req.body;
+    const { lop, ...updateData } = normalizeBody(req.body);
     const student = await Student.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
