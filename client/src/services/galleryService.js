@@ -59,51 +59,48 @@ export const fetchPhotos = async () => {
 
 // ── Upload 1 file: nén → Storage → Firestore ────────────────────────────────
 // onProgress: (pct: number, phase: 'compress'|'upload') => void
-export const uploadPhoto = ({ file, title, event, year, onProgress }) =>
-  new Promise(async (resolve, reject) => {
-    try {
-      // ── Giai đoạn 1: Nén (0 → 50%) ────────────────────────────────────────
-      const compressed = await compressImage(
-        file,
-        pct => onProgress?.(Math.round(pct / 2), 'compress')
-      );
+export const uploadPhoto = async ({ file, title, event, year, onProgress }) => {
+  // ── Giai đoạn 1: Nén (0 → 50%) ──────────────────────────────────────────
+  const compressed = await compressImage(
+    file,
+    pct => onProgress?.(Math.round(pct / 2), 'compress')
+  );
 
-      const originalSize   = file.size;
-      const compressedSize = compressed.size;
+  const originalSize   = file.size;
+  const compressedSize = compressed.size;
 
-      // ── Giai đoạn 2: Upload (50 → 100%) ───────────────────────────────────
-      const ext        = compressed.name.split('.').pop();
-      const safeName   = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const storageRef = ref(storage, `gallery/${year}/${event}/${safeName}`);
-      const task       = uploadBytesResumable(storageRef, compressed);
+  // ── Giai đoạn 2: Upload (50 → 100%) ─────────────────────────────────────
+  const ext        = compressed.name.split('.').pop();
+  const safeName   = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const storageRef = ref(storage, `gallery/${year}/${event}/${safeName}`);
+  const task       = uploadBytesResumable(storageRef, compressed);
 
-      task.on(
-        'state_changed',
-        snap => {
-          const uploadPct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-          onProgress?.(50 + Math.round(uploadPct / 2), 'upload');
-        },
-        reject,
-        async () => {
-          try {
-            const url  = await getDownloadURL(task.snapshot.ref);
-            const meta = {
-              url,
-              title:           title || file.name.replace(/\.[^/.]+$/, ''),
-              event,
-              year:            Number(year),
-              timestamp:       new Date().toISOString().slice(0, 10),
-              storagePath:     task.snapshot.ref.fullPath,
-              originalSize,
-              compressedSize,
-            };
-            const docRef = await addDoc(collection(db, COLLECTION), meta);
-            resolve({ id: docRef.id, ...meta });
-          } catch (err) { reject(err); }
-        }
-      );
-    } catch (err) { reject(err); }
+  await new Promise((resolve, reject) => {
+    task.on(
+      'state_changed',
+      snap => {
+        const uploadPct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+        onProgress?.(50 + Math.round(uploadPct / 2), 'upload');
+      },
+      reject,
+      resolve,
+    );
   });
+
+  const url  = await getDownloadURL(task.snapshot.ref);
+  const meta = {
+    url,
+    title:         title || file.name.replace(/\.[^/.]+$/, ''),
+    event,
+    year:          Number(year),
+    timestamp:     new Date().toISOString().slice(0, 10),
+    storagePath:   task.snapshot.ref.fullPath,
+    originalSize,
+    compressedSize,
+  };
+  const docRef = await addDoc(collection(db, COLLECTION), meta);
+  return { id: docRef.id, ...meta };
+};
 
 // ── Xóa ảnh: Storage + Firestore ────────────────────────────────────────────
 export const deletePhoto = async ({ id, storagePath }) => {

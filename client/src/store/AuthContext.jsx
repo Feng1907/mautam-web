@@ -1,16 +1,12 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user,    setUser]    = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('user');
-    if (stored) setUser(JSON.parse(stored));
-    setLoading(false);
-  }, []);
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const login = (userData, token) => {
     localStorage.setItem('user', JSON.stringify(userData));
@@ -18,7 +14,6 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  // Cập nhật thông tin user sau khi sửa profile
   const updateUser = (userData) => {
     const merged = { ...user, ...userData };
     localStorage.setItem('user', JSON.stringify(merged));
@@ -32,10 +27,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading: false, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

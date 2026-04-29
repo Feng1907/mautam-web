@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
 
@@ -61,7 +61,7 @@ const phanLoai = (tb) => {
   return 'Yếu';
 };
 
-const ScoreBadge = ({ diem, onDelete, canEdit, deleting, gradeId }) => {
+const ScoreBadge = ({ diem, onDelete, canEdit, deleting }) => {
   const color =
     diem >= 8 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
     : diem >= 5 ? 'bg-sky-50 text-sky-700 border-sky-200'
@@ -220,15 +220,18 @@ const GradeForm = ({ lopId, students, canEdit }) => {
   const [modal,    setModal]    = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  const loadGrades = useCallback(() => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
     api.get(`/grades/${lopId}`, { params: { hocKy } })
-      .then(r => setGrades(r.data.data))
+      .then(r => {
+        if (!cancelled) setGrades(r.data.data);
+      })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [lopId, hocKy]);
-
-  useEffect(() => { loadGrades(); }, [loadGrades]);
 
   // Danh sách sắp xếp theo tên chính
   const sorted = useMemo(() => sortByTenChinh(students), [students]);

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { CheckCircle2, Minus, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
@@ -98,22 +98,28 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
     }).catch(() => {});
   }, []);
 
-  const loadData = useCallback(() => {
+  useEffect(() => {
     if (!selNamHoc) return;
-    setLoading(true);
+    
+    let cancelled = false;
+
     Promise.all([
       api.get('/attendance/sundays', {
         params: { startDate: selNamHoc.ngayBatDau, endDate: selNamHoc.ngayKetThuc },
       }),
       api.get(`/attendance/${lopId}`, { params: { namHocId: selNamHoc._id } }),
     ]).then(([sunRes, recRes]) => {
-      setSundays(sunRes.data.data);
-      setRecords(recRes.data.data);
-    }).catch(() => {})
-      .finally(() => setLoading(false));
-  }, [lopId, selNamHoc]);
+      if (!cancelled) {
+        setSundays(sunRes.data.data);
+        setRecords(recRes.data.data);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
+    });
 
-  useEffect(() => { loadData(); }, [loadData]);
+    return () => { cancelled = true; };
+  }, [lopId, selNamHoc]);
 
   const getPresent = (studentId, date) =>
     records.find(r => r.student === studentId && r.date === date)?.present ?? false;
