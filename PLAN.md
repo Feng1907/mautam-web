@@ -6,16 +6,19 @@
 
 | Giai đoạn | Nội dung | Trạng thái |
 |-----------|----------|------------|
-| 0 | Khởi tạo project & cấu trúc mã nguồn | ✅ Hoàn thành |
-| 1 | Database schema & quan hệ dữ liệu | ✅ Hoàn thành |
-| 2 | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
-| 3 | Frontend UI cơ bản | ✅ Hoàn thành |
-| 4 | Tính năng Điểm danh | ✅ Hoàn thành |
-| 5 | Tính năng Bảng điểm | ✅ Hoàn thành |
-| 6 | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
-| 7 | Export Excel / PDF | ✅ Hoàn thành |
-| 8 | Kiểm thử & Deployment | 🔄 Đang thực hiện |
-| 9 | UX nâng cao & Trải nghiệm Phụng vụ | ✅ Hoàn thành |
+| 0  | Khởi tạo project & cấu trúc mã nguồn | ✅ Hoàn thành |
+| 1  | Database schema & quan hệ dữ liệu | ✅ Hoàn thành |
+| 2  | Backend API (Auth, RBAC, CRUD) | ✅ Hoàn thành |
+| 3  | Frontend UI cơ bản | ✅ Hoàn thành |
+| 4  | Tính năng Điểm danh | ✅ Hoàn thành |
+| 5  | Tính năng Bảng điểm | ✅ Hoàn thành |
+| 6  | Tính năng Tin tức & Thông báo | ✅ Hoàn thành |
+| 7  | Export Excel | ✅ Hoàn thành |
+| 8  | Kiểm thử & Deployment | ✅ Hoàn thành |
+| 9  | UX nâng cao & Trải nghiệm Phụng vụ | ✅ Hoàn thành |
+| 10 | Thư viện ảnh Firebase | ✅ Hoàn thành |
+| 11 | UI Spiritual Modernism + Chuyên cần + Lên lớp + Nhân sự | ✅ Hoàn thành |
+| 12 | Polish: Báo cáo tổng kết, Email phụ huynh, Lời Chúa, Stats, Avatar, Lịch sử điểm | ✅ Hoàn thành |
 
 ---
 
@@ -28,7 +31,8 @@
 
 ### Nhận diện thương hiệu
 - **Logo:** Hình ảnh nhà thờ Mẫu Tâm kết hợp vòng tròn 5 màu ngành TNTT
-- **Màu sắc:** Đỏ (nhiệt huyết) · Xanh (hy vọng) · Trắng (trong trắng)
+- **Màu sắc:** Đỏ đô `#8B0000` · Vàng đồng `#D4AF37` · Kem ngà `#fdfbf7`
+- **Design System:** Spiritual Modernism — cổ điển, trang trọng, dễ dùng trên mobile
 
 ---
 
@@ -57,20 +61,20 @@
 
 | Chức năng | User / Phụ huynh | Giáo lý viên | Admin |
 |-----------|:-:|:-:|:-:|
-| Xem giờ lễ | ✅ | ✅ | ✅ |
-| Xem lời Chúa | ✅ | ✅ | ✅ |
-| Xem tin tức & thông báo | ✅ | ✅ | ✅ |
-| Xem danh sách lớp (read-only) | ✅ | ✅ | ✅ |
+| Xem giờ lễ, Lời Chúa, tin tức | ✅ | ✅ | ✅ |
+| Xem danh sách lớp & lịch sử điểm | ✅ | ✅ | ✅ |
 | Điểm danh lớp mình | ❌ | ✅ | ✅ |
-| Nhập điểm lớp mình | ❌ | ✅ | ✅ |
-| Cập nhật thông tin đoàn sinh | ❌ | ✅ lớp mình | ✅ |
+| Nhập điểm + điểm chuyên cần | ❌ | ✅ lớp mình | ✅ |
+| Cập nhật đoàn sinh + avatar | ❌ | ✅ lớp mình | ✅ |
+| Export Excel (lớp mình) | ❌ | ✅ | ✅ |
 | Đăng tin tức / thông báo khẩn | ❌ | ❌ | ✅ |
 | Quản lý tất cả lớp & nhân sự | ❌ | ❌ | ✅ |
-| Phân công Huynh trưởng vào lớp | ❌ | ❌ | ✅ |
+| Lên lớp hàng loạt | ❌ | ❌ | ✅ |
+| Export tổng kết toàn đoàn | ❌ | ❌ | ✅ |
+| Dashboard thống kê ngành | ❌ | ❌ | ✅ |
 | Tạo / reset tài khoản | ❌ | ❌ | ✅ |
-| Xuất Excel / PDF | ❌ | ❌ | ✅ |
 
-> **Nguyên tắc bảo mật:** Huynh trưởng / Dự trưởng chỉ được thao tác trên lớp được phân công, middleware `checkClassPermission` chặn mọi truy cập chéo lớp.
+> **Nguyên tắc bảo mật:** Middleware `checkClassPermission` chặn mọi truy cập chéo lớp.
 
 ---
 
@@ -78,23 +82,56 @@
 
 ```
 mautam-website/
-├── client/                          # React + Vite
+├── client/                          # React 19 + Vite
 │   └── src/
-│       ├── assets/                  # Logo, ảnh Thánh Anrê Phú Yên
-│       ├── components/              # Navbar, Footer, AttendanceTable, GradeForm
-│       ├── pages/                   # Home, News, Liturgy, ClassDetail, Login
-│       ├── services/api.js          # Axios + auto-attach JWT token
-│       ├── store/AuthContext.jsx    # Auth state toàn cục
-│       └── App.jsx                  # React Router
-└── server/                          # Node.js + Express
-    ├── index.js
+│       ├── components/
+│       │   ├── Navbar.jsx
+│       │   ├── AttendanceTable.jsx  # Điểm danh lưới Chúa Nhật
+│       │   ├── GradeForm.jsx        # Bảng điểm + Chuyên cần (80/20)
+│       │   ├── StudentList.jsx      # Danh sách + avatar + lịch sử điểm
+│       │   └── ExportButton.jsx
+│       ├── pages/
+│       │   ├── ClassList.jsx        # Explorer 5 ngành + search
+│       │   ├── ClassDetail.jsx      # 3 tab: Danh sách / Điểm danh / Bảng điểm
+│       │   ├── LoiChua.jsx          # Lời Chúa + điều hướng ngày
+│       │   ├── GioLe.jsx            # Dashboard phụng vụ + đồng hồ real-time
+│       │   ├── Gallery.jsx          # Thư viện ảnh Firebase
+│       │   └── admin/
+│       │       ├── AdminDashboard.jsx
+│       │       ├── AdminClasses.jsx # Phân công nhân sự
+│       │       ├── AdminPromotion.jsx # Lên lớp hàng loạt
+│       │       ├── AdminStats.jsx   # Dashboard thống kê ngành
+│       │       ├── AdminExport.jsx  # Export toàn đoàn
+│       │       └── AdminNamHoc.jsx
+│       ├── services/
+│       │   ├── api.js               # Axios + JWT interceptor
+│       │   ├── firebase.js
+│       │   └── galleryService.js    # Upload + nén ảnh Firebase
+│       ├── store/AuthContext.jsx
+│       └── i18n.js                  # VI / EN
+│
+└── server/                          # Node.js + Express 5
     └── src/
-        ├── config/db.js             # Kết nối MongoDB
-        ├── models/                  # User, Class, Student, Attendance, Grade, Post, NamHoc
-        ├── controllers/             # Auth, Student, Grade, Attendance, Post
-        ├── middlewares/             # checkAuth, checkClassPermission
-        ├── routes/                  # API endpoints
-        └── app.js
+        ├── models/
+        │   ├── User.js, Class.js, Student.js
+        │   ├── NamHoc.js, Grade.js, Attendance.js
+        │   ├── ChuyenCan.js         # Điểm chuyên cần (mới phase 11)
+        │   ├── MeritPoint.js
+        │   ├── PromotionHistory.js  # Lịch sử lên lớp
+        │   └── Post.js
+        ├── controllers/
+        │   ├── exportController.js  # attendance, grades, tổng kết, toàn đoàn
+        │   ├── chuyenCanController.js
+        │   ├── promoteController.js
+        │   └── ...
+        ├── routes/
+        │   ├── export.js            # /attendance, /grades, /tong-ket, /tong-ket-toan-doan
+        │   ├── chuyencan.js
+        │   ├── promote.js
+        │   └── ...
+        └── middlewares/
+            ├── checkAuth.js
+            └── checkClassPermission.js
 ```
 
 ---
@@ -103,238 +140,91 @@ mautam-website/
 
 ---
 
-### GIAI ĐOẠN 0 — Khởi tạo project `✅ Hoàn thành`
+### GIAI ĐOẠN 0–9 `✅ Hoàn thành`
 
-- [x] Khởi tạo Vite (React) cho frontend
-- [x] Khởi tạo Express + cài packages cho backend
-- [x] Tạo cấu trúc thư mục đầy đủ
-- [x] Tạo `.gitignore` (loại trừ `node_modules`, `.env`)
-- [x] Push lên GitHub
-
----
-
-### GIAI ĐOẠN 1 — Database Schema `✅ Hoàn thành`
-
-- [x] Model `NamHoc` — quản lý năm học, đóng/mở năm (auto tắt năm cũ khi bật năm mới)
-- [x] Model `User` — vaiTro: admin / giaoly / user, bcrypt password, flag đổi mật khẩu lần đầu
-- [x] Model `Class` — 5 ngành, ref NamHoc, unique index (tenLop + namHoc), thuTu hiển thị
-- [x] Model `Student` — tenThanh, ngaySinh, ref Class, index text tìm kiếm tên
-- [x] Model `Attendance` — ref NamHoc, unique index (student + lop + date), validate format ngày
-- [x] Model `Grade` — loaiDiem: mieng / 15phut / 1tiet, ref NamHoc thay vì string
-- [x] Model `Post` — loai: tintuc / thongbao / thongbaokhan, hanHienThi cho thông báo khẩn
-- [x] Kiểm tra quan hệ & index toàn bộ schema (seed 12 lớp + năm học + admin ✅)
+> Xem chi tiết từng task trong git log. Tóm tắt:
+> - **0–2:** Khởi tạo, schema, API CRUD toàn bộ
+> - **3:** Frontend UI cơ bản, routing, auth
+> - **4:** Bảng điểm danh Chúa Nhật (scroll ngang, sticky, optimistic update)
+> - **5:** Bảng điểm (hệ số, TBM, học lực, read-only mode)
+> - **6:** Tin tức, thông báo khẩn, UrgentBanner, Admin CRUD
+> - **7:** Export Excel chuyên cần + bảng điểm (ExcelJS, UTF-8 filename)
+> - **8:** Vercel + Render + MongoDB Atlas deployment config
+> - **9:** UX nâng cao — Class Explorer 5 tab, Giờ Lễ dashboard, Lời Chúa Bible mode
 
 ---
 
-### GIAI ĐOẠN 2 — Backend API `✅ Hoàn thành`
+### GIAI ĐOẠN 10 — Thư viện ảnh Firebase `✅ Hoàn thành`
 
-#### Auth & Tài khoản
-- [x] `POST /api/auth/login` — JWT, 7 ngày
-- [x] `GET  /api/auth/me`
-- [x] `POST /api/auth/register` — Admin tạo tài khoản + gửi email mật khẩu tạm
-- [x] `PUT  /api/auth/change-password` — đổi mật khẩu, tắt flag phaiBatDauDoiMatKhau
-- [x] `POST /api/auth/forgot-password` — reset qua email (nodemailer)
-
-#### Quản lý năm học
-- [x] `GET  /api/namhoc` — danh sách năm học
-- [x] `POST /api/namhoc` — Admin tạo năm học mới
-- [x] `PUT  /api/namhoc/:id/activate` — Admin kích hoạt năm học (auto tắt năm cũ)
-
-#### Quản lý lớp & nhân sự
-- [x] `GET    /api/classes` — danh sách lớp theo năm học (mặc định năm đang hoạt động)
-- [x] `POST   /api/classes` — Admin tạo lớp mới
-- [x] `PUT    /api/classes/:id/assign` — Admin phân công HT/DT, đồng bộ lopPhuTrach
-- [x] `GET    /api/classes/:id` — chi tiết lớp
-
-#### Quản lý người dùng
-- [x] `GET    /api/users` — Admin xem danh sách (lọc theo vaiTro)
-- [x] `PUT    /api/users/:id` — Admin cập nhật thông tin
-- [x] `DELETE /api/users/:id` — Admin xoá (không tự xoá mình)
-
-#### Đoàn sinh
-- [x] `GET    /api/students/:lopId` — danh sách theo lớp
-- [x] `GET    /api/students/:lopId/:id` — chi tiết đoàn sinh
-- [x] `POST   /api/students` — thêm đoàn sinh
-- [x] `PUT    /api/students/:id` — cập nhật (không đổi lớp qua route này)
-- [x] `DELETE /api/students/:id` — soft delete (inactive)
-
-#### Điểm danh
-- [x] `GET  /api/attendance/:lopId` — toàn bộ bản ghi lớp theo năm học
-- [x] `POST /api/attendance` — upsert (tạo hoặc cập nhật), tự lấy namHoc đang hoạt động
-- [x] `GET  /api/attendance/sundays` — tự sinh danh sách Chúa Nhật theo năm học
-
-#### Bảng điểm
-- [x] `GET    /api/grades/:lopId` — lọc được theo namHocId và hocKy
-- [x] `POST   /api/grades` — tự gắn namHoc đang hoạt động
-- [x] `PUT    /api/grades/:id` — không cho đổi student/lop/namHoc
-- [x] `DELETE /api/grades/:id`
-
-#### Tin tức
-- [x] `GET    /api/posts` — public, phân trang, lọc loại, ẩn thông báo hết hạn
-- [x] `GET    /api/posts/:id`
-- [x] `POST   /api/posts` — Admin only, gửi email khi thongbaokhan
-- [x] `PUT    /api/posts/:id`
-- [x] `DELETE /api/posts/:id`
-
-#### Export
-- [ ] `GET /api/export/attendance/:lopId` — Excel chuyên cần
-- [ ] `GET /api/export/grades/:lopId` — Excel bảng điểm
-- [ ] `GET /api/export/attendance/:lopId/pdf`
-- [ ] `GET /api/export/grades/:lopId/pdf`
+- [x] Firebase Storage upload với nén ảnh tự động (Canvas API, WebP, ≤500KB)
+- [x] Firestore lưu metadata: tiêu đề, sự kiện, năm, timestamp, storagePath
+- [x] Gallery page: lưới ảnh lazy-load, lightbox toàn màn hình, điều hướng ← →
+- [x] Admin upload: drag & drop, progress bar 2 giai đoạn (nén → upload)
+- [x] Xoá ảnh: đồng bộ Storage + Firestore
 
 ---
 
-### GIAI ĐOẠN 3 — Frontend UI cơ bản `✅ Hoàn thành`
+### GIAI ĐOẠN 11 — UI Spiritual Modernism & Tính năng cốt lõi `✅ Hoàn thành`
 
-- [x] Layout tổng thể — Navbar responsive (mobile menu), Footer, màu đỏ thương hiệu
-- [x] Trang Home — hero, 5 ngành TNTT, giới thiệu Quan thầy, quick links
-- [x] Trang Giờ Lễ — lịch lễ cố định + khung Lời Chúa (cập nhật thủ công)
-- [x] Trang Tin Tức — danh sách + lọc theo loại + phân trang
-- [x] Trang Chi tiết bài viết
-- [x] Trang Đăng nhập — form, xử lý lỗi, redirect về trang trước khi login
-- [x] Trang Quên mật khẩu
-- [x] Trang Danh sách lớp — gom nhóm theo ngành, màu sắc từng ngành
-- [x] Trang Chi tiết lớp — 3 tab: Danh sách / Điểm danh / Bảng điểm
-- [x] Route Guard — redirect /login nếu chưa đăng nhập, kiểm tra vai trò
-- [x] Build production thành công (274ms, không lỗi)
+#### UI Overhaul
+- [x] Design System: màu đỏ đô / vàng đồng / kem ngà, font Georgia serif + Inter sans
+- [x] SVG watermark thánh giá chìm trên bảng điểm
+- [x] Framer Motion transitions toàn bộ tab, modal, page enter/exit
 
----
+#### Chuyên cần (Attendance Score)
+- [x] Model `ChuyenCan`: tongBuoi, soBuoiDi, vangCoPhep, vangKhongPhep, diem, ghiChu
+- [x] API upsert với auto-calc: `10 − vắng_KP×1 − vắng_CP×0.5`, kẹp [0,10]
+- [x] GradeForm: thay cột Thi đua → Chuyên cần, icon CalendarCheck
+- [x] Modal 2 mode: nhập từ buổi (preview điểm) hoặc nhập thẳng 0–10
+- [x] **Công thức Tổng kết = TBM × 80% + CC × 20%**
+- [x] Bộ lọc Nam/Nữ trong GradeForm và StudentList
 
-### GIAI ĐOẠN 4 — Tính năng Điểm danh `✅ Hoàn thành`
+#### Lên lớp hàng loạt
+- [x] Trang `AdminPromotion`: chọn lớp nguồn → lớp đích → năm học mới
+- [x] Checkbox chọn từng đoàn sinh hoặc chọn tất cả
+- [x] MongoDB transaction đảm bảo tính toàn vẹn
+- [x] `PromotionHistory` lưu đầy đủ: từ lớp, sang lớp, năm học, ai thực hiện
+- [x] Tab Lịch sử: xem lại toàn bộ đợt chuyển lớp, expand chi tiết
 
-- [x] Giao diện lưới điểm danh (hàng = học sinh, cột = Chúa Nhật)
-- [x] Scroll ngang khi nhiều tuần, cột tên sticky bên trái
-- [x] Toggle check-in trực tiếp — optimistic update, rollback nếu lỗi server
-- [x] Chế độ xem read-only nếu không có quyền (badge cảnh báo)
-- [x] Cột tổng kết: Có mặt / Vắng / % chuyên cần (màu xanh/vàng/đỏ theo ngưỡng)
-- [x] Hàng tổng kết cuối bảng: sĩ số có mặt theo từng ngày
-- [x] Highlight cột ngày hôm nay
-- [x] Chọn năm học để xem lại dữ liệu cũ
-- [x] Spinner loading + thông báo khi lớp chưa có đoàn sinh / Chúa Nhật
-
----
-
-### GIAI ĐOẠN 5 — Tính năng Bảng điểm `✅ Hoàn thành`
-
-- [x] Bảng điểm theo lớp: cột Miệng (×1), 15 phút (×1), 1 tiết (×2), scroll ngang
-- [x] Cột tên sticky left khi scroll
-- [x] Modal nhập điểm: chọn loại, nhập điểm 0–10 (bước 0.5), ghi chú
-- [x] Xoá điểm từng ô — nút × hiện khi hover
-- [x] Tính TBM tự động theo hệ số (miệng×1, 15p×1, 1tiết×2)
-- [x] Phân loại: Xuất sắc ≥9 / Giỏi ≥8 / Khá ≥6.5 / TB ≥5 / Yếu <5
-- [x] Màu điểm: xanh lá ≥8, xanh dương ≥5, đỏ <5
-- [x] Hàng thống kê cuối: TB từng loại, TBM lớp, phân bố học lực
-- [x] Chọn học kỳ 1 / 2 — load lại dữ liệu
-- [x] Chế độ read-only khi không có quyền (không hiện cột thao tác)
+#### Phân công Nhân sự
+- [x] Modal phân công HT + DT (checkbox nhiều người)
+- [x] Dashboard ClassCard: hiển thị Dự trưởng khi chưa có Huynh trưởng
+- [x] ClassList ClassCard: ưu tiên HT → DT → "Chưa phân công"
 
 ---
 
-### GIAI ĐOẠN 6 — Tin tức & Thông báo `✅ Hoàn thành`
+### GIAI ĐOẠN 12 — Polish & Production-Ready `✅ Hoàn thành`
 
-- [x] Admin đăng bài mới: tiêu đề, loại, tóm tắt, nội dung HTML, ảnh đại diện, hạn hiển thị
-- [x] Toggle đăng/gỡ bài trực tiếp từ danh sách (không cần mở form)
-- [x] Chỉnh sửa bài viết — tái sử dụng PostForm
-- [x] Xoá bài viết có xác nhận
-- [x] Lọc bài theo loại: Tin tức / Thông báo / Khẩn
-- [x] Thông báo khẩn — UrgentBanner nổi bật đỏ ngay dưới Navbar, có nút đóng (sessionStorage)
-- [x] Gửi email hàng loạt qua nodemailer khi đăng thongbaokhan (backend phase 2)
-- [x] Trang Admin tổng quan: stat cards (lớp/giáo lý viên/bài viết) + bài viết mới nhất + quick actions
-- [x] Trang Admin quản lý người dùng: tạo tài khoản gửi email MK tạm, sửa, xoá, lọc vai trò
-- [x] Trang Admin quản lý lớp: phân công Huynh trưởng + Dự trưởng qua modal checkbox
-- [x] Navbar hiện link ⚙ Quản trị chỉ với admin
-- [x] AdminLayout với sidebar (desktop) + tab bar (mobile), nested routes
+#### Báo cáo tổng kết cuối kỳ
+- [x] `GET /api/export/tong-ket/:lopId` — Excel 1 lớp: TBM×80% + CC×20% + Học lực + Giới tính
+- [x] `GET /api/export/tong-ket-toan-doan` — Excel toàn đoàn (admin only), 1 sheet/lớp
+- [x] AdminExport: banner "Xuất toàn đoàn" + nút Tổng kết từng lớp
 
----
+#### Thông báo đẩy Email phụ huynh
+- [x] postController: khi đăng `thongbaokhan + daDang=true` → gửi email HTML đến **tất cả** users (kể cả role `user` = phụ huynh)
+- [x] Template email có branding: tiêu đề đỏ đô, nội dung bài viết, hạn hiệu lực
 
-### GIAI ĐOẠN 7 — Export Excel / PDF `✅ Hoàn thành`
+#### Lời Chúa tự động
+- [x] Date picker + nút Prev/Next ngày trong LoiChua.jsx
+- [x] Nút "Hôm nay" + nút **"Chúa Nhật"** (tự tính Chúa Nhật gần nhất)
+- [x] Mỗi lần đổi ngày tự fetch lại `loichua.net/api/daily?date=YYYY-MM-DD`
 
-- [x] Cài `exceljs` cho server
-- [x] Export bảng chuyên cần (.xlsx): tiêu đề, màu sắc, cột ✓/✗, tổng kết, sĩ số theo ngày
-- [x] Export bảng điểm (.xlsx): điểm theo loại, TBM, học lực, TB lớp, màu sắc theo ngưỡng
-- [x] Tên file UTF-8 có dấu tiếng Việt (`Content-Disposition filename*=UTF-8`)
-- [x] `ExportButton` component: fetch blob → tạo link download tự động, spinner loading
-- [x] Nút "Xuất Excel" trong tab Điểm danh (theo năm học đang chọn)
-- [x] Nút "Xuất Excel" trong tab Bảng điểm (theo học kỳ đang chọn)
-- [x] Trang `/admin/export`: xuất tất cả 12 lớp cùng lúc, chọn học kỳ
-- [x] PDF: bỏ qua (puppeteer quá nặng cho Render free tier — Excel đủ dùng)
+#### Dashboard thống kê ngành (AdminStats)
+- [x] Route `/admin/thong-ke`, menu sidebar
+- [x] BigStat cards: tổng đoàn sinh / có điểm / có CC / TBM toàn đoàn
+- [x] Bar chart CSS: phân phối học lực toàn đoàn
+- [x] Grid 5 ngành: TB điểm CC, % điểm danh, học lực từng ngành
+- [x] Chọn học kỳ 1 / 2, tự reload
 
----
+#### Avatar đoàn sinh
+- [x] StudentModal: chọn file ảnh → nén (imageCompression) → upload Firebase Storage `avatars/students/`
+- [x] Cột Ảnh trong StudentList: avatar tròn hoặc fallback initials màu theo giới tính
+- [x] Progress bar upload realtime trong modal
 
-### GIAI ĐOẠN 9 — UX nâng cao & Trải nghiệm Phụng vụ `✅ Hoàn thành`
-
-#### Trang Danh sách lớp — Class Explorer
-- [x] Điều hướng khối ngành bằng 5 tab lớn (Chiên Non / Ấu Nhi / Thiếu Nhi / Nghĩa Sĩ / Hiệp Sĩ), mặc định chọn Chiên Non
-- [x] Lưới 2 cột cho các lớp trong khối — lấp đầy chiều ngang
-- [x] Thẻ lớp tối giản: dải màu ngành, icon `?` xám thay cho văn bản dài khi chưa phân công
-- [x] Trang Home — 5 thẻ ngành chuyển thành `<Link>` với query param (`?nganh=chien-non`…)
-- [x] `ClassList` đọc `useSearchParams` → tự động chọn đúng tab ngành khi điều hướng từ Home
-- [x] Hiệu ứng hover phóng to + đổi độ sáng trên thẻ ngành ở Home
-
-#### Trang Giờ Lễ (/gio-le) — Dashboard Phụng Vụ
-- [x] Tách khỏi `Liturgy.jsx` thành route `/gio-le` riêng (`GioLe.jsx`)
-- [x] Layout 2 cột (`lg:grid-cols-[1fr_300px]`): cột chính + sidebar — không còn khoảng trống trên màn hình lớn
-- [x] Đồng hồ real-time cập nhật mỗi giây (hook `useNow`)
-- [x] Fetch API `loichua.net` — nhận diện tên ngày lễ
-- [x] Logic `detectLiturgy()`: phân tích tên lễ → màu áo (Trắng/Đỏ/Tím/Xanh/Đen/Hồng) + loại (Lễ Trọng / Kính / Mùa Chay…)
-- [x] Bảng giờ lễ: gạch mờ giờ đã qua, badge "hôm nay" cho ngày hiện tại
-- [x] Sidebar: lịch lễ quan trọng tháng (hard-coded Tháng 4/2026) + Quote Thánh Anrê Phú Yên
-- [x] Card Gospel Preview → `navigate('/loi-chua')` khi click
-
-#### Trang Lời Chúa (/loi-chua) — Bible Journaling Mode
-- [x] Tách thành route `/loi-chua` riêng (`LoiChua.jsx`)
-- [x] Layout 2 cột (`lg:grid-cols-[1fr_280px]`): Paper content + sidebar
-- [x] Font chữ có chân: **Lora** (nội dung) + **Playfair Display** (tiêu đề) từ Google Fonts
-- [x] Khối "Paper" màu kem `#fdfaf5` — bo góc 24px, bóng đổ nhẹ, dải màu nhấn theo phụng vụ
-- [x] 4 section: Bài đọc 1 (Scroll icon) / Đáp Ca (Music2) / Bài đọc 2 (BookOpen) / Phúc Âm (Cross)
-- [x] Sidebar: widget hình ảnh Tin Mừng + lịch mini (highlight ngày hiện tại) + box Câu vàng (Key Verse)
-- [x] Thanh **Reading Progress** cố định đầu trang (scroll-based)
-- [x] Stub **Audio Player** ("Nghe Lời Chúa") với hiệu ứng sóng âm animated
-- [x] Hiệu ứng Fade-in từng phần bằng **Framer Motion** (`motion.div`, stagger delay)
-- [x] Nút quay lại `←` về `/gio-le`
-- [x] Fallback sạch khi API lỗi
-
----
-
-### GIAI ĐOẠN 8 — Kiểm thử & Deployment `🔄 Đang thực hiện`
-
-#### Chuẩn bị code (✅ Xong)
-- [x] `vercel.json`: rewrite SPA routes về index.html
-- [x] `render.yaml`: khai báo service, buildCommand, startCommand
-- [x] `api.js`: dùng `VITE_API_URL` env khi production, fallback `/api` proxy khi dev
-- [x] `app.js`: CORS hỗ trợ nhiều origin (dev + prod), limit body 5mb
-- [x] `index.js`: trust proxy, graceful shutdown SIGTERM/SIGINT
-- [x] `errorHandler.js`: xử lý Mongoose ValidationError, duplicate key, JWT errors
-- [x] `.env.example` cả server lẫn client cập nhật đầy đủ
-
-#### Bước 1 — MongoDB Atlas (⬜ Bạn tự làm)
-- [ ] Tạo tài khoản tại mongodb.com/atlas → Free M0 Cluster
-- [ ] Tạo Database User (username/password)
-- [ ] Network Access: thêm IP `0.0.0.0/0` (allow all — Render dùng IP động)
-- [ ] Copy Connection String: `mongodb+srv://...`
-
-#### Bước 2 — Deploy Backend lên Render (⬜ Bạn tự làm)
-- [ ] Tạo tài khoản render.com → New Web Service
-- [ ] Connect GitHub repo `Feng1907/mautam-web`
-- [ ] Root Directory: `server` | Build: `npm install` | Start: `npm start`
-- [ ] Điền Environment Variables (xem bảng bên dưới)
-- [ ] Deploy → copy URL dạng `https://mautam-api.onrender.com`
-
-#### Bước 3 — Deploy Frontend lên Vercel (⬜ Bạn tự làm)
-- [ ] Tạo tài khoản vercel.com → New Project
-- [ ] Connect GitHub repo `Feng1907/mautam-web`
-- [ ] Root Directory: `client` | Build: `npm run build` | Output: `dist`
-- [ ] Thêm Environment Variable: `VITE_API_URL=https://mautam-api.onrender.com/api`
-- [ ] Deploy → copy URL dạng `https://mautam.vercel.app`
-
-#### Bước 4 — Cập nhật CORS trên Render (⬜ Bạn tự làm)
-- [ ] Render dashboard → Environment → `CLIENT_URL=https://mautam.vercel.app`
-- [ ] Redeploy backend
-
-#### Bước 5 — Kiểm thử production (⬜ Bạn tự làm)
-- [ ] Truy cập URL Vercel → trang chủ hiển thị
-- [ ] Đăng nhập admin, tạo Huynh trưởng, phân công lớp
-- [ ] Điểm danh, nhập điểm, export Excel
-- [ ] Đăng tin tức, kiểm tra UrgentBanner
+#### Lịch sử điểm
+- [x] `GET /api/students/:lopId/:id/lich-su` — trả grades + chuyenCan theo từng NamHoc
+- [x] `LichSuModal` trong StudentList: mỗi năm học hiển thị TBM / CC / Tổng kết / Học lực từng HK
+- [x] Nút `History` (đồng hồ) trên mỗi hàng đoàn sinh, mở cho tất cả (không cần canEdit)
 
 ---
 
@@ -342,20 +232,25 @@ mautam-website/
 
 | Phần | Công nghệ |
 |------|-----------|
-| Frontend | React 18, Vite, React Router, Axios |
-| Backend | Node.js, Express 5, Mongoose |
-| Database | MongoDB (local dev) → MongoDB Atlas (prod) |
-| Auth | JWT, bcryptjs |
-| Email | nodemailer |
-| Export | exceljs (Excel), puppeteer (PDF) |
+| Frontend | React 19, Vite, React Router v7, Framer Motion 12 |
+| Styling | Tailwind CSS 4, EB Garamond, Inter |
+| Backend | Node.js, Express 5, Mongoose 9 |
+| Database | MongoDB → MongoDB Atlas (prod) |
+| Auth | JWT (7 ngày), bcryptjs |
+| Email | nodemailer (HTML template) |
+| Export | ExcelJS 4 (xlsx đa sheet, màu sắc, UTF-8 filename) |
+| Storage | Firebase Storage (ảnh gallery + avatar đoàn sinh) |
 | Deploy | Vercel (FE) + Render (BE) + MongoDB Atlas (DB) |
+| i18n | i18next (VI / EN) |
 
 ---
 
-## 7. GHI CHÚ KỸ THUẬT QUAN TRỌNG
+## 7. GHI CHÚ KỸ THUẬT
 
-- **`checkClassPermission`** phải chạy trên mọi route write của attendance và grades — đây là lớp bảo vệ duy nhất ngăn HT sửa chéo lớp.
-- **`NamHoc`** cần có flag `dangHoatDong` để lọc dữ liệu mặc định — tránh hiển thị nhầm dữ liệu năm cũ.
-- **Tài khoản** nên do Admin tạo (không cho tự đăng ký) để kiểm soát danh sách HT/DT.
-- **Lời Chúa** — quyết định sớm: tích hợp API ngoài hay Admin nhập thủ công mỗi tuần.
+- **`checkClassPermission`** phải chạy trên mọi route write của attendance, grades, chuyencan — ngăn HT sửa chéo lớp.
+- **`NamHoc.dangHoatDong`** là nguồn sự thật cho mọi query mặc định — luôn chỉ có 1 năm active.
+- **ChuyenCan index unique** `(student, lop, namHoc, hocKy)` — mỗi em chỉ có 1 bản ghi CC mỗi HK.
+- **PromotionHistory** dùng MongoDB transaction — nếu server không hỗ trợ replica set, bỏ `session`.
+- **Avatar**: upload thẳng lên Firebase từ client, chỉ lưu URL vào MongoDB — không qua server.
+- **Export toàn đoàn** gọi DB tuần tự theo từng lớp (for...of) — tránh quá tải RAM trên Render free.
 - **File `.env`** tuyệt đối không commit — chỉ commit `.env.example`.
