@@ -3,12 +3,15 @@ const ctrl = require('../controllers/studentController');
 const { checkAuth } = require('../middlewares/checkAuth');
 const checkClassPermission = require('../middlewares/checkClassPermission');
 
-// GET /api/students/:lopId - xem danh sách lớp (tất cả đăng nhập được xem)
-router.get('/:lopId', checkAuth, ctrl.getByClass);
+// Xem — tất cả đã đăng nhập
+router.get('/:lopId',     checkAuth, ctrl.getByClass);
+router.get('/:lopId/:id', checkAuth, ctrl.getOne);
 
-// Các thao tác tạo/sửa/xoá yêu cầu quyền phụ trách lớp
+// Thêm — lopId lấy từ req.body.lop
 router.post('/', checkAuth, checkClassPermission, ctrl.create);
-router.put('/:id', checkAuth, checkClassPermission, ctrl.update);
-router.delete('/:id', checkAuth, checkClassPermission, ctrl.remove);
+
+// Sửa / Xoá — lopId truyền qua params để middleware kiểm tra
+router.put('/:lopId/:id',    checkAuth, checkClassPermission, ctrl.update);
+router.delete('/:lopId/:id', checkAuth, checkClassPermission, ctrl.remove);
 
 module.exports = router;
