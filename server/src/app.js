@@ -33,6 +33,9 @@ app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/grades',     require('./routes/grades'));
 app.use('/api/posts',      require('./routes/posts'));
 app.use('/api/export',     require('./routes/export'));
+app.use('/api/promote',    require('./routes/promote'));
+app.use('/api/merit',      require('./routes/merit'));
+app.use('/api/chuyen-can', require('./routes/chuyencan'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

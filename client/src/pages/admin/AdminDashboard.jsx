@@ -58,10 +58,18 @@ const ClassCard = ({ lop }) => {
         </span>
       </div>
       <p className="font-bold text-gray-800 text-sm leading-tight">{lop.tenLop}</p>
-      <p className="text-xs text-gray-400 mt-1 truncate">
-        HT: {lop.huynhTruong?.hoTen
-          ? <span className="text-blue-600 font-medium">{lop.huynhTruong.hoTen}</span>
-          : <span className="italic">Chưa phân công</span>}
+      <p className="text-xs text-gray-500 font-medium mt-0.5">
+        Sĩ số: <span className="text-green-700 font-bold">{lop.siSo ?? 0}</span>
+        <span className="text-gray-400 font-normal"> đoàn sinh</span>
+      </p>
+      <p className="text-xs text-gray-400 mt-0.5 truncate">
+        {lop.huynhTruong?.hoTen ? (
+          <>HT: <span className="text-blue-600 font-medium">{lop.huynhTruong.hoTen}</span></>
+        ) : lop.duTruong?.length > 0 ? (
+          <>DT: <span className="text-sky-600 font-medium">{lop.duTruong.map(d => d.hoTen).join(', ')}</span></>
+        ) : (
+          <span className="italic">Chưa phân công</span>
+        )}
       </p>
       <div className="flex gap-1.5 mt-2.5">
         <Link to={`/lop-hoc/${lop._id}`}
@@ -98,9 +106,11 @@ const AdminDashboard = () => {
       setClasses(classesData);
       setPosts(postsData);
       setStats({
-        lopHoc:  classesData.length,
-        giaoly:  usersData.filter(x => x.vaiTro === 'giaoly').length,
-        baiviet: p.value?.data?.total ?? 0,
+        lopHoc:     classesData.length,
+        giaoly:     usersData.filter(x => x.vaiTro === 'giaoly').length,
+        baiviet:    p.value?.data?.total ?? 0,
+        doanSinh:   classesData.reduce((sum, c) => sum + (c.siSo ?? 0), 0),
+        lopCoNhanSu: classesData.filter(c => c.huynhTruong || c.duTruong?.length > 0).length,
       });
       setLoading(false);
     });
@@ -242,12 +252,16 @@ const AdminDashboard = () => {
             Tổng quan
           </h2>
           <div className="flex flex-col gap-2.5">
-            <StatCard icon="🏫" label="Lớp học"      value={stats.lopHoc}
-              to="/admin/lop-hoc"    color="text-blue-700"  bg="bg-blue-50"  />
-            <StatCard icon="👥" label="Giáo lý viên" value={stats.giaoly}
-              to="/admin/nguoi-dung" color="text-green-700" bg="bg-green-50" />
-            <StatCard icon="📝" label="Bài viết"     value={stats.baiviet}
-              to="/admin/bai-viet"   color="text-red-700"   bg="bg-red-50"   />
+            <StatCard icon="🏫" label="Lớp học"           value={stats.lopHoc}
+              to="/admin/lop-hoc"    color="text-blue-700"   bg="bg-blue-50"   />
+            <StatCard icon="🕊️" label="Tổng đoàn sinh"   value={stats.doanSinh}
+              to="/admin/lop-hoc"    color="text-green-700"  bg="bg-green-50"  />
+            <StatCard icon="✅" label="Lớp có nhân sự"   value={stats.lopCoNhanSu}
+              to="/admin/lop-hoc"    color="text-teal-700"   bg="bg-teal-50"   />
+            <StatCard icon="👥" label="Giáo lý viên"     value={stats.giaoly}
+              to="/admin/nguoi-dung" color="text-amber-700"  bg="bg-amber-50"  />
+            <StatCard icon="📝" label="Bài viết"         value={stats.baiviet}
+              to="/admin/bai-viet"   color="text-red-700"    bg="bg-red-50"    />
           </div>
         </div>
 
