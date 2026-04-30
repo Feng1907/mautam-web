@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mautam-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      # Các biến sau điền tay trên Render dashboard:
+      # MONGODB_URI, JWT_SECRET, CLIENT_URL, EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS
