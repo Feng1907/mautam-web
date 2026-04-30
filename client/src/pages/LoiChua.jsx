@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Scroll, Music2, BookOpen, Cross,
-  Volume2, VolumeX, Quote, ChevronRight,
+  Volume2, VolumeX, Quote, ChevronRight, ChevronLeft, CalendarDays, Sun,
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -67,15 +67,30 @@ const MiniCalendar = () => {
   );
 };
 
+// ─── Helpers ngày ────────────────────────────────────────────────────────────
+
+const toISODate = (d) => d.toISOString().slice(0, 10);
+
+// Chúa Nhật gần nhất (hôm nay nếu là CN, hoặc CN tới)
+const getNextSunday = (from = new Date()) => {
+  const d = new Date(from);
+  const day = d.getDay();
+  if (day === 0) return toISODate(d);
+  d.setDate(d.getDate() + (7 - day));
+  return toISODate(d);
+};
+
+const addDays = (isoDate, n) => {
+  const d = new Date(isoDate);
+  d.setDate(d.getDate() + n);
+  return toISODate(d);
+};
+
 // ─── Fetch & parse ────────────────────────────────────────────────────────────
 
-const fetchData = async () => {
-  const d  = new Date();
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = d.getFullYear();
+const fetchData = async (isoDate) => {
   try {
-    const res = await fetch(`https://www.loichua.net/api/daily?date=${yy}-${mm}-${dd}`);
+    const res = await fetch(`https://www.loichua.net/api/daily?date=${isoDate}`);
     if (!res.ok) throw new Error();
     return await res.json();
   } catch { return null; }
@@ -272,16 +287,28 @@ const FALLBACK_SECTIONS = [
 
 const THU_VN = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
 
-const LoiChua = () => {
-  const navigate = useNavigate();
-  const [raw, setRaw]       = useState(null);
-  const [loading, setLoad]  = useState(true);
-  const today = new Date();
-  const dateStr = `${THU_VN[today.getDay()]}, ${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+const fmtDateLabel = (isoDate) => {
+  const d = new Date(isoDate);
+  return `${THU_VN[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+};
 
-  useEffect(() => {
-    fetchData().then(r => setRaw(normalise(r))).finally(() => setLoad(false));
+const LoiChua = () => {
+  const navigate  = useNavigate();
+  const todayIso  = toISODate(new Date());
+  const [date,    setDate]   = useState(todayIso);
+  const [raw,     setRaw]    = useState(null);
+  const [loading, setLoad]   = useState(true);
+
+  const load = useCallback((isoDate) => {
+    setLoad(true);
+    setRaw(null);
+    fetchData(isoDate).then(r => setRaw(normalise(r))).finally(() => setLoad(false));
   }, []);
+
+  useEffect(() => { load(date); }, [date, load]);
+
+  const goSunday = () => setDate(getNextSunday());
+  const isToday  = date === todayIso;
 
   const data    = raw;
   const mauKey  = data?.mauKey || 'xanh';
@@ -320,7 +347,7 @@ const LoiChua = () => {
                 >
                   {data?.name || 'Lời Chúa hôm nay'}
                 </h1>
-                <p className="text-xs text-stone-400 mt-0.5">{dateStr}</p>
+                <p className="text-xs text-stone-400 mt-0.5">{fmtDateLabel(date)}</p>
               </div>
             </div>
 
@@ -328,6 +355,56 @@ const LoiChua = () => {
             <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${accent.text} ${accent.border} ${accent.bg}`}>
               {mauKey === 'do' ? 'Màu Đỏ' : mauKey === 'tim' ? 'Màu Tím' : mauKey === 'trang' ? 'Màu Trắng' : 'Thường Niên'}
             </span>
+          </motion.div>
+
+          {/* ── Điều hướng ngày ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.3 }}
+            className="flex items-center gap-2 mb-4 flex-wrap"
+          >
+            <button
+              onClick={() => setDate(d => addDays(d, -1))}
+              className="w-9 h-9 rounded-full border border-stone-200 bg-white hover:bg-stone-100 transition flex items-center justify-center text-stone-500 shadow-sm"
+              title="Ngày trước"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <input
+              type="date"
+              value={date}
+              max={toISODate(new Date())}
+              onChange={e => e.target.value && setDate(e.target.value)}
+              className="h-9 px-3 text-sm border border-stone-200 rounded-full bg-white text-stone-700 outline-none focus:border-red-400 transition"
+            />
+
+            <button
+              onClick={() => setDate(d => addDays(d, 1))}
+              disabled={date >= todayIso}
+              className="w-9 h-9 rounded-full border border-stone-200 bg-white hover:bg-stone-100 transition flex items-center justify-center text-stone-500 shadow-sm disabled:opacity-30"
+              title="Ngày sau"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            {!isToday && (
+              <button
+                onClick={() => setDate(todayIso)}
+                className="flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-full border border-stone-200 bg-white text-stone-600 hover:bg-stone-100 transition"
+              >
+                <CalendarDays size={13} /> Hôm nay
+              </button>
+            )}
+
+            <button
+              onClick={goSunday}
+              className="flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition"
+              title="Chúa Nhật gần nhất"
+            >
+              <Sun size={13} /> Chúa Nhật
+            </button>
           </motion.div>
 
           {/* ── Audio player ── */}

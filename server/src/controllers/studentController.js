@@ -1,4 +1,7 @@
-const Student = require('../models/Student');
+const Student   = require('../models/Student');
+const Grade     = require('../models/Grade');
+const ChuyenCan = require('../models/ChuyenCan');
+const NamHoc    = require('../models/NamHoc');
 
 // GET /api/students?lopId=...
 exports.getByClass = async (req, res, next) => {
@@ -52,6 +55,27 @@ exports.update = async (req, res, next) => {
     if (!student)
       return res.status(404).json({ success: false, message: 'Không tìm thấy đoàn sinh' });
     res.json({ success: true, data: student });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/students/:lopId/:id/lich-su  — Lịch sử điểm qua các năm học
+exports.lichSu = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const namHocList = await NamHoc.find().sort('-ngayBatDau');
+
+    const result = await Promise.all(
+      namHocList.map(async (nh) => {
+        const grades = await Grade.find({ student: id, namHoc: nh._id });
+        const ccList = await ChuyenCan.find({ student: id, namHoc: nh._id });
+        if (!grades.length && !ccList.length) return null;
+        return { namHoc: { _id: nh._id, ten: nh.ten }, grades, chuyenCan: ccList };
+      })
+    );
+
+    res.json({ success: true, data: result.filter(Boolean) });
   } catch (err) {
     next(err);
   }

@@ -15,11 +15,13 @@
 
 <br/>
 
-![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-12.12-FFCA28?style=flat-square&logo=firebase&logoColor=black)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.38-FF0055?style=flat-square&logo=framer&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Storage-FFCA28?style=flat-square&logo=firebase&logoColor=black)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Phase](https://img.shields.io/badge/Phase-12_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -27,37 +29,47 @@
 
 ## 📖 Giới thiệu
 
-**Xứ Đoàn Anrê Phú Yên – Mẫu Tâm** là ứng dụng web quản lý dành riêng cho các Huynh trưởng và Dự trưởng của tổ chức Thiếu Nhi Thánh Thể. Hệ thống giúp:
+**Xứ Đoàn Anrê Phú Yên – Mẫu Tâm** là ứng dụng web quản lý dành riêng cho Huynh trưởng và Dự trưởng của tổ chức Thiếu Nhi Thánh Thể. Hệ thống số hoá toàn bộ công việc quản lý giáo lý từ điểm danh đến báo cáo cuối kỳ:
 
-- 📋 **Quản lý lớp học** theo 5 ngành: Chiên Non, Ấu Nhi, Thiếu Nhi, Nghĩa Sĩ, Hiệp Sĩ
-- ✅ **Điểm danh** hàng tuần (Chúa Nhật) với giao diện cảm ứng thân thiện trên điện thoại
-- 📊 **Bảng điểm** miệng / 15 phút / 1 tiết, tính TBM tự động và phân loại học lực
-- 📸 **Thư viện ảnh** lưu trữ trên Firebase Storage, tự động nén ảnh trước khi upload
-- 📢 **Tin tức & Thông báo** nội bộ xứ đoàn
-- 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18n)
-- 📤 **Xuất Excel** danh sách điểm danh và bảng điểm
+- 📋 **Quản lý lớp học** theo 5 ngành: Chiên Non · Ấu Nhi · Thiếu Nhi · Nghĩa Sĩ · Hiệp Sĩ
+- ✅ **Điểm danh** hàng tuần (Chúa Nhật) — lưới scroll ngang, toggle trực tiếp
+- 📊 **Bảng điểm** miệng / 15 phút / 1 tiết — TBM tự động + phân loại học lực
+- 📅 **Chuyên cần** — tự tính điểm từ số buổi vắng; **Tổng kết = TBM×80% + CC×20%**
+- ⬆️ **Lên lớp hàng loạt** — chọn lớp nguồn → đích, lưu lịch sử đầy đủ
+- 📤 **Xuất Excel** — điểm danh, bảng điểm, **tổng kết từng lớp** và **toàn đoàn**
+- 📊 **Dashboard thống kê** — biểu đồ học lực + chuyên cần theo từng ngành
+- 🖼️ **Avatar đoàn sinh** — upload ảnh thẻ lên Firebase Storage, tự nén
+- 📜 **Lịch sử điểm** — xem TBM / CC / Tổng kết của mỗi em qua các năm học
+- 📢 **Thông báo khẩn** — gửi email HTML tự động đến toàn bộ giáo lý viên và phụ huynh
+- 📖 **Lời Chúa** — fetch loichua.net với điều hướng ngày, nút "Chúa Nhật gần nhất"
+- 📸 **Thư viện ảnh** — Firebase Storage, tự nén ~70%, lightbox toàn màn hình
+- 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18next)
 
 ---
 
 ## 🛠️ Công nghệ
 
 ### Frontend
-- ⚛️ **React 19** – UI framework
-- 🎨 **Tailwind CSS 4** – Utility-first styling
-- 🎞️ **Framer Motion 12** – Smooth animations
-- 🔤 **EB Garamond + Inter** – Typography hỗ trợ tiếng Việt
-- 🔀 **React Router v6** – Client-side routing
-- 🌍 **i18next** – Đa ngôn ngữ VI/EN
+- ⚛️ **React 19** + **Vite** — UI framework
+- 🎨 **Tailwind CSS 4** — Utility-first styling
+- 🎞️ **Framer Motion 12** — Animations & page transitions
+- 🔤 **EB Garamond + Inter** — Typography tiếng Việt
+- 🔀 **React Router v7** — Client-side routing
+- 🌍 **i18next** — Đa ngôn ngữ VI/EN
+- 🔥 **Firebase Storage** — Ảnh gallery + avatar đoàn sinh
 
 ### Backend
-- 🟢 **Node.js + Express** – REST API
-- 🍃 **MongoDB + Mongoose** – Database
-- 🔐 **JWT** – Authentication & Authorization
+- 🟢 **Node.js + Express 5** — REST API
+- 🍃 **MongoDB + Mongoose 9** — Database
+- 🔐 **JWT** — Authentication & Authorization (7 ngày)
+- 📧 **nodemailer** — Email thông báo khẩn
+- 📊 **ExcelJS 4** — Xuất báo cáo `.xlsx` đa sheet
 
 ### Cloud / Infrastructure
-- 🔥 **Firebase Storage** – Lưu trữ ảnh (auto-compress trước upload)
-- 🔥 **Firestore** – Metadata ảnh thư viện
-- ☁️ **Firebase Auth** *(optional)*
+- ☁️ **Vercel** — Frontend hosting (auto-deploy từ GitHub)
+- 🚀 **Render** — Backend hosting
+- 🍃 **MongoDB Atlas** — Database cloud
+- 🔥 **Firebase** — Storage (ảnh) + Firestore (metadata gallery)
 
 ---
 
@@ -66,47 +78,58 @@
 ```
 mautam-website/
 ├── client/                   # Frontend React
-│   ├── public/
-│   │   ├── images/           # Ảnh tĩnh (logo, ảnh Quan Thầy...)
-│   │   └── logos/
+│   ├── public/images/        # Ảnh tĩnh (Quan Thầy, logo...)
 │   └── src/
-│       ├── components/       # Reusable components
+│       ├── components/
 │       │   ├── Navbar.jsx
-│       │   ├── GradeForm.jsx
-│       │   ├── AttendanceTable.jsx
-│       │   └── StudentList.jsx
+│       │   ├── GradeForm.jsx         # Bảng điểm + Chuyên cần 80/20
+│       │   ├── AttendanceTable.jsx   # Điểm danh Chúa Nhật
+│       │   ├── StudentList.jsx       # Danh sách + avatar + lịch sử điểm
+│       │   └── ExportButton.jsx
 │       ├── pages/
-│       │   ├── Home.jsx
-│       │   ├── ClassList.jsx
-│       │   ├── ClassDetail.jsx
-│       │   ├── Gallery.jsx
-│       │   ├── News.jsx
-│       │   ├── GioLe.jsx
+│       │   ├── ClassList.jsx         # Explorer 5 ngành
+│       │   ├── ClassDetail.jsx       # 3 tab: Danh sách / Điểm danh / Bảng điểm
+│       │   ├── LoiChua.jsx           # Lời Chúa + điều hướng ngày
+│       │   ├── GioLe.jsx             # Dashboard phụng vụ + đồng hồ
+│       │   ├── Gallery.jsx           # Thư viện ảnh Firebase
 │       │   └── admin/
 │       │       ├── AdminDashboard.jsx
-│       │       ├── AdminPosts.jsx
-│       │       └── AdminClasses.jsx
+│       │       ├── AdminClasses.jsx  # Phân công nhân sự
+│       │       ├── AdminPromotion.jsx # Lên lớp hàng loạt
+│       │       ├── AdminStats.jsx    # Dashboard thống kê ngành
+│       │       ├── AdminExport.jsx   # Export toàn đoàn
+│       │       └── AdminNamHoc.jsx
 │       ├── services/
-│       │   ├── api.js          # Axios instance
-│       │   ├── firebase.js     # Firebase config
-│       │   └── galleryService.js
-│       ├── store/
-│       │   └── AuthContext.jsx
-│       └── i18n.js             # Translations VI/EN
+│       │   ├── api.js                # Axios + JWT interceptor
+│       │   ├── firebase.js
+│       │   └── galleryService.js     # Upload + nén Firebase
+│       ├── store/AuthContext.jsx
+│       └── i18n.js                   # Translations VI/EN
 │
 └── server/                   # Backend Express
     └── src/
-        ├── models/           # Mongoose schemas
-        ├── controllers/      # Business logic
-        ├── routes/           # API routes
-        └── middleware/       # Auth, permissions
+        ├── models/
+        │   ├── User.js, Class.js, Student.js, NamHoc.js
+        │   ├── Grade.js, Attendance.js, Post.js
+        │   ├── ChuyenCan.js          # Điểm chuyên cần
+        │   ├── MeritPoint.js
+        │   └── PromotionHistory.js   # Lịch sử lên lớp
+        ├── controllers/
+        │   ├── exportController.js   # attendance, grades, tổng kết, toàn đoàn
+        │   ├── chuyenCanController.js
+        │   ├── promoteController.js
+        │   └── ...
+        ├── routes/                   # /export, /chuyen-can, /promote, ...
+        └── middlewares/
+            ├── checkAuth.js
+            └── checkClassPermission.js
 ```
 
 ---
 
 ## 🚀 Cài đặt & Chạy thử
 
-### Yêu cầu hệ thống
+### Yêu cầu
 - Node.js ≥ 18
 - MongoDB (local hoặc Atlas)
 - Tài khoản Firebase (Spark plan miễn phí)
@@ -114,30 +137,32 @@ mautam-website/
 ### 1. Clone repo
 
 ```bash
-git clone https://github.com/DuongAnPhong/mautam-website.git
-cd mautam-website
+git clone https://github.com/Feng1907/mautam-web.git
+cd mautam-web
 ```
 
-### 2. Cài đặt dependencies
+### 2. Cài dependencies
 
 ```bash
-# Backend
 cd server && npm install
-
-# Frontend
 cd ../client && npm install
 ```
 
 ### 3. Cấu hình môi trường
 
-**`server/.env`**
+**`server/.env`** (xem `server/.env.example`)
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/mautam
 JWT_SECRET=your_jwt_secret_here
+CLIENT_URL=http://localhost:5173
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your@gmail.com
+EMAIL_PASS=your_app_password
 ```
 
-**`client/.env`**
+**`client/.env`** (xem `client/.env.example`)
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_FIREBASE_API_KEY=...
@@ -162,63 +187,40 @@ Mở trình duyệt: **http://localhost:5173**
 
 ---
 
-## 📸 Giao diện
-
-### Trang chủ
-> *(Chèn ảnh screenshot trang chủ vào đây)*
-
-```
-![Trang chủ](docs/screenshots/home.png)
-```
-
-### Điểm danh
-> *(Chèn ảnh bảng điểm danh Chúa Nhật vào đây)*
-
-```
-![Điểm danh](docs/screenshots/attendance.png)
-```
-
-### Bảng điểm
-> *(Chèn ảnh bảng điểm học kỳ vào đây)*
-
-```
-![Bảng điểm](docs/screenshots/grades.png)
-```
-
-### Thư viện ảnh
-> *(Chèn ảnh giao diện gallery vào đây)*
-
-```
-![Thư viện ảnh](docs/screenshots/gallery.png)
-```
-
-### Quản lý bài viết
-> *(Chèn ảnh trang admin posts vào đây)*
-
-```
-![Quản lý bài viết](docs/screenshots/admin-posts.png)
-```
-
----
-
 ## 👤 Vai trò người dùng
 
 | Vai trò   | Quyền hạn |
 |-----------|-----------|
-| `admin`   | Toàn quyền: quản lý lớp, người dùng, bài viết, thư viện |
-| `giaoly`  | Quản lý lớp được phân công: điểm danh, bảng điểm, danh sách đoàn sinh |
-| *(guest)* | Xem trang chủ, tin tức, giờ lễ, thư viện ảnh |
+| `admin`   | Toàn quyền: quản lý lớp, nhân sự, lên lớp, thống kê, export toàn đoàn |
+| `giaoly`  | Quản lý lớp được phân công: điểm danh, điểm, chuyên cần, export lớp mình |
+| `user`    | Xem lớp, xem lịch sử điểm con em, nhận email thông báo khẩn |
 
 ---
 
 ## ✨ Tính năng nổi bật
 
-- **Auto-compress ảnh** bằng Canvas API trước khi upload Firebase — tiết kiệm ~70% dung lượng Storage
-- **Sắp xếp danh sách** theo tên chính (từ cuối cùng) với `localeCompare('vi')` — đúng chuẩn tiếng Việt
-- **Offline-friendly**: Mock data tự động hiển thị khi Firebase chưa kết nối
-- **Lightbox** xem ảnh toàn màn hình, điều hướng bàn phím ← →
-- **Xuất Excel** điểm danh + bảng điểm (ExcelJS)
-- **Spiritual Modernism** design: tông màu đỏ đô #8B0000, vàng đồng #D4AF37, kem ngà #fdfbf7
+| Tính năng | Chi tiết |
+|-----------|----------|
+| **Chuyên cần thông minh** | Tự tính điểm từ số buổi vắng (có phép −0.5đ, không phép −1đ). Modal 2 mode: nhập buổi hoặc nhập thẳng. |
+| **Tổng kết công thức** | TBM×80% + Chuyên cần×20% = Điểm tổng kết. Export Excel đầy đủ 1 lớp hoặc toàn đoàn. |
+| **Lên lớp hàng loạt** | Chọn checkbox nhiều em, chuyển sang lớp + năm học mới, lưu lịch sử có thể xem lại. |
+| **Dashboard thống kê** | Bar chart CSS phân phối học lực, TB điểm CC, % điểm danh — phân theo từng ngành. |
+| **Lịch sử điểm** | Mỗi đoàn sinh có modal xem TBM/CC/Tổng kết qua tất cả năm học đã học. |
+| **Avatar đoàn sinh** | Upload ảnh thẻ → tự nén → Firebase Storage → hiển thị trong danh sách lớp. |
+| **Email HTML phụ huynh** | Thông báo khẩn gửi kèm template HTML có branding đến tất cả phụ huynh. |
+| **Lời Chúa điều hướng** | Date picker + Prev/Next ngày + nút "Chúa Nhật" → fetch đúng bài đọc ngày đó. |
+| **Auto-compress ảnh** | Canvas API trước khi upload Firebase — tiết kiệm ~70% dung lượng Storage. |
+| **Sắp xếp tên Việt** | `localeCompare('vi')` theo tên chính (từ cuối cùng trong họ tên). |
+
+---
+
+## 🌿 Nhánh phát triển
+
+| Nhánh | Mục đích |
+|-------|----------|
+| `master` | Production — đã merge phase 1–12 |
+| `develop` | Integration — merge trước khi lên master |
+| `phase/12-polish-features` | Đang phát triển — sẽ merge vào develop |
 
 ---
 
@@ -242,10 +244,10 @@ Không sao chép hoặc phân phối lại mà không có sự đồng ý của 
 Được xây dựng với ❤️ bởi
 
 **DƯƠNG AN PHONG**
-*Intern Frontend Developer*
+*Fullstack Developer*
 
 <br/>
 
-![GitHub](https://img.shields.io/badge/GitHub-DuongAnPhong-181717?style=flat-square&logo=github)
+![GitHub](https://img.shields.io/badge/GitHub-Feng1907%2Fmautam--web-181717?style=flat-square&logo=github)
 
 </div>
