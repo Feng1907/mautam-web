@@ -10,6 +10,7 @@ const AdminLayout = () => {
     { to: '/admin/nguoi-dung', labelKey: 'admin.menu.users',      icon: '◉' },
     { to: '/admin/lop-hoc',    labelKey: 'admin.menu.classes',    icon: '▣' },
     { to: '/admin/nam-hoc',    labelKey: 'admin.menu.schoolYear', icon: '📆' },
+    { to: '/admin/nien-hoc',   labelKey: 'admin.menu.promotion',  icon: '⬆' },
     { to: '/admin/export',     labelKey: 'admin.menu.export',     icon: '⬇' },
   ];
 

@@ -1,6 +1,7 @@
 const Class = require('../models/Class');
 const NamHoc = require('../models/NamHoc');
 const User = require('../models/User');
+const Student = require('../models/Student');
 
 // GET /api/classes?namHocId=...  (mặc định lấy năm đang hoạt động)
 exports.getAll = async (req, res, next) => {
@@ -16,9 +17,19 @@ exports.getAll = async (req, res, next) => {
     const classes = await Class.find({ namHoc: namHocId })
       .sort('thuTu')
       .populate('huynhTruong', 'hoTen email soDienThoai')
-      .populate('duTruong', 'hoTen email soDienThoai');
+      .populate('duTruong', 'hoTen email soDienThoai')
+      .lean();
 
-    res.json({ success: true, data: classes });
+    // Đếm sĩ số từng lớp trong một câu query duy nhất
+    const counts = await Student.aggregate([
+      { $match: { lop: { $in: classes.map(c => c._id) }, trangThai: 'active' } },
+      { $group: { _id: '$lop', siSo: { $sum: 1 } } },
+    ]);
+    const countMap = Object.fromEntries(counts.map(c => [c._id.toString(), c.siSo]));
+
+    const data = classes.map(c => ({ ...c, siSo: countMap[c._id.toString()] ?? 0 }));
+
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
@@ -55,6 +66,56 @@ exports.create = async (req, res, next) => {
   } catch (err) {
     if (err.code === 11000)
       return res.status(400).json({ success: false, message: 'Tên lớp đã tồn tại trong năm học này' });
+    next(err);
+  }
+};
+
+// PATCH /api/classes/:id  (Admin only — cập nhật tên lớp, khối ngành, thứ tự)
+exports.update = async (req, res, next) => {
+  try {
+    const { tenLop, nhanh, thuTu } = req.body;
+    const lop = await Class.findById(req.params.id);
+    if (!lop)
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lớp' });
+
+    if (tenLop !== undefined) lop.tenLop = tenLop.trim();
+    if (nhanh   !== undefined) lop.nhanh  = nhanh;
+    if (thuTu   !== undefined) lop.thuTu  = thuTu;
+
+    await lop.save();
+
+    const updated = await Class.findById(lop._id)
+      .populate('huynhTruong', 'hoTen email soDienThoai')
+      .populate('duTruong',    'hoTen email soDienThoai');
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    if (err.code === 11000)
+      return res.status(400).json({ success: false, message: 'Tên lớp đã tồn tại trong năm học này' });
+    next(err);
+  }
+};
+
+// DELETE /api/classes/:id  (Admin only — chặn nếu lớp còn đoàn sinh)
+exports.remove = async (req, res, next) => {
+  try {
+    const lop = await Class.findById(req.params.id);
+    if (!lop)
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lớp' });
+
+    const soLuong = await Student.countDocuments({ lop: lop._id });
+    if (soLuong > 0)
+      return res.status(409).json({
+        success: false,
+        message: `Lớp đang có ${soLuong} đoàn sinh. Hãy chuyển đoàn sinh sang lớp khác trước khi xóa.`,
+      });
+
+    // Gỡ lớp khỏi lopPhuTrach của các HT/DT
+    await User.updateMany({ lopPhuTrach: lop._id }, { $pull: { lopPhuTrach: lop._id } });
+    await lop.deleteOne();
+
+    res.json({ success: true, message: 'Đã xóa lớp thành công' });
+  } catch (err) {
     next(err);
   }
 };

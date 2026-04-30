@@ -108,7 +108,24 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
 
 // ── Class Card ────────────────────────────────────────────────────────────────
 const ClassCard = ({ lop, meta }) => {
-  const hasHT = !!lop.huynhTruong?.hoTen;
+  const htName  = lop.huynhTruong?.hoTen || null;
+  const dtNames = (lop.duTruong || []).map(d => d.hoTen).filter(Boolean);
+
+  // Xác định nhân sự hiển thị theo thứ tự ưu tiên
+  let nhanSuLabel, nhanSuName, NhanSuIcon;
+  if (htName) {
+    nhanSuLabel = 'Huynh trưởng';
+    nhanSuName  = htName;
+    NhanSuIcon  = UserCheck;
+  } else if (dtNames.length > 0) {
+    nhanSuLabel = 'Dự trưởng';
+    nhanSuName  = dtNames.join(', ');
+    NhanSuIcon  = Users;
+  } else {
+    nhanSuLabel = null;
+    nhanSuName  = null;
+    NhanSuIcon  = null;
+  }
 
   return (
     <Link
@@ -162,21 +179,31 @@ const ClassCard = ({ lop, meta }) => {
           className="flex flex-col gap-1.5 pt-3 border-t"
           style={{ borderColor: '#f0e0c0', fontFamily: SANS }}
         >
+          {/* Nhân sự phụ trách — hiển thị HT hoặc DT hoặc trống */}
           <div className="flex items-center gap-2 text-xs">
-            <UserCheck className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span className="text-gray-400 shrink-0">Huynh trưởng:</span>
-            {hasHT
-              ? <span className="font-semibold text-[#5a1a1a] truncate">{lop.huynhTruong.hoTen}</span>
-              : <span className="italic text-gray-300">Chưa phân công</span>
+            {NhanSuIcon
+              ? <NhanSuIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              : <UserCheck  className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+            }
+            {nhanSuLabel
+              ? <>
+                  <span className="text-gray-400 shrink-0">{nhanSuLabel}:</span>
+                  <span className="font-semibold text-[#5a1a1a] truncate">{nhanSuName}</span>
+                </>
+              : <span className="italic text-gray-300">Chưa phân công nhân sự</span>
             }
           </div>
-          {lop.duTruong?.length > 0 && (
+
+          {/* Dự trưởng bổ sung (chỉ hiện khi đã có HT và còn DT) */}
+          {htName && dtNames.length > 0 && (
             <div className="flex items-center gap-2 text-xs">
               <Users className="w-3.5 h-3.5 text-gray-400 shrink-0" />
               <span className="text-gray-400 shrink-0">Dự trưởng:</span>
-              <span className="text-gray-600 truncate">{lop.duTruong.map(d => d.hoTen).join(', ')}</span>
+              <span className="text-gray-600 truncate">{dtNames.join(', ')}</span>
             </div>
           )}
+
+          {/* Sĩ số */}
           {lop.siSo != null && (
             <div className="flex items-center gap-2 text-xs">
               <BookOpen className="w-3.5 h-3.5 text-gray-400 shrink-0" />
@@ -273,7 +300,7 @@ const ClassList = () => {
   // Thống kê nhanh
   const totalClasses  = classes.length;
   const totalStudents = classes.reduce((sum, l) => sum + (l.siSo ?? 0), 0);
-  const hasTeacher    = classes.filter(l => l.huynhTruong?.hoTen).length;
+  const hasTeacher    = classes.filter(l => l.huynhTruong?.hoTen || (l.duTruong?.length > 0)).length;
 
   if (loading) return <LoadingSpinner />;
 

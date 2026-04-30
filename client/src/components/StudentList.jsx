@@ -168,21 +168,31 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
 
 // ── Component chính ───────────────────────────────────────────────────────────
 const StudentList = ({ lopId, students, setStudents, canEdit }) => {
-  const [modal,    setModal]    = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const [search,   setSearch]   = useState('');
+  const [modal,        setModal]        = useState(null);
+  const [deleting,     setDeleting]     = useState(null);
+  const [search,       setSearch]       = useState('');
+  const [genderFilter, setGenderFilter] = useState('All');
 
-  // Sắp xếp một lần, rồi lọc theo search
+  // Thống kê giới tính — tính một lần khi students thay đổi
+  const { soNam, soNu } = useMemo(() => ({
+    soNam: students.filter(s => s.gioiTinh === 'Nam').length,
+    soNu:  students.filter(s => s.gioiTinh === 'Nu').length,
+  }), [students]);
+
+  // Sắp xếp một lần, rồi lọc kết hợp search + genderFilter
   const sorted = useMemo(() => sortStudents(students), [students]);
 
-  const filtered = useMemo(() =>
-    !search
-      ? sorted
-      : sorted.filter(s =>
-          `${s.tenThanh} ${s.hoTen}`.toLowerCase().includes(search.toLowerCase())
-        ),
-    [sorted, search]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return sorted.filter(s => {
+      const matchSearch = !q || `${s.tenThanh} ${s.hoTen}`.toLowerCase().includes(q);
+      const matchGender =
+        genderFilter === 'All' ||
+        (genderFilter === 'Nam' && s.gioiTinh === 'Nam') ||
+        (genderFilter === 'Nu'  && (s.gioiTinh === 'Nu' || !s.gioiTinh));
+      return matchSearch && matchGender;
+    });
+  }, [sorted, search, genderFilter]);
 
   const handleSaved = (saved, isEdit) => {
     setStudents(prev =>
@@ -210,7 +220,7 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-3 flex-wrap">
 
-        {/* Search — icon absolute, pl-10 tránh đè chữ */}
+        {/* Search */}
         <div className="flex-1 relative min-w-56">
           <Search
             className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
@@ -231,13 +241,33 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
           />
         </div>
 
+        {/* Bộ lọc giới tính */}
+        <select
+          value={genderFilter}
+          onChange={e => setGenderFilter(e.target.value)}
+          className="h-10 px-3 pr-8 text-sm outline-none transition shrink-0 appearance-none cursor-pointer"
+          style={{
+            borderRadius: '9999px',
+            border: '1.5px solid #e5d5b5',
+            background: '#fff url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23aaa\' stroke-width=\'2\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E") no-repeat right 12px center',
+            color: '#3d1515',
+            minWidth: '110px',
+          }}
+          onFocus={e => (e.target.style.borderColor = '#D4AF37')}
+          onBlur={e  => (e.target.style.borderColor = '#e5d5b5')}
+        >
+          <option value="All">Tất cả ({students.length})</option>
+          <option value="Nam">♂ Nam ({soNam})</option>
+          <option value="Nu"> ♀ Nữ  ({soNu})</option>
+        </select>
+
+        {/* Đếm kết quả */}
         <div className="flex items-center gap-1.5 text-sm text-gray-500 shrink-0">
           <Users className="w-4 h-4 text-gray-400" />
-          <span className="font-semibold text-[#5a1a1a]">{students.length}</span> đoàn sinh
-          {search && filtered.length !== students.length && (
-            <span className="text-gray-400 ml-1">
-              · tìm thấy <strong>{filtered.length}</strong>
-            </span>
+          <span className="font-semibold text-[#5a1a1a]">{filtered.length}</span>
+          <span>/ {students.length} đoàn sinh</span>
+          {(search || genderFilter !== 'All') && filtered.length !== students.length && (
+            <span className="text-xs text-gray-400">(đang lọc)</span>
           )}
         </div>
 
@@ -306,13 +336,13 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
                   </td>
 
                   <td className="px-4 py-3 text-center">
-                    <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                      s.gioiTinh === 'Nam'
-                        ? 'bg-sky-100 text-sky-700'
-                        : 'bg-pink-100 text-pink-700'
-                    }`}>
-                      {s.gioiTinh === 'Nam' ? '♂ Nam' : '♀ Nữ'}
-                    </span>
+                    {s.gioiTinh === 'Nam' ? (
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700">♂ Nam</span>
+                    ) : s.gioiTinh === 'Nu' ? (
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700">♀ Nữ</span>
+                    ) : (
+                      <span className="text-xs italic text-gray-300">Chưa cập nhật</span>
+                    )}
                   </td>
 
                   <td className="px-4 py-3 text-xs text-gray-500">

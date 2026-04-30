@@ -1,7 +1,23 @@
 import { useEffect, useState, useMemo } from 'react';
-import { CheckCircle2, Minus, Loader2 } from 'lucide-react';
+import { CheckCircle2, Minus, Loader2, Search } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
+
+// Highlight từ khoá trong chuỗi text
+const Highlight = ({ text = '', query = '' }) => {
+  if (!query.trim()) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === query.toLowerCase()
+          ? <mark key={i} className="bg-[#D4AF37]/30 text-[#3d1515] rounded px-0.5 not-italic">{p}</mark>
+          : p
+      )}
+    </>
+  );
+};
 
 // Lấy tên chính (từ cuối) để sort: "Nguyễn Ngọc Bảo Hân" → "Hân"
 const getTenChinh = (hoTen = '') => hoTen.trim().split(/\s+/).pop() ?? '';
@@ -153,8 +169,16 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
   const countPresentDay = (date)      => records.filter(r => r.date === date && r.present).length;
   const today = new Date().toISOString().slice(0, 10);
 
-  // Danh sách đã sắp xếp theo tên chính
-  const sorted = useMemo(() => sortByTenChinh(students), [students]);
+  const [search, setSearch] = useState('');
+
+  // Sắp xếp một lần, lọc theo search (tên thánh + họ tên)
+  const sorted   = useMemo(() => sortByTenChinh(students), [students]);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q
+      ? sorted.filter(s => `${s.tenThanh} ${s.hoTen}`.toLowerCase().includes(q))
+      : sorted;
+  }, [sorted, search]);
 
   if (loading) return (
     <div className="text-center py-12 text-[#8B0000]/40 text-sm italic tracking-wide flex items-center justify-center gap-2">
@@ -168,8 +192,10 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-[#5a1a1a] font-medium">Năm học:</label>
+
+        {/* Trái: Năm học + Search */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-sm text-[#5a1a1a] font-medium shrink-0">Năm học:</label>
           <select
             className="input w-auto! py-1! text-sm rounded-xl"
             value={selNamHoc?._id || ''}
@@ -181,12 +207,34 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
               </option>
             ))}
           </select>
+
+          {/* Ô tìm kiếm */}
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+              style={{ color: '#D4AF37' }}
+            />
+            <input
+              className="h-9 pl-8 pr-3 text-sm bg-white outline-none transition w-52"
+              style={{ borderRadius: '9999px', border: '1.5px solid #e5d5b5', color: '#3d1515' }}
+              onFocus={e  => (e.target.style.borderColor = '#D4AF37')}
+              onBlur={e   => (e.target.style.borderColor = '#e5d5b5')}
+              placeholder="Tìm tên Thánh, họ tên..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
         </div>
+
+        {/* Phải: Thống kê + Xuất Excel */}
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm text-gray-500">
             Tổng buổi: <strong className="text-gray-700">{sundays.length}</strong>
             &nbsp;·&nbsp;
-            Đoàn sinh: <strong className="text-gray-700">{students.length}</strong>
+            {search && filtered.length !== students.length
+              ? <><strong className="text-[#8B0000]">{filtered.length}</strong> / {students.length} đoàn sinh</>
+              : <><strong className="text-gray-700">{students.length}</strong> đoàn sinh</>
+            }
           </span>
           {selNamHoc && (
             <ExportButton
@@ -265,7 +313,7 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
                 </thead>
 
                 <tbody>
-                  {sorted.map((s, idx) => {
+                  {filtered.map((s, idx) => {
                     const soCoMat = countPresent(s._id);
                     const soVang  = sundays.length - soCoMat;
                     const pct     = sundays.length > 0
@@ -291,8 +339,12 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
                           className="sticky left-10 z-10 px-4 py-2 border-r border-amber-100/60"
                           style={{ background: idx % 2 === 0 ? '#FDFAF5' : '#faf5eb' }}
                         >
-                          <span className="text-[#D4AF37] text-[11px] font-medium">{s.tenThanh}</span>
-                          <span className="block font-semibold text-[#3d1515] text-sm leading-tight">{s.hoTen}</span>
+                          <span className="text-[#D4AF37] text-[11px] font-medium">
+                            <Highlight text={s.tenThanh} query={search} />
+                          </span>
+                          <span className="block font-semibold text-[#3d1515] text-sm leading-tight">
+                            <Highlight text={s.hoTen} query={search} />
+                          </span>
                         </td>
 
                         {/* Ô điểm danh từng ngày */}

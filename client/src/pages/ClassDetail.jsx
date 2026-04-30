@@ -96,10 +96,27 @@ const ClassDetail = () => {
               {lop.tenLop}
             </h1>
             <p className="text-sm text-gray-500 mt-1.5">
-              Sĩ số:&nbsp;<strong className="text-[#5a1a1a]">{students.length}</strong>&nbsp;đoàn sinh
-              {lop.namHoc && (
-                <>&nbsp;·&nbsp;Năm học:&nbsp;<strong className="text-[#5a1a1a]">{lop.namHoc.ten}</strong></>
-              )}
+              {(() => {
+                const soNam = students.filter(s => s.gioiTinh === 'Nam').length;
+                const soNu  = students.filter(s => s.gioiTinh === 'Nu').length;
+                return (
+                  <>
+                    Sĩ số:&nbsp;<strong className="text-[#5a1a1a]">{students.length}</strong>&nbsp;đoàn sinh
+                    {students.length > 0 && (
+                      <span className="text-gray-400">
+                        &nbsp;(
+                        <span className="font-semibold text-sky-600">{soNam}&nbsp;Nam</span>
+                        &nbsp;–&nbsp;
+                        <span className="font-semibold text-pink-500">{soNu}&nbsp;Nữ</span>
+                        )
+                      </span>
+                    )}
+                    {lop.namHoc && (
+                      <>&nbsp;·&nbsp;Năm học:&nbsp;<strong className="text-[#5a1a1a]">{lop.namHoc.ten}</strong></>
+                    )}
+                  </>
+                );
+              })()}
             </p>
           </div>
 
