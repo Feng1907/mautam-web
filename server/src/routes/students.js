@@ -4,8 +4,9 @@ const { checkAuth } = require('../middlewares/checkAuth');
 const checkClassPermission = require('../middlewares/checkClassPermission');
 
 // Xem — tất cả đã đăng nhập
-router.get('/:lopId',     checkAuth, ctrl.getByClass);
-router.get('/:lopId/:id', checkAuth, ctrl.getOne);
+router.get('/:lopId',              checkAuth, ctrl.getByClass);
+router.get('/:lopId/:id/lich-su',  checkAuth, ctrl.lichSu);
+router.get('/:lopId/:id',          checkAuth, ctrl.getOne);
 
 // Thêm — lopId lấy từ req.body.lop
 router.post('/', checkAuth, checkClassPermission, ctrl.create);

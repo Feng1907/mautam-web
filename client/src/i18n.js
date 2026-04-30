@@ -134,6 +134,8 @@ const vi = {
       users:      'NGƯỜI DÙNG',
       classes:    'LỚP HỌC',
       schoolYear: 'NĂM HỌC',
+      promotion:  'NIÊN HỌC',
+      stats:      'THỐNG KÊ',
       export:     'EXPORT',
     },
     dashboard: {
@@ -313,6 +315,8 @@ const en = {
       users:      'USERS',
       classes:    'CLASSES',
       schoolYear: 'SCHOOL YEAR',
+      promotion:  'PROMOTION',
+      stats:      'STATS',
       export:     'EXPORT',
     },
     dashboard: {
