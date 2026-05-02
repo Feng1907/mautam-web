@@ -19,6 +19,7 @@
 | 10 | Thư viện ảnh Firebase | ✅ Hoàn thành |
 | 11 | UI Spiritual Modernism + Chuyên cần + Lên lớp + Nhân sự | ✅ Hoàn thành |
 | 12 | Polish: Báo cáo tổng kết, Email phụ huynh, Lời Chúa, Stats, Avatar, Lịch sử điểm | ✅ Hoàn thành |
+| 13 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | 🔜 Sắp tới |
 
 ---
 
