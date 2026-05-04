@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { checkAuth }            = require('../middlewares/checkAuth');
-const { checkClassPermission } = require('../middlewares/checkClassPermission');
+const checkClassPermission = require('../middlewares/checkClassPermission');
 const ctrl                     = require('../controllers/chuyenCanController');
 
 // GET lấy điểm chuyên cần cả lớp
