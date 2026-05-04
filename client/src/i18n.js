@@ -74,7 +74,7 @@ const vi = {
     gospelFallback: 'Bấm để đọc bài đọc hôm nay',
     loading:        'Đang tải…',
     noData:         'Không tải được dữ liệu',
-    feastWidget:    'Lễ tháng 4 / 2026',
+    feastWidget:    'Lịch lễ tháng',
     colors: {
       trang: 'Màu Trắng',
       do:    'Màu Đỏ',
