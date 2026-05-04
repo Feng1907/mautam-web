@@ -3,8 +3,8 @@
 <img
   src="client/public/images/Chan Phuoc Anre Phu Yen.jpg"
   alt="Chân Phước Anrê Phú Yên"
-  width="180"
-  style="border-radius: 50%; border: 4px solid #D4AF37;"
+  width="100%"
+  style="max-width: 800px; border-radius: 12px; border: 2px solid #D4AF37; shadow: 0 4px 12px rgba(0,0,0,0.5);"
 />
 
 # XỨ ĐOÀN ANRÊ PHÚ YÊN – MẪU TÂM
