@@ -38,6 +38,7 @@ app.use('/api/merit',      require('./routes/merit'));
 app.use('/api/chuyen-can', require('./routes/chuyencan'));
 
 app.use('/api/liturgy',   require('./routes/liturgy'));
+app.use('/api/loi-chua',  require('./routes/loiChua'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
