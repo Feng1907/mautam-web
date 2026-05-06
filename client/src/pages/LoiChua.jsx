@@ -1,77 +1,36 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Scroll, Music2, BookOpen, Cross,
-  Volume2, VolumeX, Quote, ChevronRight, ChevronLeft, CalendarDays, Sun,
+  ArrowLeft, Scroll, Music2, BookOpen, Cross, FlameIcon,
+  Quote, ChevronRight, ChevronLeft, CalendarDays, Sun,
+  Copy, Check, Share2,
 } from 'lucide-react';
-import LoadingSpinner from '../components/LoadingSpinner';
 
-// ─── Màu nhấn theo màu phụng vụ ─────────────────────────────────────────────
+// ─── API base ────────────────────────────────────────────────────────────────
+const API = import.meta.env.VITE_API_URL || '';
 
+// ─── Màu phụng vụ (label được override bởi seasonName từ API) ────────────────
 const ACCENT = {
-  do:    { text: 'text-red-700',    border: 'border-red-400',   bg: 'bg-red-50',    ring: 'ring-red-200'   },
-  trang: { text: 'text-amber-700',  border: 'border-amber-400', bg: 'bg-amber-50',  ring: 'ring-amber-200' },
-  tim:   { text: 'text-purple-700', border: 'border-purple-400',bg: 'bg-purple-50', ring: 'ring-purple-200'},
-  xanh:  { text: 'text-green-700',  border: 'border-green-400', bg: 'bg-green-50',  ring: 'ring-green-200' },
+  do:    { text: 'text-red-700',    border: 'border-red-300',    bg: 'bg-red-50',    bar: 'bg-red-500'    },
+  trang: { text: 'text-amber-700',  border: 'border-amber-300',  bg: 'bg-amber-50',  bar: 'bg-amber-400'  },
+  tim:   { text: 'text-purple-700', border: 'border-purple-300', bg: 'bg-purple-50', bar: 'bg-purple-500' },
+  hong:  { text: 'text-pink-700',   border: 'border-pink-300',   bg: 'bg-pink-50',   bar: 'bg-pink-400'   },
+  xanh:  { text: 'text-green-700',  border: 'border-green-300',  bg: 'bg-green-50',  bar: 'bg-green-500'  },
 };
 
-// ─── Metadata từng section ────────────────────────────────────────────────────
-
+// ─── Section metadata ─────────────────────────────────────────────────────────
 const SECTION_META = {
-  baidoc1: { label: 'Bài Đọc 1', Icon: Scroll,   hue: '#3b82f6' },
-  dapca:   { label: 'Đáp Ca',    Icon: Music2,   hue: '#22c55e' },
-  baidoc2: { label: 'Bài Đọc 2', Icon: BookOpen, hue: '#a855f7' },
-  phucam:  { label: 'Phúc Âm',   Icon: Cross,    hue: '#ef4444' },
+  baidoc1: { label: 'Bài Đọc 1',        Icon: Scroll,     hue: '#3b82f6' },
+  dapca:   { label: 'Đáp Ca',            Icon: Music2,     hue: '#22c55e' },
+  baidoc2: { label: 'Bài Đọc 2',        Icon: BookOpen,   hue: '#a855f7' },
+  tunghoe: { label: 'Tung Hô Tin Mừng', Icon: FlameIcon,  hue: '#f59e0b' },
+  phucam:  { label: 'Phúc Âm',          Icon: Cross,      hue: '#ef4444' },
 };
 
-// ─── Lịch mini ───────────────────────────────────────────────────────────────
-
-const MiniCalendar = () => {
-  const today = new Date();
-  const year  = today.getFullYear();
-  const month = today.getMonth();
-  const firstDay = new Date(year, month, 1).getDay(); // 0=CN
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthName = today.toLocaleString('vi-VN', { month: 'long', year: 'numeric' });
-
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
-      <p className="text-xs font-bold capitalize tracking-wider text-stone-500 mb-3">
-        {monthName}
-      </p>
-      <div className="grid grid-cols-7 gap-0.5 text-center">
-        {['CN','2','3','4','5','6','7'].map(d => (
-          <span key={d} className="text-[9px] font-bold text-stone-400 pb-1">{d}</span>
-        ))}
-        {cells.map((d, i) => (
-          <span
-            key={i}
-            className={[
-              'text-[11px] w-6 h-6 flex items-center justify-center rounded-full mx-auto',
-              d === today.getDate()
-                ? 'bg-red-600 text-white font-bold'
-                : d ? 'text-stone-600 hover:bg-stone-100' : '',
-            ].join(' ')}
-          >
-            {d || ''}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ─── Helpers ngày ────────────────────────────────────────────────────────────
-
+// ─── Helpers ngày ─────────────────────────────────────────────────────────────
 const toISODate = (d) => d.toISOString().slice(0, 10);
 
-// Chúa Nhật gần nhất (hôm nay nếu là CN, hoặc CN tới)
 const getNextSunday = (from = new Date()) => {
   const d = new Date(from);
   const day = d.getDay();
@@ -81,90 +40,167 @@ const getNextSunday = (from = new Date()) => {
 };
 
 const addDays = (isoDate, n) => {
-  const d = new Date(isoDate);
+  const d = new Date(isoDate + 'T00:00:00');
   d.setDate(d.getDate() + n);
   return toISODate(d);
 };
 
-// ─── Fetch & parse ────────────────────────────────────────────────────────────
-
-const fetchData = async (isoDate) => {
-  try {
-    const res = await fetch(`https://www.loichua.net/api/daily?date=${isoDate}`);
-    if (!res.ok) throw new Error();
-    return await res.json();
-  } catch { return null; }
+const THU_VN = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+const fmtDateLabel = (iso) => {
+  const d = new Date(iso + 'T00:00:00');
+  return `${THU_VN[d.getDay()]}, ngày ${d.getDate()} tháng ${d.getMonth()+1} năm ${d.getFullYear()}`;
 };
 
-const normalise = (raw) => {
-  if (!raw) return null;
-  const pick = (a, b) => raw[a] || raw[b];
-  const toSec = (key, label, src) => src
-    ? { key, label, trich: src.trich || src.title || '', noidung: src.noidung || src.text || '' }
-    : null;
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+const SkeletonLine = ({ w = 'w-full', h = 'h-4' }) => (
+  <div className={`${w} ${h} rounded bg-stone-200 animate-pulse`} />
+);
 
-  const sections = [
-    toSec('baidoc1', 'Bài Đọc 1', pick('baidoc1', 'reading1')),
-    toSec('dapca',   'Đáp Ca',    pick('dapca',   'psalm')),
-    toSec('baidoc2', 'Bài Đọc 2', pick('baidoc2', 'reading2')),
-    toSec('phucam',  'Phúc Âm',   pick('phucam',  'gospel')),
-  ].filter(Boolean).filter(s => s.noidung || s.trich);
+const SkeletonSection = () => (
+  <div className="space-y-3">
+    <div className="flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-full bg-stone-200 animate-pulse shrink-0" />
+      <div className="space-y-1 flex-1">
+        <SkeletonLine w="w-24" h="h-3" />
+        <SkeletonLine w="w-36" h="h-3" />
+      </div>
+    </div>
+    <SkeletonLine />
+    <SkeletonLine />
+    <SkeletonLine w="w-5/6" />
+    <SkeletonLine w="w-4/5" />
+    <SkeletonLine />
+    <SkeletonLine w="w-3/4" />
+  </div>
+);
 
-  // câu vàng: dòng đầu tiên của Phúc Âm
-  const phucam  = sections.find(s => s.key === 'phucam');
-  const keyVerse = phucam?.noidung
-    ? phucam.noidung.replace(/<[^>]+>/g, '').split('\n').filter(Boolean)[0]?.slice(0, 160)
-    : '';
+const SkeletonCard = () => (
+  <div className="bg-[#fdfaf5] rounded-3xl border border-stone-200 shadow-md px-6 sm:px-10 py-8 space-y-8">
+    <div className="w-16 h-1 rounded-full bg-stone-200 animate-pulse mb-6" />
+    <SkeletonSection />
+    <hr className="border-stone-200" />
+    <SkeletonSection />
+    <hr className="border-stone-200" />
+    <SkeletonSection />
+  </div>
+);
 
-  return {
-    name:      raw.name || raw.title || raw.liturgicalDay || 'Lời Chúa hôm nay',
-    mauKey:    raw.color || 'xanh',
-    sections,
-    keyVerse,
-    tinMungTen: phucam?.trich || '',
-    imageUrl:  raw.image || raw.imageUrl || null,
+// ─── Nút Sao chép ─────────────────────────────────────────────────────────────
+const CopyButton = ({ text, label = 'Sao chép' }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      // fallback: execCommand
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    }
   };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={[
+        'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition',
+        copied
+          ? 'bg-green-50 border-green-300 text-green-700'
+          : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50',
+      ].join(' ')}
+      title={label}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? 'Đã sao chép!' : label}
+    </button>
+  );
+};
+
+// ─── Nút Chia sẻ ─────────────────────────────────────────────────────────────
+const ShareButton = ({ title, text }) => {
+  const canShare = typeof navigator !== 'undefined' && !!navigator.share;
+
+  const handleShare = async () => {
+    if (canShare) {
+      try {
+        await navigator.share({ title, text, url: window.location.href });
+      } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(`${title}\n\n${text}\n\n${window.location.href}`);
+      alert('Đã sao chép liên kết để chia sẻ!');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border bg-white border-stone-200 text-stone-600 hover:bg-stone-50 transition"
+      title="Chia sẻ"
+    >
+      <Share2 size={12} /> Chia sẻ
+    </button>
+  );
 };
 
 // ─── ReadingSection ───────────────────────────────────────────────────────────
-
-const ReadingSection = ({ sec, idx, accent }) => {
+const ReadingSection = ({ sec, idx }) => {
   const m = SECTION_META[sec.key] || SECTION_META.baidoc1;
+
+  // Plain text để copy: bỏ thẻ HTML
+  const plainForCopy = [
+    sec.label,
+    sec.trich ? `(${sec.trich})` : '',
+    '',
+    sec.noidung,
+  ].filter(Boolean).join('\n');
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 + idx * 0.12, duration: 0.4, ease: 'easeOut' }}
     >
-      {/* divider */}
       {idx > 0 && <hr className="border-stone-200 my-6" />}
 
-      {/* section heading */}
-      <div className="flex items-center gap-2.5 mb-4">
-        <span
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-          style={{ backgroundColor: m.hue + '18', color: m.hue }}
-        >
-          <m.Icon size={15} />
-        </span>
-        <div>
+      {/* Heading section */}
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2.5">
           <span
-            className="text-[11px] font-black uppercase tracking-widest"
-            style={{ color: m.hue }}
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: m.hue + '18', color: m.hue }}
           >
-            {sec.label}
+            <m.Icon size={15} />
           </span>
-          {sec.trich && (
-            <p className="text-xs text-stone-500 italic leading-tight mt-0.5">{sec.trich}</p>
-          )}
+          <div>
+            <span
+              className="text-[11px] font-black uppercase tracking-widest"
+              style={{ color: m.hue }}
+            >
+              {sec.label}
+            </span>
+            {sec.trich && (
+              <p className="text-xs text-stone-500 italic leading-tight mt-0.5">{sec.trich}</p>
+            )}
+          </div>
         </div>
+
+        {/* Nút copy section */}
+        {sec.noidung && <CopyButton text={plainForCopy} label="Sao chép" />}
       </div>
 
-      {/* nội dung */}
+      {/* Nội dung */}
       {sec.noidung ? (
         <div
-          className="prose-lora text-stone-700 text-[15px] leading-[1.9] whitespace-pre-line"
-          style={{ fontFamily: "'Lora', Georgia, serif" }}
+          className="text-stone-750 text-[16px] leading-loose text-justify"
+          style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
           dangerouslySetInnerHTML={{ __html: sec.noidung }}
         />
       ) : (
@@ -174,39 +210,8 @@ const ReadingSection = ({ sec, idx, accent }) => {
   );
 };
 
-// ─── AudioPlayer (stub — no real audio URL from API) ─────────────────────────
-
-const AudioPlayer = ({ label }) => {
-  const [playing, setPlaying] = useState(false);
-  return (
-    <div className="flex items-center gap-3 bg-stone-100 rounded-xl px-4 py-2.5 border border-stone-200">
-      <button
-        onClick={() => setPlaying(p => !p)}
-        className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 transition flex items-center justify-center text-white shrink-0"
-        aria-label={playing ? 'Dừng' : 'Nghe'}
-      >
-        {playing ? <VolumeX size={14} /> : <Volume2 size={14} />}
-      </button>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-stone-600 truncate">{label}</p>
-        <p className="text-[10px] text-stone-400">Audio — sắp ra mắt</p>
-      </div>
-      <div className="flex gap-0.5 items-end h-4">
-        {[3,5,4,6,3,5,4].map((h, i) => (
-          <span
-            key={i}
-            className={`w-0.5 rounded-full transition-all duration-300 ${playing ? 'bg-red-500' : 'bg-stone-300'}`}
-            style={{ height: playing ? `${h * 2}px` : '4px', animationDelay: `${i * 80}ms` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // ─── ReadingProgressBar ───────────────────────────────────────────────────────
-
-const ReadingProgress = () => {
+const ReadingProgress = ({ accentBar }) => {
   const [pct, setPct] = useState(0);
   useEffect(() => {
     const onScroll = () => {
@@ -217,10 +222,11 @@ const ReadingProgress = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-stone-200">
       <motion.div
-        className="h-full bg-red-600 origin-left"
+        className={`h-full origin-left ${accentBar}`}
         style={{ scaleX: pct / 100 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       />
@@ -228,81 +234,139 @@ const ReadingProgress = () => {
   );
 };
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
+// ─── MiniCalendar ─────────────────────────────────────────────────────────────
+const MiniCalendar = ({ selectedDate, onSelect }) => {
+  const sel   = new Date(selectedDate + 'T00:00:00');
+  const today = new Date();
+  const year  = sel.getFullYear();
+  const month = sel.getMonth();
+  const firstDay    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName   = sel.toLocaleString('vi-VN', { month: 'long', year: 'numeric' });
 
-const Sidebar = ({ imageUrl, tinMungTen, keyVerse, accent }) => (
-  <motion.aside
-    className="flex flex-col gap-4"
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: 0.25, duration: 0.45 }}
-  >
-    {/* Hình ảnh Tin Mừng */}
-    <div className="rounded-2xl overflow-hidden border border-stone-200 shadow-sm bg-stone-100 aspect-4/3 relative">
-      {imageUrl ? (
-        <img src={imageUrl} alt="Tin Mừng" className="w-full h-full object-cover" />
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-stone-300">
-          <BookOpen size={36} strokeWidth={1} />
-          <p className="text-xs">{tinMungTen || 'Hình ảnh Tin Mừng'}</p>
-        </div>
-      )}
-      {tinMungTen && (
-        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent px-3 py-2">
-          <p className="text-white text-[11px] font-semibold leading-snug line-clamp-2">{tinMungTen}</p>
-        </div>
-      )}
-    </div>
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
 
-    {/* Lịch mini */}
-    <MiniCalendar />
+  const makeIso = (d) => {
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  };
+  const todayIso = toISODate(today);
 
-    {/* Câu vàng */}
-    {keyVerse && (
-      <div className={`rounded-2xl p-4 border ${accent.border} ${accent.bg}`}>
-        <div className={`flex items-center gap-1.5 mb-2 ${accent.text}`}>
-          <Quote size={13} />
-          <span className="text-[10px] font-black uppercase tracking-widest">Câu vàng hôm nay</span>
-        </div>
-        <p
-          className={`text-sm leading-relaxed italic ${accent.text}`}
-          style={{ fontFamily: "'Lora', Georgia, serif" }}
-        >
-          "{keyVerse}"
-        </p>
+  return (
+    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+      <p className="text-xs font-bold capitalize tracking-wider text-stone-500 mb-3">{monthName}</p>
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {['CN','2','3','4','5','6','7'].map(d => (
+          <span key={d} className="text-[9px] font-bold text-stone-400 pb-1">{d}</span>
+        ))}
+        {cells.map((d, i) => {
+          const iso = d ? makeIso(d) : null;
+          const isToday = iso === todayIso;
+          const isSel   = iso === selectedDate;
+          const isFut   = iso > todayIso;
+          return (
+            <button
+              key={i}
+              disabled={!d || isFut}
+              onClick={() => iso && onSelect(iso)}
+              className={[
+                'text-[11px] w-6 h-6 flex items-center justify-center rounded-full mx-auto transition',
+                !d ? '' :
+                isSel && isToday ? 'bg-red-600 text-white font-bold' :
+                isSel ? 'bg-red-100 text-red-700 font-bold' :
+                isToday ? 'ring-1 ring-red-400 text-red-600 font-bold' :
+                isFut  ? 'text-stone-300 cursor-not-allowed' :
+                'text-stone-600 hover:bg-stone-100 cursor-pointer',
+              ].join(' ')}
+            >
+              {d || ''}
+            </button>
+          );
+        })}
       </div>
-    )}
-  </motion.aside>
-);
-
-// ─── Fallback sections khi API lỗi ───────────────────────────────────────────
-
-const FALLBACK_SECTIONS = [
-  { key: 'baidoc1', label: 'Bài Đọc 1', trich: '', noidung: '' },
-  { key: 'dapca',   label: 'Đáp Ca',    trich: '', noidung: '' },
-  { key: 'phucam',  label: 'Phúc Âm',   trich: '', noidung: '' },
-];
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-const THU_VN = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
-
-const fmtDateLabel = (isoDate) => {
-  const d = new Date(isoDate);
-  return `${THU_VN[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    </div>
+  );
 };
 
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+const Sidebar = ({ tinMungTen, keyVerse, accent, selectedDate, onSelect, allSections }) => {
+  // Plain text toàn bộ để chia sẻ
+  const fullText = allSections
+    .map(s => `【${s.label}】${s.trich ? ` (${s.trich})` : ''}\n${s.noidung}`)
+    .join('\n\n---\n\n');
+
+  return (
+    <motion.aside
+      className="flex flex-col gap-4"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.25, duration: 0.45 }}
+    >
+      {/* Lịch mini tương tác */}
+      <MiniCalendar selectedDate={selectedDate} onSelect={onSelect} />
+
+      {/* Câu vàng */}
+      {keyVerse && (
+        <div className={`rounded-2xl p-4 border ${accent.border} ${accent.bg}`}>
+          <div className={`flex items-center gap-1.5 mb-2 ${accent.text}`}>
+            <Quote size={13} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Câu Vàng Hôm Nay</span>
+          </div>
+          <p
+            className={`text-[15px] leading-relaxed italic ${accent.text}`}
+            style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
+          >
+            "{keyVerse}"
+          </p>
+        </div>
+      )}
+
+      {/* Nút Chia sẻ toàn bộ */}
+      {allSections.length > 0 && (
+        <div className="rounded-2xl p-4 border border-stone-200 bg-white shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-3">
+            Chia sẻ cho Huynh Trưởng
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <CopyButton text={fullText} label="Sao chép tất cả" />
+            <ShareButton title={tinMungTen || 'Lời Chúa hôm nay'} text={fullText} />
+          </div>
+        </div>
+      )}
+    </motion.aside>
+  );
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 const LoiChua = () => {
   const navigate  = useNavigate();
   const todayIso  = toISODate(new Date());
   const [date,    setDate]   = useState(todayIso);
-  const [raw,     setRaw]    = useState(null);
+  const [data,    setData]   = useState(null);
   const [loading, setLoad]   = useState(true);
+  const [error,   setError]  = useState(null);
 
-  const load = useCallback((isoDate) => {
+  const load = useCallback(async (isoDate) => {
     setLoad(true);
-    setRaw(null);
-    fetchData(isoDate).then(r => setRaw(normalise(r))).finally(() => setLoad(false));
+    setData(null);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/loi-chua?date=${isoDate}`);
+      const json = await res.json();
+      if (json.success) {
+        setData(json.data);
+      } else {
+        setError(json.message || 'Không tải được dữ liệu.');
+      }
+    } catch {
+      setError('Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      setLoad(false);
+    }
   }, []);
 
   useEffect(() => { load(date); }, [date, load]);
@@ -310,21 +374,18 @@ const LoiChua = () => {
   const goSunday = () => setDate(getNextSunday());
   const isToday  = date === todayIso;
 
-  const data    = raw;
   const mauKey  = data?.mauKey || 'xanh';
   const accent  = ACCENT[mauKey] || ACCENT.xanh;
-  const sections = data?.sections?.length ? data.sections : FALLBACK_SECTIONS;
-
-  if (loading) return <LoadingSpinner />;
+  const sections = data?.sections || [];
 
   return (
     <>
-      <ReadingProgress />
+      <ReadingProgress accentBar={accent.bar} />
 
       <main className="flex-1 bg-stone-50 min-h-screen">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
 
-          {/* ── Sticky header ── */}
+          {/* ── Header ── */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -343,17 +404,22 @@ const LoiChua = () => {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Phụng Vụ Lời Chúa</p>
                 <h1
                   className="text-xl font-bold text-stone-900 leading-tight"
-                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                  style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
                 >
-                  {data?.name || 'Lời Chúa hôm nay'}
+                  {loading ? (
+                    <span className="inline-block w-48 h-5 bg-stone-200 rounded animate-pulse" />
+                  ) : (
+                    data?.name || 'Lời Chúa hôm nay'
+                  )}
                 </h1>
                 <p className="text-xs text-stone-400 mt-0.5">{fmtDateLabel(date)}</p>
               </div>
             </div>
 
-            {/* Accent badge */}
             <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${accent.text} ${accent.border} ${accent.bg}`}>
-              {mauKey === 'do' ? 'Màu Đỏ' : mauKey === 'tim' ? 'Màu Tím' : mauKey === 'trang' ? 'Màu Trắng' : 'Thường Niên'}
+              {loading
+                ? <span className="inline-block w-20 h-3 bg-current opacity-20 rounded animate-pulse" />
+                : (data?.seasonName || 'Mùa Thường Niên')}
             </span>
           </motion.div>
 
@@ -362,7 +428,7 @@ const LoiChua = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08, duration: 0.3 }}
-            className="flex items-center gap-2 mb-4 flex-wrap"
+            className="flex items-center gap-2 mb-5 flex-wrap"
           >
             <button
               onClick={() => setDate(d => addDays(d, -1))}
@@ -375,7 +441,7 @@ const LoiChua = () => {
             <input
               type="date"
               value={date}
-              max={toISODate(new Date())}
+              max={todayIso}
               onChange={e => e.target.value && setDate(e.target.value)}
               className="h-9 px-3 text-sm border border-stone-200 rounded-full bg-white text-stone-700 outline-none focus:border-red-400 transition"
             />
@@ -407,17 +473,7 @@ const LoiChua = () => {
             </button>
           </motion.div>
 
-          {/* ── Audio player ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.35 }}
-            className="mb-5"
-          >
-            <AudioPlayer label={data?.name || 'Lời Chúa hôm nay'} />
-          </motion.div>
-
-          {/* ── 2-col grid ── */}
+          {/* ── 2-col layout ── */}
           <div className="grid lg:grid-cols-[1fr_280px] gap-5 items-start">
 
             {/* Cột trái — Paper */}
@@ -425,46 +481,93 @@ const LoiChua = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.4 }}
-              className="bg-[#fdfaf5] rounded-3xl border border-stone-200 shadow-md px-6 sm:px-10 py-8"
             >
-              {/* top accent line */}
-              <div className={`h-1 w-16 rounded-full mb-6 ${accent.border.replace('border-', 'bg-')}`} />
-
-              {data ? (
-                sections.map((sec, i) => (
-                  <ReadingSection key={sec.key} sec={sec} idx={i} accent={accent} />
-                ))
-              ) : (
-                <div className="py-12 text-center">
-                  <BookOpen size={40} className="text-stone-300 mx-auto mb-3" strokeWidth={1} />
-                  <p className="text-sm text-stone-500 font-semibold mb-1">Không tải được Lời Chúa hôm nay</p>
-                  <p className="text-xs text-stone-400">Vui lòng kiểm tra kết nối hoặc thử lại sau.</p>
-                  <button
-                    onClick={() => navigate('/gio-le')}
-                    className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div
+                    key="skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <ArrowLeft size={13} /> Về trang Giờ Lễ
-                  </button>
-                </div>
-              )}
+                    <SkeletonCard />
+                  </motion.div>
+                ) : error ? (
+                  <motion.div
+                    key="error"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-[#fdfaf5] rounded-3xl border border-stone-200 shadow-md px-6 sm:px-10 py-12 text-center"
+                  >
+                    <BookOpen size={40} className="text-stone-300 mx-auto mb-3" strokeWidth={1} />
+                    <p className="text-sm text-stone-500 font-semibold mb-1">Không tải được Lời Chúa</p>
+                    <p className="text-xs text-stone-400 mb-4">{error}</p>
+                    <button
+                      onClick={() => load(date)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition"
+                    >
+                      Thử lại
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={date}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-[#fdfaf5] rounded-3xl border border-stone-200 shadow-md px-6 sm:px-10 py-8"
+                  >
+                    {/* Accent bar */}
+                    <div className={`h-1 w-16 rounded-full mb-6 ${accent.bar}`} />
 
-              {/* footer */}
-              <p className="text-[10px] text-stone-300 text-center mt-8 pt-4 border-t border-stone-100">
-                Dữ liệu phụng vụ từ loichua.net · cập nhật hàng ngày
-              </p>
+                    {sections.length > 0 ? (
+                      sections.map((sec, i) => (
+                        <ReadingSection key={sec.key} sec={sec} idx={i} />
+                      ))
+                    ) : (
+                      <div className="py-12 text-center">
+                        <BookOpen size={40} className="text-stone-300 mx-auto mb-3" strokeWidth={1} />
+                        <p className="text-sm text-stone-500 font-semibold mb-1">
+                          Đang cập nhật Lời Chúa cho ngày này từ TGPSG
+                        </p>
+                        <p className="text-xs text-stone-400">
+                          Vui lòng thử lại sau hoặc chọn ngày khác.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Source footer */}
+                    <p className="text-[10px] text-stone-300 text-center mt-8 pt-4 border-t border-stone-100">
+                      Dữ liệu phụng vụ từ tgpsaigon.net · cập nhật hàng ngày
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
             {/* Cột phải */}
             <Sidebar
-              imageUrl={data?.imageUrl}
               tinMungTen={data?.tinMungTen}
               keyVerse={data?.keyVerse}
               accent={accent}
+              selectedDate={date}
+              onSelect={setDate}
+              allSections={sections}
             />
           </div>
 
         </div>
       </main>
+
+      {/* CSS cho voice-jesus */}
+      <style>{`
+        .voice-jesus {
+          color: #b91c1c;
+          font-style: italic;
+        }
+      `}</style>
     </>
   );
 };
