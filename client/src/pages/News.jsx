@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Newspaper, Bell, BellRing, LayoutGrid, ArrowRight, CalendarDays } from 'lucide-react';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -165,6 +165,7 @@ const News = () => {
   const [loai,    setLoai]    = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api.get('/posts', { params: { loai: loai || undefined, limit: 20 } })
       .then(r => setPosts(r.data.data))

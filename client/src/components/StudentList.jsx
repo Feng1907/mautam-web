@@ -10,7 +10,7 @@ const toDateInput = (iso) => iso ? iso.slice(0, 10) : '';
 
 const emptyForm = {
   tenThanh: '', hoTen: '', ngaySinh: '', gioiTinh: 'Nam',
-  phuHuynh: { hoTen: '', soDienThoai: '' },
+  phuHuynh: { hoTen: '', soDienThoai: '', email: '' },
 };
 
 /**
@@ -174,8 +174,9 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
           tenThanh: initial.tenThanh, hoTen: initial.hoTen,
           ngaySinh: toDateInput(initial.ngaySinh), gioiTinh: initial.gioiTinh || 'Nam',
           phuHuynh: {
-            hoTen: initial.phuHuynh?.hoTen || '',
+            hoTen:       initial.phuHuynh?.hoTen       || '',
             soDienThoai: initial.phuHuynh?.soDienThoai || '',
+            email:       initial.phuHuynh?.email       || '',
           },
         }
       : emptyForm
@@ -322,6 +323,21 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Số điện thoại</label>
                 <input className="input rounded-xl" placeholder="0xxxxxxxxx"
                   value={form.phuHuynh.soDienThoai} onChange={e => setPh('soDienThoai', e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Email phụ huynh
+                  <span className="ml-1 font-normal text-amber-600">(dùng để nhận thông báo điểm danh)</span>
+                </label>
+                <input
+                  className="input rounded-xl"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={form.phuHuynh.email}
+                  onChange={e => setPh('email', e.target.value)}
+                  pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+                  title="Nhập địa chỉ email hợp lệ hoặc để trống"
+                />
               </div>
             </div>
           </div>

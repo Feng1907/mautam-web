@@ -2,9 +2,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const mongoose = require('mongoose');
 const connectDB = require('./db');
 
-const NamHoc = require('../models/NamHoc');
-const Class = require('../models/Class');
-const User = require('../models/User');
+const NamHoc   = require('../models/NamHoc');
+const Class    = require('../models/Class');
+const User     = require('../models/User');
+const Student  = require('../models/Student');
 
 // 12 lớp theo đúng PLAN.md
 const DS_LOP = [
@@ -25,7 +26,9 @@ const DS_LOP = [
 async function seed() {
   await connectDB();
   console.log('Đang xóa dữ liệu cũ...');
+  // Xóa Student trước Class để tránh orphan references
   await Promise.all([
+    Student.deleteMany({}),
     NamHoc.deleteMany({}),
     Class.deleteMany({}),
     User.deleteMany({}),
@@ -53,30 +56,31 @@ async function seed() {
   );
 
   // 3. Tạo tài khoản mẫu
+  // Dùng User.create() thay vì insertMany() để pre('save') hook chạy → mật khẩu được hash
   console.log('Tạo tài khoản mẫu...');
-  await User.insertMany([
-    {
+  await Promise.all([
+    User.create({
       hoTen: 'Admin Xứ Đoàn',
       email: 'admin@mautam.com',
       matKhau: 'Admin@123',
       vaiTro: 'admin',
-    },
-    {
+    }),
+    User.create({
       hoTen: 'Nguyễn Huynh Trưởng A',
       email: 'huynhtruong@mautam.com',
       matKhau: 'HT@12345',
       vaiTro: 'giaoly',
       chucVu: 'huynhtruong',
       phaiBatDauDoiMatKhau: true,
-    },
-    {
+    }),
+    User.create({
       hoTen: 'Trần Dự Trưởng B',
       email: 'dutruong@mautam.com',
       matKhau: 'DT@12345',
       vaiTro: 'giaoly',
       chucVu: 'dutruong',
       phaiBatDauDoiMatKhau: true,
-    },
+    }),
   ]);
 
   console.log('\n✅ Seed hoàn thành!');

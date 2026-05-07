@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { CheckCircle2, Minus, Loader2, Search } from 'lucide-react';
+import { CheckCircle2, Minus, Loader2, Search, Mail, X } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
 
@@ -171,6 +171,39 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
 
   const [search, setSearch] = useState('');
 
+  // ── State gửi thông báo ────────────────────────────────────────────────────
+  const [notifyModal, setNotifyModal] = useState(null); // null | { date, countEmail }
+  const [notifySending, setNotifySending] = useState(false);
+  const [notifyResult, setNotifyResult]   = useState(null); // { sent, skipped, errors }
+
+  // Đếm số phụ huynh có email để hiện trong modal xác nhận
+  const countWithEmail = useMemo(
+    () => students.filter(s => s.phuHuynh?.email).length,
+    [students]
+  );
+
+  const handleOpenNotify = (date) => {
+    setNotifyResult(null);
+    setNotifyModal({ date });
+  };
+
+  const handleSendNotify = async () => {
+    if (!notifyModal) return;
+    setNotifySending(true);
+    try {
+      const res = await api.post('/notify/diem-danh', {
+        lopId: lopId,
+        date:  notifyModal.date,
+        sendAll: true,
+      });
+      setNotifyResult(res.data);
+    } catch (err) {
+      setNotifyResult({ sent: 0, skipped: 0, errors: [{ error: err.response?.data?.message || err.message }] });
+    } finally {
+      setNotifySending(false);
+    }
+  };
+
   // Sắp xếp một lần, lọc theo search (tên thánh + họ tên)
   const sorted   = useMemo(() => sortByTenChinh(students), [students]);
   const filtered = useMemo(() => {
@@ -236,6 +269,17 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
               : <><strong className="text-gray-700">{students.length}</strong> đoàn sinh</>
             }
           </span>
+          {/* Nút gửi thông báo — chỉ hiện khi có ngày hôm nay hoặc chọn ngày gần nhất */}
+          {canEdit && sundays.length > 0 && (
+            <button
+              onClick={() => handleOpenNotify(sundays.includes(today) ? today : sundays[sundays.length - 1])}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all
+                         bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              Gửi thông báo phụ huynh
+            </button>
+          )}
           {selNamHoc && (
             <ExportButton
               url={`/api/export/attendance/${lopId}?namHocId=${selNamHoc._id}`}
@@ -409,6 +453,99 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Modal xác nhận gửi thông báo ── */}
+      {notifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+
+            {/* Header modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-amber-600" />
+                <h3 className="font-bold text-gray-800 text-sm">Gửi thông báo phụ huynh</h3>
+              </div>
+              <button onClick={() => setNotifyModal(null)} className="text-gray-300 hover:text-gray-500">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body modal */}
+            <div className="px-5 py-4">
+              {!notifyResult ? (
+                <>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    Gửi thông báo điểm danh ngày{' '}
+                    <strong className="text-gray-800">
+                      {new Date(notifyModal.date + 'T00:00:00').toLocaleDateString('vi-VN', {
+                        weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric',
+                      })}
+                    </strong>{' '}
+                    cho{' '}
+                    <strong className="text-amber-700">{countWithEmail} phụ huynh</strong> có email?
+                  </p>
+                  {countWithEmail === 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 mb-3">
+                      <p className="text-xs text-orange-700">
+                        ⚠️ Chưa có phụ huynh nào trong lớp có email. Vui lòng cập nhật thông tin phụ huynh trước.
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={handleSendNotify}
+                      disabled={notifySending || countWithEmail === 0}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold
+                                 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition"
+                    >
+                      {notifySending
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang gửi...</>
+                        : <><Mail className="w-3.5 h-3.5" /> Gửi</>}
+                    </button>
+                    <button
+                      onClick={() => setNotifyModal(null)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                    >
+                      Huỷ
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Kết quả sau khi gửi */
+                <>
+                  <div className={`rounded-xl px-4 py-3 mb-3 ${
+                    notifyResult.errors?.length > 0
+                      ? 'bg-orange-50 border border-orange-200'
+                      : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                      {notifyResult.errors?.length > 0 ? '⚠️ Gửi hoàn tất (có lỗi)' : '✅ Gửi thành công'}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Đã gửi: <strong className="text-green-700">{notifyResult.sent}</strong> email
+                      &nbsp;·&nbsp;
+                      Bỏ qua: <strong className="text-gray-500">{notifyResult.skipped}</strong>
+                      {' '}(chưa có email)
+                    </p>
+                    {notifyResult.errors?.length > 0 && (
+                      <p className="text-xs text-orange-700 mt-1">
+                        Lỗi: {notifyResult.errors.length} email không gửi được
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setNotifyModal(null)}
+                    className="w-full py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                  >
+                    Đóng
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

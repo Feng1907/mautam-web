@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, History, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -30,6 +30,7 @@ const PromoteTab = ({ classes, namHocList }) => {
 
   // Fetch đoàn sinh khi chọn lớp nguồn
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!fromLopId) { setStudents([]); setSelected(new Set()); return; }
     setLoadingSt(true);
     api.get(`/students/${fromLopId}`)

@@ -3,14 +3,17 @@
  *
  * Nguồn dữ liệu (theo thứ tự ưu tiên):
  *  1. tgpsaigon.net — lịch Việt Nam chính thống, đầy đủ Đáp ca + Tung hô
- *  2. loichua.net HTML — fallback
- *  3. loichua.net JSON API — fallback cuối
+ *  2. loichua.net HTML — fallback (nếu còn sống)
+ *  3. loichua.net JSON API — fallback cuối (nếu còn sống)
  *
  * Cache in-memory 6h: 100 user cùng ngày chỉ cào nguồn 1 lần.
  */
 
 const axios   = require('axios');
 const cheerio = require('cheerio');
+const Romcal  = require('romcal');
+const fs      = require('fs');
+const path    = require('path');
 
 // ── Cache ─────────────────────────────────────────────────────────────────────
 const CACHE     = new Map();
@@ -80,9 +83,10 @@ const SECTION_LABELS = {
 };
 
 const LABEL_PATTERNS = [
+  // baidoc2 phải đứng trước baidoc1 để "BÀI ĐỌC II" không bị khớp nhầm bởi regex baidoc1
+  { key: 'baidoc2', re: /bài\s*đọc\s*(2|ii|hai)/i },
   { key: 'baidoc1', re: /bài\s*đọc\s*(1|i|một)/i },
   { key: 'dapca',   re: /đáp\s*ca|thánh\s*vịnh/i },
-  { key: 'baidoc2', re: /bài\s*đọc\s*(2|ii|hai)/i },
   { key: 'tunghoe', re: /tung\s*hô|alleluia/i },
   { key: 'phucam',  re: /phúc\s*âm|tin\s*mừng/i },
 ];
@@ -117,15 +121,18 @@ const getSeasonFromRomcal = async (isoDate) => {
     const year = parseInt(y, 10);
 
     if (!ROMCAL_YEAR_CACHE.has(year)) {
-      const Romcal  = require('romcal');
-      let calendar  = Romcal.calendarFor({ year, locale: 'vi' });
+        let calendar  = Romcal.calendarFor({ year, locale: 'vi' });
       if (calendar && typeof calendar.then === 'function') calendar = await calendar;
       ROMCAL_YEAR_CACHE.set(year, Object.values(calendar));
     }
 
     const entries = ROMCAL_YEAR_CACHE.get(year);
     // Tìm entry khớp ngày (moment là ISO string: YYYY-MM-DD...)
-    const entry = entries.find(e => e?.moment?.slice(0, 10) === isoDate);
+    const allEntries = entries.filter(e => e?.moment?.slice(0, 10) === isoDate);
+    
+    // Ưu tiên các ngày lễ (SOLEMNITY, FEAST) hơn ngày thường (FERIA)
+    const entry = allEntries.find(e => ['SOLEMNITY', 'FEAST', 'SUNDAY'].includes(e.type)) || allEntries[0];
+    
     if (!entry) return null;
 
     const colorKey  = (entry.data?.meta?.liturgicalColor?.key || 'GREEN').toUpperCase();
@@ -142,89 +149,133 @@ const getSeasonFromRomcal = async (isoDate) => {
 };
 
 // ── Nguồn 1: tgpsaigon.net ───────────────────────────────────────────────────
-// URL format: https://tgpsaigon.net/loi-chua/ngay-DD-MM-YYYY
+// Cấu trúc mới (2026): bài viết theo slug dưới category loi-chua-hang-ngay
+// Category: https://tgpsaigon.net/diem-tin/loi-chua-hang-ngay-10
+// Date nằm trong .article-content-date: "Ngày DD/MM/YYYY"
 
-const tgpsaigonUrl = (isoDate) => {
-  const [y, m, d] = isoDate.split('-');
-  return `https://tgpsaigon.net/loi-chua/ngay-${d}-${m}-${y}`;
-};
+const TGPSG_CATEGORY = 'https://tgpsaigon.net/diem-tin/loi-chua-hang-ngay-10';
 
 const scrapeTGPSG = async (isoDate) => {
-  const url = tgpsaigonUrl(isoDate);
-  let html;
+  // Bước 1: Lấy danh sách bài viết từ trang category
+  console.log(`[TGPSG] Fetching category: ${TGPSG_CATEGORY}`);
+  let articleLinks;
   try {
-    const res = await http.get(url);
-    if (res.status !== 200 || !res.data) return null;
-    html = res.data;
-  } catch {
+    const catRes = await http.get(TGPSG_CATEGORY);
+    console.log(`[TGPSG] Category HTTP: ${catRes.status}, length: ${catRes.data?.length ?? 0}`);
+    if (catRes.status !== 200 || !catRes.data) return null;
+    const $cat = cheerio.load(catRes.data);
+    const seenLinks = new Set();
+    articleLinks = [];
+    $cat('a[href^="/bai-viet/"]').each((_, e) => {
+      const href = $cat(e).attr('href');
+      if (href && !seenLinks.has(href)) { seenLinks.add(href); articleLinks.push(href); }
+    });
+    console.log(`[TGPSG] Tìm được ${articleLinks.length} bài viết trên category`);
+  } catch (err) {
+    console.log(`[TGPSG] Lỗi fetch category: ${err.message}`);
+    return null;
+  }
+  if (!articleLinks || articleLinks.length === 0) return null;
+
+  // Bước 2: Tìm bài viết khớp ngày qua .article-content-date = "Ngày DD/MM/YYYY"
+  const [y, m, d] = isoDate.split('-');
+  const targetDateText = `Ngày ${d}/${m}/${y}`;
+  console.log(`[TGPSG] Tìm bài có date: "${targetDateText}"`);
+
+  let matchedUrl = null;
+  let matchedHtml = null;
+  for (const link of articleLinks.slice(0, 7)) {
+    const artUrl = `https://tgpsaigon.net${link}`;
+    console.log(`[TGPSG] Kiểm tra: ${artUrl}`);
+    try {
+      const artRes = await http.get(artUrl);
+      if (artRes.status !== 200 || !artRes.data) continue;
+      const $art = cheerio.load(artRes.data);
+      const artDate = $art('.article-content-date').text().trim();
+      console.log(`[TGPSG]   → date: "${artDate}"`);
+      if (artDate === targetDateText) {
+        matchedUrl = artUrl;
+        matchedHtml = artRes.data;
+        console.log(`[TGPSG] Tìm thấy bài khớp!`);
+        break;
+      }
+    } catch (err) {
+      console.log(`[TGPSG]   Lỗi fetch article: ${err.message}`);
+    }
+  }
+
+  if (!matchedHtml) {
+    console.log(`[TGPSG] Không tìm thấy bài cho ngày ${isoDate}`);
     return null;
   }
 
-  const $ = cheerio.load(html);
+  // Dump HTML ra debug/
+  try {
+    const debugDir = path.join(__dirname, '..', '..', 'debug');
+    if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+    fs.writeFileSync(path.join(debugDir, `tgpsg-${isoDate}.html`), matchedHtml, 'utf8');
+    console.log(`[TGPSG] HTML dumped: debug/tgpsg-${isoDate}.html`);
+  } catch (e) {
+    console.log(`[TGPSG] Không dump được HTML: ${e.message}`);
+  }
 
-  // Tên ngày lễ — thường nằm trong h1 hoặc .field-name-title
+  const $ = cheerio.load(matchedHtml);
+
+  // Tên ngày lễ từ h1
   const name =
-    $('h1.page-header, h1.title, .page-header h1, h1').first().text().trim() ||
+    $('h1').first().text().trim() ||
     $('title').text().split(/[|\-–]/)[0].trim() ||
     `Lời Chúa ${isoDate}`;
 
-  // Phát hiện màu phụng vụ từ toàn trang
   const bodyText = $('body').text();
   const mauKey   = detectColor(bodyText);
 
-  // Vùng nội dung chính trên TGPSG
-  const $content = $(
-    '.field-name-body, .field-body, .node-content, .content, article .content, #content-area'
-  ).first();
-  const $root = $content.length ? $content : $('body');
+  // Container nội dung chính: div.article-detail (cấu trúc TGPSG 2026)
+  const $root = $('.article-detail').first().length
+    ? $('.article-detail').first()
+    : $('body');
+  console.log(`[TGPSG] $root: ${$root.prop('tagName')}.${$root.attr('class')?.split(' ')[0] ?? ''}`);
 
   const sections = [];
-  const seen = new Set();
+  const seenSec  = new Set();
 
-  // Chiến lược 1: heading rõ ràng (h2, h3, strong in tiêu đề)
-  $root.find('h2, h3, h4, strong, b, p > strong, p > b').each((_, el) => {
+  // TGPSG 2026 dùng <strong> cho tiêu đề: BÀI ĐỌC I, ĐÁP CA, Tin mừng
+  $root.find('strong, b').each((_, el) => {
     const headText = $(el).text().trim();
     const key = matchSection(headText);
-    if (!key || seen.has(key)) return;
-    seen.add(key);
+    if (!key || seenSec.has(key)) return;
+    seenSec.add(key);
 
-    // Trich dẫn (nguồn sách)
-    let trich = '';
-    const $sib = $(el).next();
-    if ($sib.is('em, i') || $sib.find('em, i').length) {
-      trich = ($sib.is('em, i') ? $sib : $sib.find('em, i').first()).text().trim();
-    }
-    // Thử tìm em trong cùng parent
-    if (!trich) {
-      const $emInParent = $(el).closest('p, div').find('em, i').first();
-      if ($emInParent.length) trich = $emInParent.text().trim();
-    }
+    // Trích dẫn sách: phần sau dấu : trong headText
+    let trich = headText.includes(':') ? headText.split(':').slice(1).join(':').trim() : '';
 
-    // Thu nội dung các thẻ block liền sau cho đến heading kế
+    // <strong> có thể nằm sâu trong <span><span><p> → tìm block ancestor gần nhất
     const bodyParts = [];
-    let cur = $(el).parent().is('p, div') ? $(el).parent().next() : $(el).next();
-    if (cur.is('em, i') && !trich) { trich = cur.text().trim(); cur = cur.next(); }
-    let limit = 30; // tối đa 30 sibling để tránh vô hạn
+    const $blockAncestor = $(el).closest('p, div, li');
+    let cur = $blockAncestor.length ? $blockAncestor.next() : $(el).next();
+    let limit = 60;
     while (cur.length && limit-- > 0) {
       const tag = cur.prop('tagName')?.toLowerCase();
-      if (['h2','h3','h4'].includes(tag)) break;
-      const t = cur.text().trim();
-      if (t && matchSection(t)) break;
+      if (['h1','h2','h3','h4'].includes(tag)) break;
+      // Dừng khi gặp <p> chứa strong là section header tiếp theo
+      if (tag === 'p' && matchSection(cur.find('strong, b').first().text())) break;
+      // Dừng khi vào phần suy niệm
+      if (tag === 'h2' && /suy\s*niệm/i.test(cur.text())) break;
       if (!cur.is('hr')) bodyParts.push($.html(cur));
       cur = cur.next();
     }
 
-    const rawHtml  = bodyParts.join('');
-    const plain    = toPlain(rawHtml);
+    const plain = toPlain(bodyParts.join(''));
     if (plain.length < 10) return;
-
     const richHtml = key === 'phucam' ? markJesusWords(plain) : plain;
-
     sections.push({ key, label: SECTION_LABELS[key], trich, noidung: plain, html: richHtml });
   });
 
-  // Chiến lược 2: text-split fallback nếu không parse được heading
+  console.log(`[TGPSG] Số sections: ${sections.length}, keys: [${sections.map(s=>s.key).join(', ')}]`);
+
+  // Fallback text-split
   if (sections.length === 0) {
+    console.log(`[TGPSG] Thử fallback text-split...`);
     const allText = toPlain($root.html() || '');
     const parts   = allText.split(
       /(?=\n(?:BÀI ĐỌC|ĐÁP CA|THÁNH VỊNH|TUNG HÔ|ALLELUIA|PHÚC ÂM|TIN MỪNG))/i
@@ -232,18 +283,17 @@ const scrapeTGPSG = async (isoDate) => {
     parts.forEach(part => {
       const lines = part.split('\n').filter(Boolean);
       const key   = matchSection(lines[0] || '');
-      if (!key || seen.has(key)) return;
-      seen.add(key);
+      if (!key || seenSec.has(key)) return;
+      seenSec.add(key);
       const body = lines.slice(1).join('\n').trim();
       if (body.length < 10) return;
       sections.push({
-        key,
-        label:   SECTION_LABELS[key],
-        trich:   '',
+        key, label: SECTION_LABELS[key], trich: '',
         noidung: body,
-        html:    key === 'phucam' ? markJesusWords(body) : body,
+        html: key === 'phucam' ? markJesusWords(body) : body,
       });
     });
+    console.log(`[TGPSG] Fallback sections: ${sections.length}`);
   }
 
   if (sections.length === 0) return null;
@@ -261,7 +311,7 @@ const scrapeTGPSG = async (isoDate) => {
     sections,
     keyVerse,
     tinMungTen: phucam?.trich || '',
-    sourceUrl:  url,
+    sourceUrl:  matchedUrl,
     source:     'tgpsaigon.net',
   };
 };
@@ -278,12 +328,20 @@ const loiChuaHtmlUrls = (isoDate) => {
 const scrapeLoiChuaHtml = async (isoDate) => {
   let $, html, workingUrl;
   for (const url of loiChuaHtmlUrls(isoDate)) {
+    console.log(`[loichua.net HTML] Fetching: ${url}`);
     try {
       const res = await http.get(url);
+      console.log(`[loichua.net HTML] HTTP status: ${res.status}`);
       if (res.status === 200 && res.data) { html = res.data; workingUrl = url; break; }
-    } catch { /* try next */ }
+    } catch (err) {
+      console.log(`[loichua.net HTML] Lỗi: ${err.message}`);
+    }
   }
-  if (!html) return null;
+  // loichua.net đã chết: trả về redirect HTML 114 bytes về /lander
+  if (!html || html.length < 500) {
+    console.log(`[loichua.net HTML] Trang trả về quá ngắn (${html?.length ?? 0} bytes) — có thể đã chết`);
+    return null;
+  }
 
   $ = cheerio.load(html);
 
@@ -330,6 +388,7 @@ const scrapeLoiChuaHtml = async (isoDate) => {
     });
   });
 
+  console.log(`[loichua.net HTML] Số sections: ${sections.length}, keys: [${sections.map(s=>s.key).join(', ')}]`);
   if (sections.length === 0) return null;
 
   const ORDER = ['baidoc1','dapca','baidoc2','tunghoe','phucam'];
@@ -348,9 +407,17 @@ const scrapeLoiChuaHtml = async (isoDate) => {
 
 // ── Nguồn 3: loichua.net JSON API ─────────────────────────────────────────────
 const fetchLoiChuaApi = async (isoDate) => {
-  const res = await http.get(`https://www.loichua.net/api/daily?date=${isoDate}`);
+  const apiUrl = `https://www.loichua.net/api/daily?date=${isoDate}`;
+  console.log(`[loichua.net API] Fetching: ${apiUrl}`);
+  const res = await http.get(apiUrl);
   const raw = res.data;
-  if (!raw) return null;
+  // API đã chết: trả về HTML redirect thay vì JSON object
+  if (!raw || typeof raw === 'string') {
+    console.log(`[loichua.net API] HTTP ${res.status}, nhận string (HTML?) thay vì JSON — API đã chết`);
+    return null;
+  }
+  console.log(`[loichua.net API] HTTP status: ${res.status}, keys: ${Object.keys(raw).join(', ')}`);
+
 
   const pick  = (a, b) => raw[a] || raw[b];
   const toSec = (key, label, src) => src ? {
@@ -396,24 +463,51 @@ exports.getLoiChua = async (req, res) => {
     if (cached) return res.json({ success: true, cached: true, data: cached });
 
     let data = null;
+    const attemptedSources = [];
 
     // 1. TGPSG — nguồn chính
-    try { data = await scrapeTGPSG(date); } catch { /* ignore */ }
+    console.log(`[loiChua] Thử nguồn 1 (TGPSG) cho ngày: ${date}`);
+    try {
+      data = await scrapeTGPSG(date);
+      attemptedSources.push({ source: 'tgpsaigon.net', sections: data?.sections?.length ?? 0, ok: !!data });
+      console.log(`[loiChua] TGPSG → sections=${data?.sections?.length ?? 'null'}`);
+    } catch (err) {
+      attemptedSources.push({ source: 'tgpsaigon.net', error: err.message, ok: false });
+      console.log(`[loiChua] TGPSG throw: ${err.message}`);
+    }
 
     // 2. loichua.net HTML — fallback
     if (!data || data.sections.length === 0) {
-      try { data = await scrapeLoiChuaHtml(date); } catch { /* ignore */ }
+      console.log(`[loiChua] Thử nguồn 2 (loichua.net HTML)...`);
+      try {
+        data = await scrapeLoiChuaHtml(date);
+        attemptedSources.push({ source: 'loichua.net (html)', sections: data?.sections?.length ?? 0, ok: !!data });
+        console.log(`[loiChua] loichua.net HTML → sections=${data?.sections?.length ?? 'null'}`);
+      } catch (err) {
+        attemptedSources.push({ source: 'loichua.net (html)', error: err.message, ok: false });
+        console.log(`[loiChua] loichua.net HTML throw: ${err.message}`);
+      }
     }
 
     // 3. loichua.net API — fallback cuối
     if (!data || data.sections.length === 0) {
-      try { data = await fetchLoiChuaApi(date); } catch { /* ignore */ }
+      console.log(`[loiChua] Thử nguồn 3 (loichua.net API)...`);
+      try {
+        data = await fetchLoiChuaApi(date);
+        attemptedSources.push({ source: 'loichua.net (api)', sections: data?.sections?.length ?? 0, ok: !!data });
+        console.log(`[loiChua] loichua.net API → sections=${data?.sections?.length ?? 'null'}`);
+      } catch (err) {
+        attemptedSources.push({ source: 'loichua.net (api)', error: err.message, ok: false });
+        console.log(`[loiChua] loichua.net API throw: ${err.message}`);
+      }
     }
 
     if (!data) {
+      console.log(`[loiChua] TẤT CẢ nguồn đều thất bại cho ${date}:`, attemptedSources);
       return res.status(502).json({
         success: false,
         message: 'Không lấy được dữ liệu Lời Chúa. Vui lòng thử lại sau.',
+        attemptedSources,
       });
     }
 

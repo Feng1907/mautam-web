@@ -16,7 +16,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    // Chỉ redirect khi 401 xảy ra ở route được bảo vệ (token hết hạn),
+    // KHÔNG redirect khi đang thực hiện chính request login/signup —
+    // vì backend trả 401 cho sai mật khẩu, interceptor sẽ gây GET /login → 304.
+    const url = err.config?.url || '';
+    const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/signup');
+    if (err.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

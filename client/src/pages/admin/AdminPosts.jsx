@@ -173,20 +173,19 @@ const PostForm = ({ initial, onSave, onCancel }) => {
     setImageFile(null); setPreviewUrl(''); set('anhDaiDien', '');
   };
 
-  const uploadToFirebase = (file) =>
-    new Promise(async (resolve, reject) => {
-      try {
-        const blob     = await compressImage(file);
-        const fileName = `news_images/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-        const task     = uploadBytesResumable(ref(storage, fileName), blob, { contentType: 'image/jpeg' });
-        setUploading(true); setUploadPct(0);
-        task.on('state_changed',
-          snap => setUploadPct(Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
-          err  => { setUploading(false); reject(err); },
-          async () => { setUploading(false); resolve(await getDownloadURL(task.snapshot.ref)); },
-        );
-      } catch (err) { setUploading(false); reject(err); }
+  const uploadToFirebase = async (file) => {
+    const blob     = await compressImage(file);
+    const fileName = `news_images/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const task     = uploadBytesResumable(ref(storage, fileName), blob, { contentType: 'image/jpeg' });
+    setUploading(true); setUploadPct(0);
+    return new Promise((resolve, reject) => {
+      task.on('state_changed',
+        snap => setUploadPct(Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
+        err  => { setUploading(false); reject(err); },
+        async () => { setUploading(false); resolve(await getDownloadURL(task.snapshot.ref)); },
+      );
     });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setSaving(true);
@@ -396,6 +395,7 @@ const AdminPosts = () => {
       .finally(() => setLoading(false));
   }, [loai]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const handleSave = (saved) => {

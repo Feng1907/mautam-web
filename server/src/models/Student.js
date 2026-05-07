@@ -14,8 +14,9 @@ const studentSchema = new mongoose.Schema(
     gioiTinh: { type: String, enum: ['Nam', 'Nu'], required: true },
     lop: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
     phuHuynh: {
-      hoTen: { type: String, trim: true },
+      hoTen:       { type: String, trim: true },
       soDienThoai: { type: String, trim: true },
+      email:       { type: String, trim: true, lowercase: true },
     },
     trangThai: { type: String, enum: ['active', 'inactive'], default: 'active' },
     avatar: String,

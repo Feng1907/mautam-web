@@ -21,14 +21,6 @@ const NGANH_CFG  = {
 };
 
 // ── Liturgical color config (static hôm nay — link sang trang GioLe để cập nhật thật) ──
-const VESTMENT_COLORS = {
-  trang: { label: 'Màu Trắng',  dot: '#f9fafb', border: '#d1d5db', text: '#374151' },
-  do:    { label: 'Màu Đỏ',    dot: '#ef4444', border: '#fca5a5', text: '#991b1b' },
-  xanh:  { label: 'Màu Xanh',  dot: '#3b82f6', border: '#93c5fd', text: '#1e40af' },
-  tim:   { label: 'Màu Tím',   dot: '#a855f7', border: '#d8b4fe', text: '#6b21a8' },
-  den:   { label: 'Màu Đen',   dot: '#374151', border: '#9ca3af', text: '#111827' },
-  hong:  { label: 'Màu Hồng',  dot: '#f472b6', border: '#fbcfe8', text: '#9d174d' },
-};
 
 // ── Framer variants ───────────────────────────────────────────────────────────
 const stagger = {
@@ -71,16 +63,6 @@ const Home = () => {
   const { user } = useAuth();
   const { t }    = useTranslation();
 
-  const quickLinks = [
-    { to: '/gio-le',   icon: <Clock className="w-5 h-5" />,     color: '#8B0000', title: t('home.liturgyLink'),  desc: t('home.liturgyDesc'),  large: true  },
-    { to: '/tin-tuc',  icon: <Newspaper className="w-5 h-5" />, color: '#2563eb', title: t('home.newsLink'),     desc: t('home.newsDesc'),     large: false },
-    { to: '/thu-vien', icon: <Images className="w-5 h-5" />,    color: '#D4AF37', title: t('home.galleryLink'),  desc: t('home.galleryDesc'),  large: false },
-    user ? {
-      to: '/lop-hoc', icon: <BookOpen className="w-5 h-5" />, color: '#16a34a', title: t('home.classesLink'), desc: t('home.classesDesc'), large: false,
-    } : {
-      to: '/login', icon: <LogIn className="w-5 h-5" />, color: '#6b7280', title: t('home.loginCta'), desc: t('home.loginDesc'), large: false, dashed: true,
-    },
-  ];
 
   return (
     <main className="relative flex-1" style={{ background: '#fdfbf7', fontFamily: SANS }}>

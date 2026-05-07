@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, CalendarCheck, Trash2 } from 'lucide-react';
+import { Search, CalendarCheck, Trash2, Mail, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
 
@@ -372,8 +372,31 @@ const GradeForm = ({ lopId, students, canEdit }) => {
   const [modal,       setModal]       = useState(null);
   const [ccModal,     setCcModal]     = useState(null);
   const [deleting,    setDeleting]    = useState(null);
-  const [search,      setSearch]      = useState('');
+  const [search,       setSearch]       = useState('');
   const [genderFilter, setGenderFilter] = useState('All');
+
+  // ── State gửi bảng điểm ───────────────────────────────────────────────────
+  const [bdModal,    setBdModal]    = useState(false);
+  const [bdHocKySend, setBdHocKySend] = useState(1); // học kỳ chọn trong modal
+  const [bdSending,  setBdSending]  = useState(false);
+  const [bdResult,   setBdResult]   = useState(null);
+
+  const countWithEmail = useMemo(
+    () => students.filter(s => s.phuHuynh?.email).length,
+    [students]
+  );
+
+  const handleSendBangDiem = async () => {
+    setBdSending(true);
+    try {
+      const res = await api.post('/notify/bang-diem', { lopId, hocKy: bdHocKySend });
+      setBdResult(res.data);
+    } catch (err) {
+      setBdResult({ sent: 0, skipped: 0, errors: [{ error: err.response?.data?.message || err.message }], summary: {} });
+    } finally {
+      setBdSending(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -543,6 +566,17 @@ const GradeForm = ({ lopId, students, canEdit }) => {
               <span className="font-medium">CC×{TI_LE_CHUYEN_CAN * 100}%</span>
             </span>
           </div>
+          {canEdit && students.length > 0 && (
+            <button
+              onClick={() => { setBdResult(null); setBdHocKySend(hocKy); setBdModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all
+                         text-white border border-[#8B0000]"
+              style={{ background: 'linear-gradient(135deg,#8B0000,#6e1a1a)' }}
+            >
+              <Mail className="w-3.5 h-3.5" />
+              Gửi bảng điểm phụ huynh
+            </button>
+          )}
           <ExportButton
             url={`/api/export/grades/${lopId}?hocKy=${hocKy}`}
             fileName={`BangDiem_HK${hocKy}.xlsx`}
@@ -801,6 +835,132 @@ const GradeForm = ({ lopId, students, canEdit }) => {
           onClose={() => setCcModal(null)}
           onSaved={handleCcSaved}
         />
+      )}
+
+      {/* ── Modal gửi bảng điểm phụ huynh ── */}
+      {bdModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4"
+                 style={{ background: 'linear-gradient(135deg,#8B0000,#6e1a1a)' }}>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#D4AF37]" />
+                <h3 className="font-bold text-white text-sm">Gửi bảng điểm cho phụ huynh</h3>
+              </div>
+              <button onClick={() => setBdModal(false)} className="text-white/60 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-5">
+              {!bdResult ? (
+                <>
+                  {/* Chọn học kỳ */}
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Chọn học kỳ gửi</p>
+                    <div className="flex gap-2">
+                      {[1, 2].map(hk => (
+                        <button key={hk} onClick={() => setBdHocKySend(hk)}
+                          className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition ${
+                            bdHocKySend === hk
+                              ? 'bg-[#8B0000] text-white border-[#8B0000]'
+                              : 'text-[#5a1a1a] border-[#D4AF37]/50 bg-amber-50/50 hover:border-[#8B0000]/40'
+                          }`}>
+                          Học kỳ {hk}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preview thống kê */}
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 text-sm text-gray-700 space-y-1">
+                    <p>
+                      📧 Sẽ gửi cho{' '}
+                      <strong className="text-[#8B0000]">{countWithEmail} phụ huynh</strong>{' '}
+                      có email
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      ⏭️ Bỏ qua {students.length - countWithEmail} phụ huynh chưa có email
+                    </p>
+                  </div>
+
+                  {countWithEmail === 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 mb-4">
+                      <p className="text-xs text-orange-700">
+                        ⚠️ Chưa có phụ huynh nào trong lớp có email. Vui lòng cập nhật thông tin đoàn sinh trước.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSendBangDiem}
+                      disabled={bdSending || countWithEmail === 0}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold
+                                 text-white transition disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg,#8B0000,#6e1a1a)' }}
+                    >
+                      {bdSending
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang gửi...</>
+                        : <><Mail className="w-3.5 h-3.5" /> Gửi bảng điểm</>}
+                    </button>
+                    <button onClick={() => setBdModal(false)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                      Huỷ
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Kết quả */
+                <>
+                  <div className={`rounded-xl px-4 py-3 mb-4 ${
+                    bdResult.errors?.length > 0
+                      ? 'bg-orange-50 border border-orange-200'
+                      : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <p className="text-sm font-bold text-gray-800 mb-2">
+                      {bdResult.errors?.length > 0 ? '⚠️ Gửi hoàn tất (có lỗi)' : '✅ Gửi thành công'}
+                    </p>
+                    <p className="text-xs text-gray-600 mb-1">
+                      ✅ Đã gửi: <strong className="text-green-700">{bdResult.sent}</strong> email
+                      &emsp;
+                      ⏭️ Bỏ qua: <strong className="text-gray-500">{bdResult.skipped}</strong>
+                      {bdResult.errors?.length > 0 && (
+                        <>&emsp;❌ Lỗi: <strong className="text-red-600">{bdResult.errors.length}</strong></>
+                      )}
+                    </p>
+                    {/* Thống kê học lực */}
+                    {bdResult.summary && (
+                      <div className="mt-2 pt-2 border-t border-current/10">
+                        <p className="text-xs font-semibold text-gray-500 mb-1">📊 Học lực lớp HK{bdHocKySend}:</p>
+                        <div className="flex flex-wrap gap-1.5 text-xs">
+                          {[
+                            { key: 'xuatSac',   label: 'Xuất sắc',   cls: 'bg-amber-100 text-amber-700' },
+                            { key: 'gioi',      label: 'Giỏi',       cls: 'bg-green-100 text-green-700' },
+                            { key: 'kha',       label: 'Khá',        cls: 'bg-blue-100 text-blue-700' },
+                            { key: 'trungBinh', label: 'Trung bình', cls: 'bg-orange-100 text-orange-700' },
+                            { key: 'yeu',       label: 'Yếu',        cls: 'bg-red-100 text-red-700' },
+                          ].map(({ key, label, cls }) => bdResult.summary[key] > 0 && (
+                            <span key={key} className={`px-2 py-0.5 rounded-full font-semibold ${cls}`}>
+                              {label}: {bdResult.summary[key]}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setBdModal(false)}
+                    className="w-full py-2.5 rounded-xl text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                    Đóng
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
