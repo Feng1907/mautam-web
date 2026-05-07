@@ -131,7 +131,7 @@ const AdminNamHoc = () => {
       const res = await api.put(`/namhoc/${id}/activate`);
       setList(prev => prev.map(n => ({ ...n, dangHoatDong: n._id === id })));
       showMsg('success', `Đã kích hoạt năm học ${res.data.data.ten}`);
-    } catch (err) {
+    } catch {
       showMsg('error', 'Kích hoạt thất bại');
     } finally { setActivating(null); }
   };

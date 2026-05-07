@@ -369,6 +369,7 @@ const LoiChua = () => {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(date); }, [date, load]);
 
   const goSunday = () => setDate(getNextSunday());

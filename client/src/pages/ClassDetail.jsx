@@ -91,9 +91,9 @@ const ClassDetail = () => {
             </div>
             <h1
               className="text-2xl font-bold text-[#3d1515] leading-tight"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              style={{ fontFamily: '"Be Vietnam Pro", "Inter", system-ui, sans-serif' }}
             >
-              {lop.tenLop}
+              {(lop.tenLop || '').normalize('NFC')}
             </h1>
             <p className="text-sm text-gray-500 mt-1.5">
               {(() => {

@@ -247,14 +247,11 @@ const formatDate = (date, locale) => {
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
 
 const fetchLoiChua = async () => {
-  const d  = new Date();
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = d.getFullYear();
+  const d = new Date();
+  const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
   try {
-    const res = await fetch(`https://www.loichua.net/api/daily?date=${yy}-${mm}-${dd}`);
-    if (!res.ok) throw new Error();
-    return await res.json();
+    const res = await api.get(`/loichua?date=${dateStr}`);
+    return res.data.data;
   } catch { return null; }
 };
 
@@ -302,50 +299,18 @@ const RankBadge = ({ rank }) => {
   );
 };
 
-// LoaiBadge giữ lại cho FeastItem trong danh sách (dùng cap: dai/trong/kinh/nho)
-const LOAI_KEY_MAP = {
-  'Lễ Trọng':    'leTrong',
-  'Lễ Đặc Biệt':'leDacBiet',
-  'Mùa Chay':   'muaChay',
-  'Mùa Vọng':   'muaVong',
-  'Lễ Kính':    'leKinh',
-  'Lễ Nhớ':     'leNho',
-  'Lễ Thường':  'leThuong',
-  // 'Mùa Phục Sinh' đã bị xóa — không map sang leTrong nữa
-};
-const LOAI_CLS = {
-  leTrong:   'bg-red-100 text-red-700',
-  leDacBiet: 'bg-purple-100 text-purple-700',
-  muaChay:   'bg-purple-50 text-purple-600',
-  muaVong:   'bg-purple-50 text-purple-600',
-  leKinh:    'bg-orange-100 text-orange-600',
-  leNho:     'bg-gray-100 text-gray-500',
-  leThuong:  'bg-gray-100 text-gray-500',
-};
-
-const LoaiBadge = ({ loai }) => {
-  const { t } = useTranslation();
-  const key = LOAI_KEY_MAP[loai];
-  if (!key) return null;   // loai không xác định → ẩn badge
-  return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${LOAI_CLS[key]}`}>
-      {t(`liturgy.types.${key}`)}
-    </span>
-  );
-};
 
 // ─── LiturgyCards — Áo Lễ + Phụng Vụ Hôm Nay ────────────────────────────────
 // activeMauKey: màu được tính theo thứ tự ưu tiên (romcal > API > detectLiturgy)
 // isSolemnity:  true khi rank cao (dai/trong) → hiệu ứng shimmer
 const LiturgyCards = ({
-  activeMauKey, loai, tenLe, loading,
+  activeMauKey, tenLe, loading,
   selectedFeast, isThangHoa, isSolemnity,
   onClearFeast,
 }) => {
   const { t } = useTranslation();
 
-  const displayTen  = selectedFeast?.ten  ?? tenLe;
-  const displayLoai = selectedFeast?.loai ?? loai;
+  const displayTen = selectedFeast?.ten ?? tenLe;
 
   // Tháng Hoa + Màu Trắng (Phục Sinh) → variant đặc biệt có viền xanh Đức Mẹ
   const rawKey    = selectedFeast?.mauKey ?? activeMauKey;
@@ -533,7 +498,7 @@ const GospelCard = ({ tinMung, loading, onClick }) => {
       {loading ? (
         <p className="text-sm text-amber-300 italic">{t('liturgy.loading')}</p>
       ) : tinMung ? (
-        <p className="text-sm font-semibold text-amber-800 leading-snug">{tinMung}</p>
+        <p className="text-sm font-semibold text-amber-800 leading-snug" style={{ fontFamily: '"EB Garamond", serif', fontSize: '1.1rem' }}>{tinMung}</p>
       ) : (
         <p className="text-sm text-amber-600 italic">{t('liturgy.gospelFallback')}</p>
       )}
@@ -807,6 +772,7 @@ const GioLe = () => {
     }
   }, [autoSelectToday]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadLoiChua(); }, [loadLoiChua]);
   useEffect(() => { loadFeasts(currentMonth, currentYear); }, []); // eslint-disable-line
 
@@ -857,16 +823,11 @@ const GioLe = () => {
 
   const apiColorRaw = loiChua?.color || loiChua?.mau || loiChua?.liturgicalColor || '';
   const apiMauKey   = getLiturgicalColor(apiColorRaw);
-  const { mauKey: fallbackMauKey, loai: fallbackLoai } = detectLiturgy(tenLe);
+  const { mauKey: fallbackMauKey } = detectLiturgy(tenLe);
 
   // activeMauKey — không dùng 'thangHoa' làm màu áo (tránh hiểu lầm phụng vụ)
   // Tháng Hoa chỉ là yếu tố trang trí phụ, màu áo vẫn theo romcal/API
   const activeMauKey = todayFeast?.mauKey || apiMauKey || fallbackMauKey;
-
-  // activeLoai — cho FERIA (ngày thường), derive từ tên romcal đã dịch
-  const activeLoai = todayFeast
-    ? (CAP_TO_LOAI[todayFeast.cap] || detectLiturgy(todayFeast.ten).loai)
-    : fallbackLoai;
 
   // Lễ trọng = có hiệu ứng shimmer
   const isSolemnity = ['dai', 'trong'].includes(todayFeast?.cap ?? '')
@@ -903,7 +864,6 @@ const GioLe = () => {
           <div>
             <LiturgyCards
               activeMauKey={activeMauKey}
-              loai={activeLoai}
               tenLe={tenLe}
               loading={loadingLC || loadingFeasts}
               selectedFeast={selectedFeast}

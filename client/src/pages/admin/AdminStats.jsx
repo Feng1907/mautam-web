@@ -51,7 +51,7 @@ const phanLoai = (d) => {
 };
 
 // ── Mini bar chart (CSS) ──────────────────────────────────────────────────────
-const Bar = ({ label, value, max, color, bg, suffix = '' }) => {
+const Bar = ({ label, value, max, color, suffix = '' }) => {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-2 text-xs">
@@ -260,7 +260,6 @@ const AdminStats = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {nganhStats.map(ns => {
               const cfg = NGANH_CFG[ns.nhanh];
-              const maxHL = Math.max(...Object.values(ns.hocLucCount), 1);
               return (
                 <div
                   key={ns.nhanh}

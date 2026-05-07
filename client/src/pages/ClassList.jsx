@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Users, BookOpen, ArrowRight, UserCheck, ChevronRight } from 'lucide-react';
+import { Search, Users, BookOpen, ArrowRight, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
-const SERIF = '"EB Garamond", Lora, Georgia, serif';
+const SERIF = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── Ngành config ──────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ const ClassCard = ({ lop, meta }) => {
               className="font-bold leading-tight text-[#3d1515] line-clamp-1"
               style={{ fontFamily: SERIF, fontSize: '1.05rem' }}
             >
-              {lop.tenLop}
+              {(lop.tenLop || '').normalize('NFC')}
             </h3>
           </div>
         </div>
@@ -309,7 +309,13 @@ const ClassList = () => {
   return (
     <main
       className="relative flex-1 page-container min-h-screen"
-      style={{ background: '#fdfbf7', fontFamily: SANS }}
+      style={{ 
+        background: '#fdfbf7', 
+        fontFamily: SANS,
+        textRendering: 'optimizeLegibility',
+        WebkitFontSmoothing: 'antialiased',
+        fontVariantLigatures: 'none'
+      }}
     >
       <CrossWatermark />
 

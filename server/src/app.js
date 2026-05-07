@@ -39,6 +39,7 @@ app.use('/api/chuyen-can', require('./routes/chuyencan'));
 
 app.use('/api/liturgy',   require('./routes/liturgy'));
 app.use('/api/loi-chua',  require('./routes/loiChua'));
+app.use('/api/notify',    require('./routes/notify'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

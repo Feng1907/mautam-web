@@ -5,7 +5,7 @@ import { useAuth } from '../store/AuthContext';
 import {
   Upload, Download, Trash2, X,
   ChevronLeft, ChevronRight, ZoomIn, Loader2,
-  Search, Filter, Images,
+  Search, Filter,
 } from 'lucide-react';
 import { fetchPhotos, uploadPhoto, deletePhoto, formatBytes } from '../services/galleryService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -15,6 +15,7 @@ const SERIF = '"EB Garamond", Lora, Georgia, serif';
 const SANS  = '"Inter", system-ui, sans-serif';
 
 // ── Cấu hình sự kiện & năm ────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export const EVENTS = [
   { value: 'all',          label: { vi: 'Tất cả sự kiện',  en: 'All events'      } },
   { value: 'phuc-sinh',    label: { vi: 'Phục Sinh',        en: 'Easter'          } },
