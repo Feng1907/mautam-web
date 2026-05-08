@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
+import { formatClassName } from '../utils/formatClassName';
 import { useAuth } from '../store/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StudentList    from '../components/StudentList';
@@ -93,7 +94,7 @@ const ClassDetail = () => {
               className="text-2xl font-bold text-[#3d1515] leading-tight"
               style={{ fontFamily: '"Be Vietnam Pro", "Inter", system-ui, sans-serif' }}
             >
-              {(lop.tenLop || '').normalize('NFC')}
+              {formatClassName(lop.tenLop)}
             </h1>
             <p className="text-sm text-gray-500 mt-1.5">
               {(() => {

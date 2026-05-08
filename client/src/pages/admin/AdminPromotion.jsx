@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, History, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import api from '../../services/api';
+import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const SERIF = '"EB Garamond", Georgia, serif';
@@ -102,7 +103,7 @@ const PromoteTab = ({ classes, namHocList }) => {
                 <option value="">— Chọn lớp nguồn —</option>
                 {classes.map(c => (
                   <option key={c._id} value={c._id}>
-                    {c.tenLop} ({NGANH_CFG[c.nhanh]?.label || c.nhanh})
+                    {formatClassName(c.tenLop)} ({NGANH_CFG[c.nhanh]?.label || c.nhanh})
                   </option>
                 ))}
               </select>
@@ -129,7 +130,7 @@ const PromoteTab = ({ classes, namHocList }) => {
                 <option value="">— Chọn lớp đích —</option>
                 {classes.map(c => (
                   <option key={c._id} value={c._id} disabled={c._id === fromLopId}>
-                    {c.tenLop} ({NGANH_CFG[c.nhanh]?.label || c.nhanh})
+                    {formatClassName(c.tenLop)} ({NGANH_CFG[c.nhanh]?.label || c.nhanh})
                   </option>
                 ))}
               </select>
@@ -379,8 +380,8 @@ const HistoryTab = ({ namHocList }) => {
                           <td className="py-1.5 font-medium text-[#3d1515]">
                             {item.student?.tenThanh} {item.student?.hoTen}
                           </td>
-                          <td className="py-1.5 text-gray-500">{item.fromLop?.tenLop || '—'}</td>
-                          <td className="py-1.5 text-emerald-700 font-medium">{item.toLop?.tenLop || '—'}</td>
+                          <td className="py-1.5 text-gray-500 whitespace-nowrap">{formatClassName(item.fromLop?.tenLop) || '—'}</td>
+                          <td className="py-1.5 text-emerald-700 font-medium whitespace-nowrap">{formatClassName(item.toLop?.tenLop) || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
