@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../../services/api';
+import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 // ── Cấu hình nhãn & màu ─────────────────────────────────────────────────────
@@ -230,7 +231,18 @@ const AdminUsers = () => {
               <div key={u._id} className="card flex items-center justify-between gap-4 flex-wrap py-3">
                 {/* Avatar + thông tin */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0">
+                  {u.avatar ? (
+                    <img
+                      src={u.avatar}
+                      alt={u.hoTen}
+                      className="w-10 h-10 rounded-full object-cover shrink-0"
+                      onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-10 h-10 rounded-full bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center shrink-0"
+                    style={u.avatar ? { display: 'none' } : {}}
+                  >
                     {u.hoTen?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -255,7 +267,7 @@ const AdminUsers = () => {
                     {/* Lớp phụ trách */}
                     {u.lopPhuTrach?.length > 0 && (
                       <p className="text-xs text-blue-600 mt-0.5">
-                        📚 {u.lopPhuTrach.map(l => l.tenLop).join(', ')}
+                        📚 {u.lopPhuTrach.map(l => l?.tenLop ? formatClassName(l.tenLop) : null).filter(Boolean).join(', ') || '(lớp không còn tồn tại)'}
                       </p>
                     )}
 

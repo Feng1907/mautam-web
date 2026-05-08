@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
 import api from '../../services/api';
+import { formatClassName } from '../../utils/formatClassName';
 import ExportButton from '../../components/ExportButton';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -116,7 +117,7 @@ const AdminExport = () => {
                     style={{ background: '#fffcf9', borderColor: '#e5d5b5' }}
                   >
                     <div>
-                      <p className="font-semibold text-[#3d1515] text-sm">{lop.tenLop}</p>
+                      <p className="font-semibold text-[#3d1515] text-sm">{formatClassName(lop.tenLop)}</p>
                       <p className="text-xs text-gray-400">
                         HT: {lop.huynhTruong?.hoTen || '—'}
                         {lop.siSo != null && (

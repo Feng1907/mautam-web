@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Users, Pencil } from 'lucide-react';
 import api from '../../services/api';
+import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 // ── Config ngành — thứ tự cố định ─────────────────────────────────────────────
@@ -50,7 +51,7 @@ const AssignModal = ({ lop, giaoly, onClose, onSaved }) => {
             Phân công nhân sự
           </h3>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{lop.tenLop}</p>
+        <p className="text-sm text-gray-500 mb-4">{formatClassName(lop.tenLop)}</p>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3 py-2 mb-3">
@@ -433,7 +434,7 @@ const AdminClasses = () => {
                           {cfg.label}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-semibold text-[#3d1515] text-sm">{lop.tenLop}</p>
+                          <p className="font-semibold text-[#3d1515] text-sm">{formatClassName(lop.tenLop)}</p>
                           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                             <p className="text-xs text-gray-500">
                               HT:&nbsp;

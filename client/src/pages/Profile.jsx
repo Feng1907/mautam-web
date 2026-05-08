@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../store/AuthContext';
 import api from '../services/api';
+import { formatClassName } from '../utils/formatClassName';
 
 const CHUC_VU = { huynhtruong: 'Huynh trưởng', dutruong: 'Dự trưởng' };
 const VAI_TRO = { admin: 'Admin', giaoly: 'Giáo lý viên', user: 'Phụ huynh' };
@@ -162,7 +163,7 @@ const Profile = () => {
                 <div className="flex flex-wrap justify-center gap-1">
                   {user.lopPhuTrach.map(l => (
                     <span key={l._id || l} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                      {l.tenLop || l}
+                      {formatClassName(l.tenLop || l)}
                     </span>
                   ))}
                 </div>

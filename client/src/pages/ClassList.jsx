@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, BookOpen, ArrowRight, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
+import { formatClassName } from '../utils/formatClassName';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
 const SERIF = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 const SANS  = '"Inter", system-ui, sans-serif';
+
 
 // ── Ngành config ──────────────────────────────────────────────────────────────
 const NGANH_ORDER = ['ChienNon', 'AuNhi', 'ThieuNhi', 'NghiaSi', 'HiepSi'];
@@ -130,7 +132,7 @@ const ClassCard = ({ lop, meta }) => {
   return (
     <Link
       to={`/lop-hoc/${lop._id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1"
+      className="group flex flex-col flex-1 overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1"
       style={{
         background: 'rgba(255,252,249,0.92)',
         borderColor: '#e5d5b5',
@@ -169,7 +171,7 @@ const ClassCard = ({ lop, meta }) => {
               className="font-bold leading-tight text-[#3d1515] line-clamp-1"
               style={{ fontFamily: SERIF, fontSize: '1.05rem' }}
             >
-              {(lop.tenLop || '').normalize('NFC')}
+              {formatClassName(lop.tenLop)}
             </h3>
           </div>
         </div>
@@ -396,7 +398,7 @@ const ClassList = () => {
               </div>
             ) : (
               <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
                 initial="hidden"
                 animate="show"
                 variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
@@ -404,6 +406,7 @@ const ClassList = () => {
                 {filtered.map(lop => (
                   <motion.div
                     key={lop._id}
+                    className="flex flex-col"
                     variants={{
                       hidden: { opacity: 0, y: 18 },
                       show:   { opacity: 1, y: 0, transition: { duration: 0.26, ease: 'easeOut' } },
