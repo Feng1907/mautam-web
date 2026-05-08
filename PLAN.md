@@ -20,7 +20,10 @@
 | 11 | UI Spiritual Modernism + Chuyên cần + Lên lớp + Nhân sự | Hoàn thành |
 | 12 | Polish: Báo cáo tổng kết, Email phụ huynh, Lời Chúa, Stats, Avatar, Lịch sử điểm | Hoàn thành |
 | 13 | Thông báo Email nâng cao, Lời Chúa thông minh, Tính điểm tự động | Hoàn thành |
-| 14 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
+| 14 | AdminDashboard nâng cấp: Quick Actions, SVG Charts, Search toàn cục, Phụng vụ | Hoàn thành |
+| 15 | Dark Mode toàn diện + Circular Reveal + Phụng vụ Việt Nam (dời lễ) | Hoàn thành |
+| 16 | Chuẩn hóa tên lớp, fix Avatar, fix Calendar, tối ưu UI ClassList & GioLe | Hoàn thành |
+| 17 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
 
 ---
 
@@ -336,7 +339,119 @@ GradeForm client-side cũng tính ngay khi nhập:
 
 ---
 
-### GIAI ĐOẠN 14 — Tối ưu hiệu năng & Production — Sắp tới
+### GIAI ĐOẠN 14 — AdminDashboard nâng cấp — Hoàn thành
+
+#### Quick Action Widgets (`QuickActionWidgets.jsx`)
+
+| Widget | Chức năng |
+| --- | --- |
+| `AddStudentModal` | Form thêm đoàn sinh nhanh (hoTen, tenThanh, gioiTinh, lop, SĐT PH) → POST /api/students |
+| `ExportDropdown` | Xuất Excel toàn đoàn (xlsx) hoặc In PDF (window.print), loading state |
+| `SendNotifyModal` | Soạn & gửi thông báo khẩn → POST /api/posts, daDang=true |
+| `StickyNote` | Ghi chú nhanh lưu localStorage, auto-save debounce 600ms |
+| `QuickAttendanceModal` | Điểm danh 2 bước: chọn lớp (search) → điểm danh tại chỗ, lưu batch song song |
+
+#### SVG Charts (không cần thư viện ngoài)
+
+- `SvgBarChart` — đoàn sinh theo ngành, màu theo ngành, Y-axis tự scale
+- `SvgDonutChart` — tỉ lệ chuyên cần (Có mặt / Nghỉ phép / Nghỉ không phép)
+- MutationObserver theo dõi class `dark` trên `<html>` để cập nhật màu SVG realtime
+
+#### Global Search (debounce 220ms)
+
+- Tìm đồng thời users (tên + email) và classes (tên lớp đã format)
+- Dropdown gợi ý phân loại bằng icon, click điều hướng thẳng
+- Đóng khi click ngoài (mousedown listener)
+
+#### Liturgy Card
+
+- Gọi `/api/loi-chua` + `/api/liturgy/feasts` → tự đổi màu nền theo màu áo lễ
+- Hiển thị tên lễ + chủ đề Tin Mừng + link sang trang Giờ Lễ
+
+---
+
+### GIAI ĐOẠN 15 — Dark Mode toàn diện — Hoàn thành
+
+#### ThemeContext + Circular Reveal
+
+- `ThemeContext.jsx`: quản lý `dark`/`light`, lưu localStorage, nhận system preference
+- Circular Reveal: `document.startViewTransition()` + CSS `clip-path: circle(0%→160%)` từ tâm nút bấm
+- Fallback: chuyển ngay nếu browser không hỗ trợ View Transitions API
+- `ThemeToggle.jsx`: icon Sun/Moon với rotate 90° animation, đặt trên Navbar (desktop + mobile)
+- Tailwind v4: `@custom-variant dark` → class-based dark mode
+
+#### Dark Mode phủ toàn hệ thống
+
+| Trang / Component | Xử lý |
+| --- | --- |
+| AdminLayout sidebar | `dark:bg-slate-800 dark:border-slate-700`, link active `dark:bg-red-950/50` |
+| AdminDashboard | Tất cả card, search, chart SVG, user list |
+| Home, Gallery, News | `bg-page` class tự chuyển `#fdfbf7` → `#0f172a` |
+| GioLe | Main `dark:bg-slate-950`, card `dark:bg-slate-800`, đồng hồ, bảng giờ lễ |
+| LoiChua | Toàn bộ rewrite: ACCENT màu áo lễ, paper card, navigation, MiniCalendar |
+| index.css | `.bg-page`, `.dark .dark\:bg-slate-800 { !important }`, global input/table dark |
+
+#### Feast Visual Effects (GioLe.jsx)
+
+- `feast-solemnity` — gradient red-700→rose-600, inset glow đỏ
+- `feast-great` — gradient amber-950→yellow-900, glow vàng
+- `feast-feast` — gradient blue-600/20, glow xanh
+- `feast-memorial` — `bg-slate-800/40 backdrop-blur-md`, glow đen tối
+- `hover:scale-[1.01] transition-all duration-300` trên tất cả cấp lễ
+
+#### Phụng vụ Việt Nam — Dời lễ
+
+- `adjustVietnameseLiturgicalCalendar()` trong `liturgy.js`:
+  - Lễ Chúa Giêsu Lên Trời: Thứ Năm → Chúa Nhật VII Phục Sinh
+  - Lễ Mình Máu Thánh Chúa: Thứ Năm → Chúa Nhật tiếp theo
+  - Fix timezone: dùng `getFullYear/Month/Date` thay `toISOString()` tránh lệch UTC+7
+
+---
+
+### GIAI ĐOẠN 16 — Chuẩn hóa & Fix — Hoàn thành
+
+#### utils/formatClassName.js — dùng chung toàn hệ thống
+
+Regex replace tiền tố viết tắt → tên đầy đủ:
+
+| Viết tắt | Tên đầy đủ |
+| --- | --- |
+| XT | Xưng Tội |
+| CN | Chiên Non |
+| TN | Thiếu Nhi |
+| NS | Nghĩa Sĩ |
+| HS | Hiệp Sĩ |
+
+Áp dụng vào: ClassList, ClassDetail, AdminDashboard, AdminClasses, AdminExport, AdminPromotion, AdminUsers, Profile.
+
+#### Fix Avatar toàn hệ thống
+
+- AdminUsers: `<img>` + `onError` fallback về gradient placeholder
+- AdminDashboard: tương tự, `display:none` toggle bằng JS
+- Avatar gradient 8 màu theo ký tự đầu tên
+
+#### Fix Calendar (LoiChua MiniCalendar)
+
+- Tách `viewYear/viewMonth` state khỏi `selectedDate` → điều hướng tháng độc lập
+- Nút `‹ ›` chuyển tháng, canGoNext chặn tháng tương lai
+- `useEffect` đồng bộ view khi selectedDate thay đổi từ bên ngoài
+- `invisible` thay `''` cho ô null → giữ grid alignment
+
+#### ClassList Layout
+
+- Grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch`
+- `motion.div` bọc card dùng `flex flex-col`, `Link` dùng `flex-1`
+- Đồng đều chiều cao card dù nội dung khác nhau
+
+#### Giờ Lễ — Chữ & Visual
+
+- Giờ Lễ Cố Định: dark variants cho label (`dark:text-slate-200`) và time pill
+- GioLe dark background: `dark:bg-none dark:bg-slate-950`
+- CAP_CONFIG Lễ Nhớ/Kính: `dark:shadow-none`, viền `border-slate-200`
+
+---
+
+### GIAI ĐOẠN 17 — Tối ưu hiệu năng & Production — Sắp tới
 
 - PWA offline support (Service Worker, cache assets)
 - Kiểm thử toàn diện (unit test controller, integration test API)
@@ -352,7 +467,7 @@ GradeForm client-side cũng tính ngay khi nhập:
 | Phần | Công nghệ |
 | --- | --- |
 | Frontend | React 19, Vite, React Router v7, Framer Motion 12 |
-| Styling | Tailwind CSS 4, EB Garamond, Inter |
+| Styling | Tailwind CSS 4, EB Garamond, Inter, Dark Mode (View Transitions API) |
 | Backend | Node.js, Express 5, Mongoose 9 |
 | Database | MongoDB → MongoDB Atlas (prod) |
 | Auth | JWT (7 ngày), bcryptjs |
@@ -376,3 +491,9 @@ GradeForm client-side cũng tính ngay khi nhập:
 - **Lời Chúa cache** sống trong RAM process — restart Render xóa cache, scrape lại lần đầu.
 - **gradeCalculator** là nguồn sự thật duy nhất cho công thức 80/20 — không tính lại ở client lẫn exportController riêng lẻ.
 - **File `.env`** tuyệt đối không commit — chỉ commit `.env.example`.
+- **`formatClassName`** là nguồn sự thật duy nhất cho tên lớp hiển thị — không hardcode tên dài trong DB.
+- **Dark Mode** dùng class `dark` trên `<html>` (không phải `prefers-color-scheme`) để user có thể override.
+- **View Transitions API** chỉ chạy trên Chrome/Edge 111+ — fallback instant toggle cho Firefox/Safari.
+- **`adjustVietnameseLiturgicalCalendar`** cần chạy sau khi merge custom events — thứ tự sort phải đảm bảo.
+- **SVG Charts** trong AdminDashboard dùng MutationObserver theo dõi class `dark` — không dùng `useTheme` để tránh re-render toàn component.
+- **`server/debug/`** đã thêm vào `.gitignore` — file HTML debug tgpsaigon.net không được commit.
