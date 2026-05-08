@@ -206,7 +206,7 @@ const CAP_CONFIG = {
            + ' hover:bg-gray-50 hover:scale-[1.01] dark:hover:bg-slate-700/50'
            + ' transition-all duration-300 feast-memorial',
     dateCls: 'text-gray-400 dark:text-slate-300 font-bold',
-    nameCls: 'text-gray-600 dark:text-slate-200',
+    nameCls: 'text-gray-600 dark:text-slate-200 font-medium',
     badge:   'bg-gray-100 text-gray-500 dark:bg-slate-500/20 dark:text-slate-200 dark:backdrop-blur-sm dark:border dark:border-white/20 font-extrabold uppercase',
   },
 };
@@ -457,7 +457,7 @@ const MassSchedule = ({ now, activeMauKey }) => {
 
   return (
     <div className={`rounded-2xl border shadow-sm p-5 mb-4 bg-white dark:bg-slate-800 dark:border-slate-700 ${tint}`}>
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+      <h3 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
         <Clock size={13} /> {t('liturgy.scheduleTitle')}
       </h3>
       <div className="flex flex-col gap-2.5">
@@ -465,10 +465,12 @@ const MassSchedule = ({ now, activeMauKey }) => {
           const isCurrent = isChaNhat ? l.key === 'sunday' : l.key === 'weekdays';
           return (
             <div key={l.key} className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-semibold w-24 shrink-0 ${isCurrent ? 'text-gray-800' : 'text-gray-400'}`}>
+              <span className={`text-xs font-semibold w-24 shrink-0 ${
+                isCurrent ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500'
+              }`}>
                 {l.label}
                 {isCurrent && (
-                  <span className="ml-1 text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">
+                  <span className="ml-1 text-[9px] bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-bold">
                     {t('liturgy.todayBadge')}
                   </span>
                 )}
@@ -480,9 +482,11 @@ const MassSchedule = ({ now, activeMauKey }) => {
                   return (
                     <span key={g} className={[
                       'font-mono text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors',
-                      isPast    ? 'bg-gray-50 text-gray-300 border-gray-100 line-through' :
-                      isCurrent ? 'bg-red-50 text-red-700 border-red-100' :
-                                  'bg-gray-50 text-gray-400 border-gray-100',
+                      isPast
+                        ? 'bg-gray-50 dark:bg-slate-700/50 text-gray-300 dark:text-slate-600 border-gray-100 dark:border-slate-700 line-through'
+                        : isCurrent
+                          ? 'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-100 dark:border-red-800/50'
+                          : 'bg-gray-50 dark:bg-slate-700/40 text-gray-400 dark:text-slate-400 border-gray-100 dark:border-slate-700',
                     ].join(' ')}>{g}</span>
                   );
                 })}
@@ -644,9 +648,7 @@ const Sidebar = ({ feasts, loadingFeasts, month, year, todayStr, selectedFeast, 
         )}
 
         <div className="relative">
-          <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-linear-to-b from-white dark:from-slate-800 to-transparent z-10" />
-          {/* px-1 + pb-8: tạo khoảng trống cho box-shadow không bị overflow clip cắt mất */}
-          <ul className="scrollbar-thin flex flex-col gap-1.5 overflow-y-auto max-h-96 px-1 pt-1 pb-4">
+          <ul className="scrollbar-thin flex flex-col gap-1.5 overflow-y-auto max-h-96 px-1 pt-1 pb-3">
             {loadingFeasts ? (
               <li className="text-center py-8 text-gray-300 dark:text-slate-600 text-xs italic">{t('liturgy.loading')}</li>
             ) : feasts.length === 0 ? (
