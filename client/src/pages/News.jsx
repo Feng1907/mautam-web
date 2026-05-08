@@ -84,7 +84,7 @@ const PostCard = ({ post }) => {
   return (
     <Link
       to={`/tin-tuc/${post._id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5"
+      className="group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 dark:bg-slate-800 dark:border-slate-700"
       style={{
         background: 'rgba(255,252,249,0.85)',
         borderColor: '#e5d5b5',
@@ -135,7 +135,7 @@ const PostCard = ({ post }) => {
         </h2>
         {post.tomTat && (
           <p
-            className="text-sm text-gray-500 line-clamp-2 flex-1 mb-3"
+            className="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 flex-1 mb-3"
             style={{ fontFamily: SANS }}
           >
             {post.tomTat}
@@ -175,8 +175,8 @@ const News = () => {
 
   return (
     <main
-      className="relative flex-1 page-container min-h-screen"
-      style={{ background: '#fdfbf7', fontFamily: SANS }}
+      className="relative flex-1 page-container min-h-screen bg-page"
+      style={{ fontFamily: SANS }}
     >
       <CrossWatermark />
 
@@ -194,7 +194,7 @@ const News = () => {
                 className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border font-medium transition-all ${
                   active
                     ? 'text-white border-[#8B0000] shadow-sm'
-                    : 'text-gray-600 border-[#e5d5b5] bg-white/70 hover:border-[#D4AF37] hover:text-[#5a1a1a]'
+                    : 'text-gray-600 dark:text-slate-300 border-[#e5d5b5] dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 hover:border-[#D4AF37] hover:text-[#5a1a1a]'
                 }`}
                 style={active ? { background: 'linear-gradient(135deg, #8B0000, #6e1a1a)' } : {}}
               >
