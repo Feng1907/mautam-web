@@ -21,7 +21,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Phase](https://img.shields.io/badge/Phase-12_%E2%9C%85-8B0000?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase-13_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -40,8 +40,8 @@
 - 📊 **Dashboard thống kê** — biểu đồ học lực + chuyên cần theo từng ngành
 - 🖼️ **Avatar đoàn sinh** — upload ảnh thẻ lên Firebase Storage, tự nén
 - 📜 **Lịch sử điểm** — xem TBM / CC / Tổng kết của mỗi em qua các năm học
-- 📢 **Thông báo khẩn** — gửi email HTML tự động đến toàn bộ giáo lý viên và phụ huynh
-- 📖 **Lời Chúa** — fetch loichua.net với điều hướng ngày, nút "Chúa Nhật gần nhất"
+- 📧 **Email phụ huynh** — 3 loại: thông báo khẩn, điểm danh từng buổi, bảng điểm tổng kết HK
+- 📖 **Lời Chúa thông minh** — scraper 3 nguồn (tgpsaigon.net → loichua.net), cache 6 giờ, màu phụng vụ tự động
 - 📸 **Thư viện ảnh** — Firebase Storage, tự nén ~70%, lightbox toàn màn hình
 - 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18next)
 
@@ -50,6 +50,7 @@
 ## 🛠️ Công nghệ
 
 ### Frontend
+
 - ⚛️ **React 19** + **Vite** — UI framework
 - 🎨 **Tailwind CSS 4** — Utility-first styling
 - 🎞️ **Framer Motion 12** — Animations & page transitions
@@ -59,13 +60,16 @@
 - 🔥 **Firebase Storage** — Ảnh gallery + avatar đoàn sinh
 
 ### Backend
+
 - 🟢 **Node.js + Express 5** — REST API
 - 🍃 **MongoDB + Mongoose 9** — Database
 - 🔐 **JWT** — Authentication & Authorization (7 ngày)
-- 📧 **nodemailer** — Email thông báo khẩn
+- 📧 **nodemailer** — 3 template email HTML: thông báo khẩn, điểm danh, bảng điểm
+- 🔢 **romcal** — Lịch phụng vụ Công giáo (màu lễ, mùa phụng vụ)
 - 📊 **ExcelJS 4** — Xuất báo cáo `.xlsx` đa sheet
 
 ### Cloud / Infrastructure
+
 - ☁️ **Vercel** — Frontend hosting (auto-deploy từ GitHub)
 - 🚀 **Render** — Backend hosting
 - 🍃 **MongoDB Atlas** — Database cloud
@@ -75,7 +79,7 @@
 
 ## 🗂️ Cấu trúc dự án
 
-```
+```text
 mautam-website/
 ├── client/                   # Frontend React
 │   ├── public/images/        # Ảnh tĩnh (Quan Thầy, logo...)
@@ -87,6 +91,8 @@ mautam-website/
 │       │   ├── StudentList.jsx       # Danh sách + avatar + lịch sử điểm
 │       │   └── ExportButton.jsx
 │       ├── pages/
+│       │   ├── Home.jsx              # Landing page 5 ngành
+│       │   ├── News.jsx              # Tin tức + lọc loại
 │       │   ├── ClassList.jsx         # Explorer 5 ngành
 │       │   ├── ClassDetail.jsx       # 3 tab: Danh sách / Điểm danh / Bảng điểm
 │       │   ├── LoiChua.jsx           # Lời Chúa + điều hướng ngày
@@ -94,10 +100,12 @@ mautam-website/
 │       │   ├── Gallery.jsx           # Thư viện ảnh Firebase
 │       │   └── admin/
 │       │       ├── AdminDashboard.jsx
-│       │       ├── AdminClasses.jsx  # Phân công nhân sự
-│       │       ├── AdminPromotion.jsx # Lên lớp hàng loạt
-│       │       ├── AdminStats.jsx    # Dashboard thống kê ngành
-│       │       ├── AdminExport.jsx   # Export toàn đoàn
+│       │       ├── AdminClasses.jsx    # Phân công nhân sự
+│       │       ├── AdminPromotion.jsx  # Lên lớp hàng loạt
+│       │       ├── AdminStats.jsx      # Dashboard thống kê ngành
+│       │       ├── AdminExport.jsx     # Export toàn đoàn
+│       │       ├── AdminPosts.jsx      # Quản lý tin tức / thông báo
+│       │       ├── AdminUsers.jsx      # Quản lý tài khoản + phân quyền
 │       │       └── AdminNamHoc.jsx
 │       ├── services/
 │       │   ├── api.js                # Axios + JWT interceptor
@@ -116,10 +124,15 @@ mautam-website/
         │   └── PromotionHistory.js   # Lịch sử lên lớp
         ├── controllers/
         │   ├── exportController.js   # attendance, grades, tổng kết, toàn đoàn
+        │   ├── notifyController.js   # email: điểm danh, lịch lễ, bảng điểm
+        │   ├── loiChuaController.js  # scraper 3 nguồn + cache 6h + romcal
         │   ├── chuyenCanController.js
         │   ├── promoteController.js
         │   └── ...
-        ├── routes/                   # /export, /chuyen-can, /promote, ...
+        ├── utils/
+        │   ├── emailTemplates.js     # 3 template HTML có branding
+        │   └── gradeCalculator.js    # tinhTBHocTap, tinhTongKet, phanLoai
+        ├── routes/                   # /export, /notify, /chuyen-can, /promote, ...
         └── middlewares/
             ├── checkAuth.js
             └── checkClassPermission.js
@@ -130,6 +143,7 @@ mautam-website/
 ## 🚀 Cài đặt & Chạy thử
 
 ### Yêu cầu
+
 - Node.js ≥ 18
 - MongoDB (local hoặc Atlas)
 - Tài khoản Firebase (Spark plan miễn phí)
@@ -151,6 +165,7 @@ cd ../client && npm install
 ### 3. Cấu hình môi trường
 
 **`server/.env`** (xem `server/.env.example`)
+
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/mautam
@@ -163,6 +178,7 @@ EMAIL_PASS=your_app_password
 ```
 
 **`client/.env`** (xem `client/.env.example`)
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_FIREBASE_API_KEY=...
@@ -183,14 +199,14 @@ cd server && npm run dev
 cd client && npm run dev
 ```
 
-Mở trình duyệt: **http://localhost:5173**
+Mở trình duyệt: **<http://localhost:5173>**
 
 ---
 
 ## 👤 Vai trò người dùng
 
-| Vai trò   | Quyền hạn |
-|-----------|-----------|
+| Vai trò | Quyền hạn |
+| --- | --- |
 | `admin`   | Toàn quyền: quản lý lớp, nhân sự, lên lớp, thống kê, export toàn đoàn |
 | `giaoly`  | Quản lý lớp được phân công: điểm danh, điểm, chuyên cần, export lớp mình |
 | `user`    | Xem lớp, xem lịch sử điểm con em, nhận email thông báo khẩn |
@@ -200,15 +216,16 @@ Mở trình duyệt: **http://localhost:5173**
 ## ✨ Tính năng nổi bật
 
 | Tính năng | Chi tiết |
-|-----------|----------|
+| --- | --- |
 | **Chuyên cần thông minh** | Tự tính điểm từ số buổi vắng (có phép −0.5đ, không phép −1đ). Modal 2 mode: nhập buổi hoặc nhập thẳng. |
 | **Tổng kết công thức** | TBM×80% + Chuyên cần×20% = Điểm tổng kết. Export Excel đầy đủ 1 lớp hoặc toàn đoàn. |
 | **Lên lớp hàng loạt** | Chọn checkbox nhiều em, chuyển sang lớp + năm học mới, lưu lịch sử có thể xem lại. |
 | **Dashboard thống kê** | Bar chart CSS phân phối học lực, TB điểm CC, % điểm danh — phân theo từng ngành. |
 | **Lịch sử điểm** | Mỗi đoàn sinh có modal xem TBM/CC/Tổng kết qua tất cả năm học đã học. |
 | **Avatar đoàn sinh** | Upload ảnh thẻ → tự nén → Firebase Storage → hiển thị trong danh sách lớp. |
-| **Email HTML phụ huynh** | Thông báo khẩn gửi kèm template HTML có branding đến tất cả phụ huynh. |
-| **Lời Chúa điều hướng** | Date picker + Prev/Next ngày + nút "Chúa Nhật" → fetch đúng bài đọc ngày đó. |
+| **Email phụ huynh 3 loại** | Thông báo khẩn / điểm danh từng buổi / bảng điểm tổng kết — template HTML branding, gửi batch qua `Promise.allSettled()`. |
+| **Lời Chúa thông minh** | Scraper 3 nguồn (tgpsaigon.net → loichua.net HTML → JSON), cache 6h, tô màu lời Chúa Giêsu, màu phụng vụ tự động qua romcal. |
+| **Tính điểm tự động** | `gradeCalculator.js` dùng chung: TBM có trọng số (miệng×1, 15ph×1, 1tiết×2), Tổng kết = TBM×80%+CC×20%, phân loại học lực. |
 | **Auto-compress ảnh** | Canvas API trước khi upload Firebase — tiết kiệm ~70% dung lượng Storage. |
 | **Sắp xếp tên Việt** | `localeCompare('vi')` theo tên chính (từ cuối cùng trong họ tên). |
 
@@ -217,10 +234,9 @@ Mở trình duyệt: **http://localhost:5173**
 ## 🌿 Nhánh phát triển
 
 | Nhánh | Mục đích |
-|-------|----------|
-| `master` | Production — đã merge phase 1–12 |
+| --- | --- |
+| `master` | Production — đã merge phase 1–13 |
 | `develop` | Integration — merge trước khi lên master |
-| `phase/12-polish-features` | Đang phát triển — sẽ merge vào develop |
 
 ---
 
