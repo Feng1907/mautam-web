@@ -33,3 +33,7 @@ Thumbs.db
 
 # Misc
 *.pem
+
+# Claude Code
+.claude/
+server/debug/
