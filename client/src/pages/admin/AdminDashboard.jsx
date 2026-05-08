@@ -63,7 +63,20 @@ const avatarGradient = (name = '') =>
   GRADIENTS[(name.charCodeAt(0) || 0) % GRADIENTS.length];
 
 // ── SVG Bar Chart ─────────────────────────────────────────────────────────────
+// Detect dark mode cho SVG (SVG không đọc được Tailwind dark: trực tiếp)
+const useDark = () => document.documentElement.classList.contains('dark');
+
 const SvgBarChart = ({ data }) => {
+  const [, forceRender] = useState(0);
+  useEffect(() => {
+    // Re-render khi theme thay đổi để SVG cập nhật màu
+    const obs = new MutationObserver(() => forceRender(n => n + 1));
+    obs.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  const dark = useDark();
+  const gridColor  = dark ? '#334155' : '#f1f5f9';
+  const tickColor  = dark ? '#64748b' : '#cbd5e1';
   const W = 280, H = 130, PAD = { top: 10, right: 8, bottom: 28, left: 28 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
@@ -78,8 +91,8 @@ const SvgBarChart = ({ data }) => {
         const y = PAD.top + innerH * (1 - t);
         return (
           <g key={t}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={y} y2={y} stroke="#f1f5f9" strokeWidth={1} />
-            <text x={PAD.left - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#cbd5e1">
+            <line x1={PAD.left} x2={W - PAD.right} y1={y} y2={y} stroke={gridColor} strokeWidth={1} />
+            <text x={PAD.left - 4} y={y + 4} textAnchor="end" fontSize={9} fill={tickColor}>
               {Math.round(max * t)}
             </text>
           </g>
@@ -93,7 +106,7 @@ const SvgBarChart = ({ data }) => {
         return (
           <g key={i}>
             <rect x={x} y={y} width={barW} height={barH} fill={d.color} rx={3} opacity={0.85} />
-            <text x={x + barW / 2} y={PAD.top + innerH + 14} textAnchor="middle" fontSize={9} fill="#94a3b8">
+            <text x={x + barW / 2} y={PAD.top + innerH + 14} textAnchor="middle" fontSize={9} fill={tickColor}>
               {d.label.length > 5 ? d.label.slice(0, 4) + '…' : d.label}
             </text>
             {d.value > 0 && (
@@ -157,12 +170,12 @@ const EmptyState = ({ icon: Icon, message }) => (
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, to, iconCls, valCls }) => (
-  <Link to={to} className="bg-white border border-slate-100 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition group shadow-sm">
+  <Link to={to} className="bg-white border border-slate-100 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition group shadow-sm dark:bg-slate-800 dark:border-slate-700">
     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconCls}`}>
       <Icon className="w-5 h-5" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">{label}</p>
+      <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">{label}</p>
       <p className={`text-2xl font-black leading-tight ${valCls}`}>{value ?? '—'}</p>
     </div>
   </Link>
@@ -172,11 +185,11 @@ const StatCard = ({ icon: Icon, label, value, to, iconCls, valCls }) => (
 const ClassCard = ({ lop }) => {
   const cfg = NGANH_CFG[lop.nhanh] || NGANH_CFG.ChienNon;
   return (
-    <div className="bg-white border border-slate-100 rounded-xl p-3 hover:shadow-md transition shadow-sm">
+    <div className="bg-white border border-slate-100 rounded-xl p-3 hover:shadow-md transition shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-1.5">
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>{cfg.label}</span>
       </div>
-      <p className="font-bold text-gray-800 text-sm leading-tight">{formatClassName(lop.tenLop)}</p>
+      <p className="font-bold text-gray-800 text-sm leading-tight dark:text-slate-100">{formatClassName(lop.tenLop)}</p>
       <p className="text-xs text-gray-500 mt-0.5">
         Sĩ số: <span className="text-emerald-700 font-bold">{lop.siSo ?? 0}</span>
         <span className="text-gray-400"> đoàn sinh</span>
@@ -321,7 +334,7 @@ const GlobalSearch = ({ users, classes }) => {
           onChange={handleChange}
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder="Tìm đoàn sinh, huynh trưởng, lớp..."
-          className="w-full h-9 pl-9 pr-8 text-sm bg-white border border-slate-200 rounded-xl shadow-sm outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 transition placeholder:text-gray-400"
+          className="w-full h-9 pl-9 pr-8 text-sm bg-white border border-slate-200 rounded-xl shadow-sm outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 transition placeholder:text-gray-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         {query && (
           <button onClick={clear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -331,17 +344,17 @@ const GlobalSearch = ({ users, classes }) => {
       </div>
 
       {open && (
-        <div className="absolute top-full mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden dark:bg-slate-800 dark:border-slate-700">
           {results.map((r) => (
             <Link key={`${r.type}-${r.id}`} to={r.to} onClick={clear}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition">
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition dark:hover:bg-slate-700">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white text-xs font-bold ${
                 r.type === 'user' ? 'bg-blue-500' : 'bg-emerald-500'
               }`}>
                 {r.type === 'user' ? <Users className="w-3.5 h-3.5" /> : <LayoutGrid className="w-3.5 h-3.5" />}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{r.label}</p>
+                <p className="text-sm font-semibold text-gray-800 truncate dark:text-slate-100">{r.label}</p>
                 <p className="text-xs text-gray-400 truncate">{r.sub}</p>
               </div>
             </Link>
@@ -479,7 +492,7 @@ const AdminDashboard = () => {
         {/* ══ CỘT 1 — NGƯỜI DÙNG ══════════════════════════════════════ */}
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Quản lý Người dùng</h2>
+            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Quản lý Người dùng</h2>
             <Link to="/admin/nguoi-dung" className="btn-primary py-1! px-3! text-xs!">+ Tạo tài khoản</Link>
           </div>
 
@@ -509,7 +522,7 @@ const AdminDashboard = () => {
               const cv   = u.chucVu ? CHUC_VU_CFG[u.chucVu] : null;
               const grad = avatarGradient(u.hoTen);
               return (
-                <div key={u._id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:shadow-sm transition shadow-sm">
+                <div key={u._id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:shadow-sm transition shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   {u.avatar ? (
                     <img src={u.avatar} alt={u.hoTen}
                       className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm"
@@ -551,7 +564,7 @@ const AdminDashboard = () => {
         {/* ══ CỘT 2 — LỚP HỌC ═════════════════════════════════════════ */}
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Quản lý Lớp học</h2>
+            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Quản lý Lớp học</h2>
             <Link to="/admin/lop-hoc" className="text-xs text-red-600 hover:underline font-medium">Xem tất cả →</Link>
           </div>
 
@@ -566,7 +579,7 @@ const AdminDashboard = () => {
                   <div key={nhanh}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`} />
-                      <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">{cfg.label}</p>
+                      <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">{cfg.label}</p>
                     </div>
                     <div className={`grid gap-2 ${lops.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                       {lops.map(lop => <ClassCard key={lop._id} lop={lop} />)}
@@ -583,7 +596,7 @@ const AdminDashboard = () => {
 
           {/* Stat cards */}
           <div>
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Tổng quan</h2>
+            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-3">Tổng quan</h2>
             <div className="flex flex-col gap-2">
               <StatCard icon={LayoutGrid}    label="Lớp học"        value={stats.lopHoc}      to="/admin/lop-hoc"    iconCls="bg-blue-50 text-blue-600"      valCls="text-blue-700"   />
               <StatCard icon={GraduationCap} label="Tổng đoàn sinh" value={stats.doanSinh}    to="/admin/lop-hoc"    iconCls="bg-emerald-50 text-emerald-600" valCls="text-emerald-700" />
@@ -595,15 +608,15 @@ const AdminDashboard = () => {
 
           {/* Bar chart: Đoàn sinh theo ngành */}
           {barData.length > 0 && (
-            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-              <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Đoàn sinh theo Ngành</p>
+            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+              <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-3">Đoàn sinh theo Ngành</p>
               <SvgBarChart data={barData} />
             </div>
           )}
 
           {/* Donut chart: Tỉ lệ chuyên cần */}
-          <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-1">Tỉ lệ Chuyên cần</p>
+          <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-1">Tỉ lệ Chuyên cần</p>
             <p className="text-[10px] text-gray-300 italic mb-2">Dữ liệu mẫu · kết nối API chuyên cần để cập nhật thật</p>
             <SvgDonutChart data={pieData} />
           </div>
@@ -611,7 +624,7 @@ const AdminDashboard = () => {
           {/* Bài viết mới nhất */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Bài viết mới nhất</h2>
+              <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Bài viết mới nhất</h2>
               <Link to="/admin/bai-viet" className="text-xs text-red-600 hover:underline font-medium">Xem tất cả →</Link>
             </div>
             {posts.length === 0 ? (
@@ -619,9 +632,9 @@ const AdminDashboard = () => {
             ) : (
               <div className="flex flex-col gap-2">
                 {posts.map(p => (
-                  <div key={p._id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:shadow-sm transition shadow-sm">
+                  <div key={p._id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:shadow-sm transition shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{p.tieuDe}</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate dark:text-slate-100">{p.tieuDe}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</p>
                     </div>
                     <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${

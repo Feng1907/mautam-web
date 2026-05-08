@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+/* ── Tailwind v4: class-based dark mode ──────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --brand-red:  #c0392b;
   --brand-blue: #2980b9;
+  /* Circular Reveal origin (set by ThemeContext) */
+  --vt-x: 50%;
+  --vt-y: 50%;
 }
 
 * { box-sizing: border-box; }
@@ -12,6 +18,28 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f3f4f6;
   color: #1f2937;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark body, body:where(.dark *) {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* ── Circular Reveal — View Transitions API ──────────────────────────────── */
+@keyframes vt-clip-reveal {
+  from { clip-path: circle(0% at var(--vt-x) var(--vt-y)); }
+  to   { clip-path: circle(160% at var(--vt-x) var(--vt-y)); }
+}
+
+/* New snapshot mở rộng từ tâm nút bấm */
+::view-transition-new(root) {
+  animation: vt-clip-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+/* Old snapshot nằm im phía dưới */
+::view-transition-old(root) {
+  animation: none;
+  z-index: -1;
 }
 
 #root {
@@ -26,8 +54,8 @@ body {
 .btn-ghost     { @apply border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded transition cursor-pointer; }
 .btn-danger    { @apply bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-4 py-2 rounded transition cursor-pointer; }
 
-.card  { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5; }
-.input { @apply w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400; }
+.card  { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5 dark:bg-slate-800 dark:border-slate-700; }
+.input { @apply w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder:text-slate-500; }
 
 .badge-red   { @apply inline-block bg-red-100   text-red-700   text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-blue  { @apply inline-block bg-blue-100  text-blue-700  text-xs font-semibold px-2 py-0.5 rounded-full; }
@@ -41,6 +69,89 @@ body {
   0%   { transform: translateX(-100%); }
   60%  { transform: translateX(100%); }
   100% { transform: translateX(100%); }
+}
+
+/* ── Dark mode: global helpers ───────────────────────────────────────────── */
+/* Tất cả trang dùng bg-page sẽ tự chuyển màu khi dark */
+.bg-page        { background-color: #fdfbf7; }
+.dark .bg-page  { background-color: #0f172a; }
+
+/* Card nền ngà chuyển sang slate-800 */
+.dark .card-warm { background-color: #1e293b !important; border-color: #334155 !important; }
+
+/* Văn bản phụ */
+.dark .text-secondary { color: #94a3b8; }
+
+/* Input/Select trong dark */
+.dark input:not([type=checkbox]):not([type=radio]):not([type=range]),
+.dark select,
+.dark textarea {
+  background-color: #1e293b;
+  border-color:     #475569;
+  color:            #f1f5f9;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #64748b; }
+
+/* Table zebra */
+.dark table tbody tr:nth-child(even) { background-color: rgba(30,41,59,0.4); }
+.dark table tbody tr:hover           { background-color: rgba(51,65,85,0.5); }
+
+/* Hover nút ghost */
+.dark .btn-ghost { border-color: #475569; color: #cbd5e1; }
+.dark .btn-ghost:hover { background-color: #1e293b; }
+
+/* Dark mode: override warm ivory inline backgrounds trên các card */
+.dark .dark\:bg-slate-800 { background: #1e293b !important; }
+
+/* ── Feast glow effects (dark mode only) ─────────────────────────────────── */
+/* Lễ Trọng — hào quang đỏ (gradient đỏ rực từ red-700) */
+.dark .feast-solemnity {
+  box-shadow: 0 0 0 1px rgba(185,28,28,0.40),
+              0 0 15px rgba(239,68,68,0.50),
+              0 4px 20px rgba(239,68,68,0.35);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dark .feast-solemnity:hover {
+  box-shadow: 0 0 0 1px rgba(185,28,28,0.60),
+              0 0 22px rgba(239,68,68,0.65),
+              0 6px 28px rgba(239,68,68,0.50);
+  transform: translateY(-1px);
+}
+
+/* Lễ Kính — viền xanh tinh tế, không glow chói */
+.dark .feast-feast {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.18),
+              0 2px 8px rgba(0,0,0,0.40);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dark .feast-feast:hover {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.35),
+              0 4px 14px rgba(0,0,0,0.50);
+  transform: translateY(-1px);
+}
+
+/* Lễ Nhớ — viền slate mờ, bóng đen tối tự nhiên */
+.dark .feast-memorial {
+  box-shadow: 0 0 0 1px rgba(100,116,139,0.20),
+              0 2px 6px rgba(0,0,0,0.35);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dark .feast-memorial:hover {
+  box-shadow: 0 0 0 1px rgba(100,116,139,0.35),
+              0 4px 10px rgba(0,0,0,0.45);
+  transform: translateY(-1px);
+}
+
+/* Đại Lễ — hào quang vàng */
+.dark .feast-great {
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.25),
+              0 4px 16px rgba(251,191,36,0.28);
+  transition: box-shadow 0.2s ease;
+}
+.dark .feast-great:hover {
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.45),
+              0 6px 24px rgba(251,191,36,0.40);
 }
 
 /* Custom scrollbar — dùng cho .scrollbar-thin */

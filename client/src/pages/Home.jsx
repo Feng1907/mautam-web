@@ -65,7 +65,7 @@ const Home = () => {
 
 
   return (
-    <main className="relative flex-1" style={{ background: '#fdfbf7', fontFamily: SANS }}>
+    <main className="relative flex-1 bg-page" style={{ fontFamily: SANS }}>
       <CrossWatermark />
 
       {/* ══════════════════════════════════════════════════════
@@ -182,7 +182,7 @@ const Home = () => {
                   <p className="font-bold text-sm text-[#3d1515]" style={{ fontFamily: SERIF }}>
                     {t(`nganh.${key}`)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{t(`nganh.desc.${key}`)}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{t(`nganh.desc.${key}`)}</p>
                 </Link>
               </motion.div>
             );
@@ -235,7 +235,7 @@ const Home = () => {
               <div className="h-px w-6 bg-[#D4AF37]/40" />
             </div>
 
-            <p className="text-gray-600 text-sm leading-relaxed ml-8" style={{ fontFamily: SANS }}>
+            <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed ml-8" style={{ fontFamily: SANS }}>
               {t('home.patronDesc')}
             </p>
 
@@ -313,7 +313,7 @@ const Home = () => {
                   <p className="font-semibold text-[#3d1515] text-sm truncate" style={{ fontFamily: SERIF }}>
                     Xem giờ lễ & màu áo lễ
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5" style={{ fontFamily: SANS }}>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5" style={{ fontFamily: SANS }}>
                     Giờ lễ cố định và lời Chúa trong ngày
                   </p>
                 </div>

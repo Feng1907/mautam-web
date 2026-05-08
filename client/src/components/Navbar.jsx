@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import ThemeToggle from './ThemeToggle';
 
 const AVATAR_COLORS = [
   'bg-red-400','bg-blue-400','bg-green-500','bg-yellow-400',
@@ -83,8 +84,9 @@ const Navbar = () => {
           ))}
         </nav>
 
-        {/* Right side: lang switcher + auth */}
+        {/* Right side: lang switcher + theme toggle + auth */}
         <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle />
           <LanguageSwitcher />
 
           {user ? (
@@ -156,6 +158,9 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        {/* Mobile: theme toggle */}
+        <ThemeToggle className="md:hidden" />
 
         {/* Mobile hamburger */}
         <button className="md:hidden text-white p-1" onClick={() => setMenuOpen(o => !o)} aria-label="Menu">

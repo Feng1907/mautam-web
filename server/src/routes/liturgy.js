@@ -183,6 +183,101 @@ const pickIcon = (name = '', type = '', colorKey = 'GREEN') => {
   return '✨';
 };
 
+// ── Các lễ trọng được dời sang Chúa Nhật tại Việt Nam ────────────────────────
+//
+//  Hội đồng Giám mục Việt Nam cho phép dời 3 lễ trọng từ ngày giữa tuần
+//  sang Chúa Nhật liền sau:
+//    1. Lễ Chúa Giêsu Lên Trời  (Thứ Năm tuần VI PS  → CN VII PS)
+//    2. Lễ Mình Máu Thánh Chúa  (Thứ Năm sau CN Ba Ngôi → CN tiếp)
+//    3. Lễ Hiển Linh             (06/01 → CN giữa 02/01–08/01)
+//       * Hiển Linh xử lý riêng vì dời về trước, không phải sau.
+//
+const VIET_MOVEABLE = [
+  {
+    key:          'ASCENSION',
+    matchName:    (n) => n.includes('Lên Trời') || n.toLowerCase().includes('ascension'),
+    weekday:      4,    // Thứ Năm (0=CN … 4=Năm)
+    daysToSunday: 3,    // +3 ngày → CN
+    // Thứ Năm được hạ xuống ngày thường Phục Sinh
+    feriaLabel:   (dateKey) => {
+      const d = new Date(dateKey + 'T00:00:00');
+      // Tính tuần trong mùa Phục Sinh: Easter luôn trước Ascension 39 ngày
+      // → Ascension là ngày 40 PS → thuộc tuần VI → deria "Thứ Năm tuần VI PS"
+      return 'Thứ Năm tuần VI Mùa Phục Sinh';
+    },
+  },
+  {
+    key:          'CORPUS',
+    matchName:    (n) => n.includes('Mình Máu') || n.toLowerCase().includes('body and blood'),
+    weekday:      4,    // Thứ Năm
+    daysToSunday: 3,
+    feriaLabel:   () => 'Thứ Năm sau Lễ Chúa Ba Ngôi',
+  },
+];
+
+const adjustVietnameseLiturgicalCalendar = (feasts) => {
+  const result = [...feasts];
+
+  VIET_MOVEABLE.forEach(({ key, matchName, weekday, daysToSunday, feriaLabel }) => {
+    // Tìm lễ cần dời
+    const idx = result.findIndex(f => matchName(f.ten));
+    if (idx === -1) return;
+
+    const feast = result[idx];
+    const d = new Date(feast.dateKey + 'T00:00:00');
+    if (d.getDay() !== weekday) return;   // Romcal đã đặt đúng Thứ Năm, tiếp tục
+
+    // Tính dateKey của Chúa Nhật liền sau
+    // Dùng local date components để tránh lỗi timezone UTC+7
+    const sunday = new Date(d);
+    sunday.setDate(sunday.getDate() + daysToSunday);
+    const sy = sunday.getFullYear();
+    const sm = String(sunday.getMonth() + 1).padStart(2, '0');
+    const sd = String(sunday.getDate()).padStart(2, '0');
+    const sundayKey  = `${sy}-${sm}-${sd}`;
+    const sundayNgay = `${sd}/${sm}`;
+
+    // Tìm entry Chúa Nhật đó trong danh sách
+    const sunIdx = result.findIndex(f => f.dateKey === sundayKey);
+
+    // Hạ ngày Thứ Năm thành ngày thường
+    result[idx] = {
+      ...feast,
+      ten:    feriaLabel(feast.dateKey),
+      cap:    undefined,
+      rank:   'FERIA',
+      icon:   '📅',
+      mauKey: 'trang',  // Mùa Phục Sinh = áo Trắng
+    };
+
+    if (sunIdx !== -1) {
+      // Ghép tên lễ trọng vào Chúa Nhật hiện có
+      const sun = result[sunIdx];
+      result[sunIdx] = {
+        ...sun,
+        ten:    `${sun.ten}. ${feast.ten}`,
+        cap:    'trong',
+        rank:   'SOLEMNITY',
+        icon:   feast.icon,
+        mauKey: feast.mauKey,
+      };
+    } else {
+      // Chúa Nhật chưa có (hiếm — nằm qua tháng khác) → thêm mới
+      result.push({
+        ngay:    sundayNgay,
+        dateKey: sundayKey,
+        ten:     feast.ten,
+        cap:     'trong',
+        rank:    'SOLEMNITY',
+        icon:    feast.icon,
+        mauKey:  feast.mauKey,
+      });
+    }
+  });
+
+  return result.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+};
+
 // ── Lễ riêng Xứ đoàn Anrê Phú Yên ───────────────────────────────────────────
 const getCustomEvents = (year) => [
   {
@@ -269,8 +364,11 @@ router.get('/feasts', async (req, res) => {
       return m === month;
     });
 
-    const allFeasts = [...romcalFeasts, ...customThisMonth]
-      .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+    // Áp dụng điều chỉnh Phụng vụ Việt Nam (dời lễ sang Chúa Nhật)
+    // Cần toàn bộ tháng để tìm Chúa Nhật liền sau ngày lễ
+    const allFeasts = adjustVietnameseLiturgicalCalendar(
+      [...romcalFeasts, ...customThisMonth]
+    );
 
     // Metadata tháng
     const isThangHoa = month === 5;

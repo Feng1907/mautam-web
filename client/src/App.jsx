@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './store/AuthContext';
+import { ThemeProvider } from './store/ThemeContext';
 import Navbar        from './components/Navbar';
 import Footer        from './components/Footer';
 import RouteGuard    from './components/RouteGuard';
@@ -36,6 +37,7 @@ const ConditionalFooter = () => {
 };
 
 const App = () => (
+  <ThemeProvider>
   <AuthProvider>
     <BrowserRouter>
       <Navbar />
@@ -80,6 +82,7 @@ const App = () => (
       <ConditionalFooter />
     </BrowserRouter>
   </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

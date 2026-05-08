@@ -103,7 +103,7 @@ const ImageCard = ({ photo, index, isAdmin, onDelete, onOpen }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.18 } }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-300 border border-[#e5d5b5] hover:border-[#D4AF37]"
+      className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-shadow duration-300 border border-[#e5d5b5] hover:border-[#D4AF37] dark:border-slate-700"
       style={{ background: '#fffcf9', aspectRatio: '4/3' }}
       onClick={() => !deleting && onOpen(photo)}
     >
@@ -545,8 +545,8 @@ const Gallery = () => {
 
   return (
     <main
-      className="flex-1 min-h-screen"
-      style={{ background: '#fdfbf7', fontFamily: SANS }}
+      className="flex-1 min-h-screen bg-page"
+      style={{ fontFamily: SANS }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
@@ -587,11 +587,10 @@ const Gallery = () => {
               style={{ color: '#D4AF37' }}
             />
             <input
-              className="w-full h-10 pl-10 pr-4 text-sm bg-white/80 outline-none transition"
+              className="w-full h-10 pl-10 pr-4 text-sm bg-white/80 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 outline-none transition"
               style={{
                 borderRadius: '9999px',
                 border: '1.5px solid #e5d5b5',
-                color: '#3d1515',
                 fontFamily: SANS,
               }}
               onFocus={e => (e.target.style.borderColor = '#D4AF37')}

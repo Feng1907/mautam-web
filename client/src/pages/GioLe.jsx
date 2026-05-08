@@ -164,32 +164,50 @@ const PAGE_BG = {
 
 const CAP_CONFIG = {
   dai: {
-    label:   'ĐẠI LỄ',
-    rowCls:  'bg-amber-50 border border-amber-200 hover:bg-amber-100',
-    dateCls: 'text-amber-600',
-    nameCls: 'font-bold text-amber-800',
-    badge:   'bg-amber-500 text-white',
+    label:    'ĐẠI LỄ',
+    rowCls:   'bg-amber-50 shadow-sm dark:shadow-none border border-amber-200'
+            + ' dark:bg-linear-to-r dark:from-amber-950/70 dark:via-yellow-900/50 dark:to-amber-950/70'
+            + ' dark:border-amber-700/60'
+            + ' hover:bg-amber-100 hover:scale-[1.01] dark:hover:from-amber-900/70 dark:hover:via-yellow-900/60 dark:hover:to-amber-900/70'
+            + ' transition-all duration-300 feast-great',
+    dateCls:  'text-amber-600 dark:text-amber-300 font-black',
+    nameCls:  'font-bold text-amber-800 dark:text-amber-200',
+    badge:    'bg-amber-500 dark:bg-amber-600 text-white font-extrabold uppercase',
   },
   trong: {
-    label:   'LỄ TRỌNG',
-    rowCls:  'bg-red-50 border border-red-100 hover:bg-red-100',
-    dateCls: 'text-red-500',
-    nameCls: 'font-semibold text-red-800',
-    badge:   'bg-red-500 text-white',
+    label:    'LỄ TRỌNG',
+    // Light: nền đỏ nhạt, badge đỏ đậm  |  Dark: gradient rực, text trắng
+    rowCls:   'bg-red-50 shadow-sm dark:shadow-none border border-red-200'
+            + ' dark:bg-linear-to-r dark:from-red-700 dark:via-rose-600 dark:to-red-700'
+            + ' dark:border-red-600/50'
+            + ' hover:bg-red-100 hover:scale-[1.01] dark:hover:from-red-600 dark:hover:via-rose-500 dark:hover:to-red-600'
+            + ' transition-all duration-300 feast-solemnity',
+    dateCls:  'text-red-600 dark:text-white font-black',
+    nameCls:  'font-bold text-red-800 dark:text-white',
+    badge:    'bg-red-100 text-red-700 dark:bg-white/20 dark:text-white dark:backdrop-blur-sm font-extrabold uppercase',
   },
   kinh: {
     label:   'LỄ KÍNH',
-    rowCls:  'bg-orange-50 border border-orange-100 hover:bg-orange-100',
-    dateCls: 'text-orange-500',
-    nameCls: 'font-semibold text-orange-800',
-    badge:   'bg-orange-400 text-white',
+    // Light: viền xám nhạt + shadow nhẹ  |  Dark: gradient xanh mờ
+    rowCls:  'bg-orange-50 shadow-sm dark:shadow-none border border-slate-200'
+           + ' dark:bg-linear-to-r dark:from-blue-600/20 dark:to-transparent'
+           + ' dark:border-blue-400/40'
+           + ' hover:bg-orange-100 hover:scale-[1.01] dark:hover:from-blue-600/30'
+           + ' transition-all duration-300 feast-feast',
+    dateCls: 'text-orange-500 dark:text-blue-300 font-bold',
+    nameCls: 'font-semibold text-orange-800 dark:text-slate-100',
+    badge:   'bg-orange-100 text-orange-700 dark:bg-blue-500/30 dark:text-blue-200 dark:backdrop-blur-sm dark:border dark:border-blue-400/40 font-extrabold uppercase',
   },
   nho: {
     label:   'LỄ NHỚ',
-    rowCls:  'hover:bg-gray-50',
-    dateCls: 'text-gray-400',
-    nameCls: 'text-gray-600',
-    badge:   'bg-gray-200 text-gray-500',
+    // Light: viền xám nhạt shadow-sm  |  Dark: slate kính mờ, glow bạc
+    rowCls:  'border border-slate-200 shadow-sm dark:shadow-none'
+           + ' dark:bg-slate-800/40 dark:backdrop-blur-md dark:border-white/10'
+           + ' hover:bg-gray-50 hover:scale-[1.01] dark:hover:bg-slate-700/50'
+           + ' transition-all duration-300 feast-memorial',
+    dateCls: 'text-gray-400 dark:text-slate-300 font-bold',
+    nameCls: 'text-gray-600 dark:text-slate-200',
+    badge:   'bg-gray-100 text-gray-500 dark:bg-slate-500/20 dark:text-slate-200 dark:backdrop-blur-sm dark:border dark:border-white/20 font-extrabold uppercase',
   },
 };
 
@@ -438,7 +456,7 @@ const MassSchedule = ({ now, activeMauKey }) => {
   ];
 
   return (
-    <div className={`rounded-2xl border shadow-sm p-5 mb-4 bg-white ${tint}`}>
+    <div className={`rounded-2xl border shadow-sm p-5 mb-4 bg-white dark:bg-slate-800 dark:border-slate-700 ${tint}`}>
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
         <Clock size={13} /> {t('liturgy.scheduleTitle')}
       </h3>
@@ -519,38 +537,37 @@ const FeastItem = ({ le, isToday, isSelected, onSelect }) => {
   // Thứ tự ưu tiên style: isSelected > isBonMang > isToday > cap > default
   let rowCls, dateCls, nameCls;
   if (isSelected) {
-    rowCls  = 'bg-blue-100 border border-blue-300 shadow-sm ring-1 ring-blue-400';
-    dateCls = 'text-blue-600 font-black';
-    nameCls = 'font-bold text-blue-800';
+    rowCls  = 'bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-700 shadow-sm ring-1 ring-blue-400 dark:ring-blue-600';
+    dateCls = 'text-blue-600 dark:text-blue-400 font-black';
+    nameCls = 'font-bold text-blue-800 dark:text-blue-300';
   } else if (isBonMang) {
-    // Bổn mạng xứ đoàn: đỏ rực rỡ + shimmer nhẹ
-    rowCls  = 'bg-linear-to-r from-red-100 to-rose-50 border-2 border-red-400 shadow-md';
-    dateCls = 'text-red-600 font-black';
-    nameCls = 'font-black text-red-900';
+    rowCls  = 'bg-linear-to-r from-red-100 dark:from-red-700 via-rose-50 dark:via-rose-600 to-red-100 dark:to-red-700 border-2 border-red-400 dark:border-red-500 feast-solemnity';
+    dateCls = 'text-red-600 dark:text-white font-black';
+    nameCls = 'font-black text-red-900 dark:text-white';
   } else if (isToday) {
-    rowCls  = 'bg-yellow-50 border border-yellow-300 shadow-sm ring-1 ring-yellow-300';
-    dateCls = 'text-yellow-600 font-black';
-    nameCls = 'font-bold text-yellow-800';
+    rowCls  = 'bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-300 dark:border-yellow-700 shadow-sm ring-1 ring-yellow-300 dark:ring-yellow-700';
+    dateCls = 'text-yellow-600 dark:text-yellow-400 font-black';
+    nameCls = 'font-bold text-yellow-800 dark:text-yellow-300';
   } else {
-    rowCls  = cap ? cap.rowCls  : 'hover:bg-gray-50';
-    dateCls = cap ? cap.dateCls : 'text-gray-400';
-    nameCls = cap ? cap.nameCls : 'text-gray-700';
+    rowCls  = cap ? cap.rowCls  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50';
+    dateCls = cap ? cap.dateCls : 'text-gray-400 dark:text-slate-500';
+    nameCls = cap ? cap.nameCls : 'text-gray-700 dark:text-slate-300';
   }
 
   return (
     <button
       onClick={() => onSelect(le)}
-      className={`w-full flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all cursor-pointer text-left ${rowCls}`}
+      className={`w-full flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all duration-300 cursor-pointer text-left ${rowCls}`}
     >
       {/* Priority badges — chỉ hiện 1 badge ưu tiên nhất */}
       {isSelected ? (
-        <span className="text-[9px] font-black text-blue-600 bg-blue-200 px-1.5 py-0.5 rounded-full shrink-0">ĐÃ CHỌN</span>
+        <span className="text-[9px] font-black text-blue-600 dark:text-blue-300 bg-blue-200 dark:bg-blue-900 px-1.5 py-0.5 rounded-full shrink-0">ĐÃ CHỌN</span>
       ) : isBonMang ? (
         <span className="text-[8px] font-black text-white bg-red-600 border border-red-800 px-1.5 py-0.5 rounded-full shrink-0 leading-tight">
           BỔN MẠNG<br />XỨ ĐOÀN
         </span>
       ) : isToday ? (
-        <span className="text-[9px] font-black text-yellow-600 bg-yellow-200 px-1.5 py-0.5 rounded-full shrink-0">HÔM NAY</span>
+        <span className="text-[9px] font-black text-yellow-700 dark:text-yellow-300 bg-yellow-200 dark:bg-yellow-900/60 px-1.5 py-0.5 rounded-full shrink-0">HÔM NAY</span>
       ) : null}
 
       <span className={`w-2 h-2 rounded-full shrink-0 ${MAU_DOT_SMALL[le.mauKey] || 'bg-gray-300'}`} />
@@ -560,7 +577,7 @@ const FeastItem = ({ le, isToday, isSelected, onSelect }) => {
 
       {/* Badge cấp lễ */}
       {cap && (
-        <span className={`text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 ${cap.badge}`}>
+        <span className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 backdrop-blur-sm ${cap.badge}`}>
           {t(`liturgy.caps.${le.cap}`, cap.label)}
         </span>
       )}
@@ -606,9 +623,9 @@ const Sidebar = ({ feasts, loadingFeasts, month, year, todayStr, selectedFeast, 
       )}
 
       {/* Danh sách ngày lễ */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <h3 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <Calendar size={13} />
             {`LỄ THÁNG ${month} / ${year}`}
             {isThangHoa && <span className="text-base leading-none">🌸</span>}
@@ -627,12 +644,13 @@ const Sidebar = ({ feasts, loadingFeasts, month, year, todayStr, selectedFeast, 
         )}
 
         <div className="relative">
-          <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-linear-to-b from-white to-transparent z-10" />
-          <ul className="scrollbar-thin flex flex-col gap-1 overflow-y-auto max-h-96 pr-1 py-1">
+          <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-linear-to-b from-white dark:from-slate-800 to-transparent z-10" />
+          {/* px-1 + pb-8: tạo khoảng trống cho box-shadow không bị overflow clip cắt mất */}
+          <ul className="scrollbar-thin flex flex-col gap-1.5 overflow-y-auto max-h-96 px-1 pt-1 pb-4">
             {loadingFeasts ? (
-              <li className="text-center py-8 text-gray-300 text-xs italic">{t('liturgy.loading')}</li>
+              <li className="text-center py-8 text-gray-300 dark:text-slate-600 text-xs italic">{t('liturgy.loading')}</li>
             ) : feasts.length === 0 ? (
-              <li className="text-center py-8 text-gray-300 text-xs italic">{t('liturgy.noData')}</li>
+              <li className="text-center py-8 text-gray-300 dark:text-slate-600 text-xs italic">{t('liturgy.noData')}</li>
             ) : feasts.map(le => {
               const isToday    = le.ngay === todayStr;
               const isSelected = selectedFeast?.ngay === le.ngay && selectedFeast?.ten === le.ten;
@@ -837,20 +855,20 @@ const GioLe = () => {
   const pageBg = PAGE_BG[activeMauKey] || PAGE_BG.xanh;
 
   return (
-    <main className={`flex-1 min-h-screen bg-linear-to-br ${pageBg} transition-all duration-700`}>
+    <main className={`flex-1 min-h-screen bg-linear-to-br ${pageBg} dark:bg-none dark:bg-slate-950 transition-all duration-700`}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 mb-1 flex items-center gap-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 dark:text-slate-500 mb-1 flex items-center gap-1">
               {t('liturgy.pageSubtitle')}
               {isThangHoa && <span className="text-base leading-none">🌸</span>}
             </p>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">{thu}</h1>
-            <p className="text-base text-gray-500 font-medium mt-0.5">{ngay}</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-slate-100 leading-tight">{thu}</h1>
+            <p className="text-base text-gray-500 dark:text-slate-400 font-medium mt-0.5">{ngay}</p>
           </div>
-          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/60 shadow-sm">
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/60 dark:border-slate-700 shadow-sm">
             <Clock size={15} className="text-red-600 shrink-0" />
             <span className="font-mono font-bold text-2xl tracking-widest text-red-700 tabular-nums">
               {gio}
