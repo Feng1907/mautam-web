@@ -95,45 +95,63 @@ mautam-website/
 ├── client/                          # React 19 + Vite
 │   └── src/
 │       ├── components/
-│       │   ├── Navbar.jsx
+│       │   ├── Navbar.jsx           # Nav + user dropdown + ThemeToggle + LanguageSwitcher
+│       │   ├── Footer.jsx           # Footer branding + motto
 │       │   ├── AttendanceTable.jsx  # Điểm danh + lọc buổi + đếm vắng + email
 │       │   ├── GradeForm.jsx        # Bảng điểm + CC + tính điểm tự động (80/20)
 │       │   ├── StudentList.jsx      # Danh sách + avatar + lịch sử điểm
-│       │   └── ExportButton.jsx
+│       │   ├── ExportButton.jsx
+│       │   ├── UrgentBanner.jsx     # Banner thông báo khẩn (dismissable, sessionStorage)
+│       │   ├── RouteGuard.jsx       # Bảo vệ route theo role (admin/giaoly/user)
+│       │   ├── LoadingSpinner.jsx   # Spinner SVG dùng chung
+│       │   ├── LanguageSwitcher.jsx # Dropdown VI 🇻🇳 / EN 🇺🇸 (i18next)
+│       │   ├── ThemeToggle.jsx      # Sun/Moon toggle + Circular Reveal
+│       │   └── QuickActionWidgets.jsx  # 5 widget nhanh trong AdminDashboard
 │       ├── pages/
 │       │   ├── Home.jsx             # Landing page 5 ngành + SVG watermark
+│       │   ├── Login.jsx            # Đăng nhập + redirect sau login
+│       │   ├── Signup.jsx           # Đăng ký + auto-login
+│       │   ├── ForgotPassword.jsx   # Quên mật khẩu — gửi email khôi phục
+│       │   ├── Profile.jsx          # Hồ sơ cá nhân: avatar upload, chỉnh sửa thông tin
 │       │   ├── News.jsx             # Tin tức + lọc loại + UrgentBanner
+│       │   ├── NewsDetail.jsx       # Chi tiết bài viết: ảnh, nội dung HTML, tác giả
 │       │   ├── ClassList.jsx        # Explorer 5 ngành + search
 │       │   ├── ClassDetail.jsx      # 3 tab: Danh sách / Điểm danh / Bảng điểm
-│       │   ├── LoiChua.jsx          # Lời Chúa + điều hướng ngày + Chúa Nhật
-│       │   ├── GioLe.jsx            # Dashboard phụng vụ + đồng hồ real-time
+│       │   ├── LoiChua.jsx          # Lời Chúa + điều hướng ngày + Chúa Nhật + MiniCalendar
+│       │   ├── GioLe.jsx            # Dashboard phụng vụ + đồng hồ real-time + feast effects
 │       │   ├── Gallery.jsx          # Thư viện ảnh Firebase
 │       │   └── admin/
-│       │       ├── AdminDashboard.jsx
+│       │       ├── AdminLayout.jsx     # Wrapper: sidebar desktop + bottom tab mobile
+│       │       ├── AdminDashboard.jsx  # Quick Actions, SVG Charts, Global Search, Liturgy Card
 │       │       ├── AdminClasses.jsx    # Phân công nhân sự
-│       │       ├── AdminPromotion.jsx  # Lên lớp hàng loạt
+│       │       ├── AdminPromotion.jsx  # Lên lớp hàng loạt + lịch sử
 │       │       ├── AdminStats.jsx      # Dashboard thống kê ngành
 │       │       ├── AdminExport.jsx     # Export toàn đoàn
 │       │       ├── AdminPosts.jsx      # Quản lý tin tức / thông báo (CRUD + ảnh)
 │       │       ├── AdminUsers.jsx      # Quản lý tài khoản + phân quyền
 │       │       └── AdminNamHoc.jsx     # Quản lý năm học
 │       ├── services/
-│       │   ├── api.js               # Axios + JWT interceptor + notify endpoints
-│       │   ├── firebase.js
+│       │   ├── api.js               # Axios + JWT interceptor + 401 auto-redirect
+│       │   ├── firebase.js          # Firebase SDK init (Storage + Firestore)
 │       │   └── galleryService.js    # Upload + nén ảnh Firebase
-│       ├── store/AuthContext.jsx
-│       └── i18n.js                  # VI / EN
+│       ├── store/
+│       │   ├── AuthContext.jsx      # Login/logout state + updateUser + useAuth hook
+│       │   └── ThemeContext.jsx     # Dark/light + localStorage + system preference
+│       ├── utils/
+│       │   └── formatClassName.js   # Viết tắt → tên đầy đủ (XT, CN, TN, NS, HS)
+│       └── i18n.js                  # VI / EN (i18next)
 │
 └── server/                          # Node.js + Express 5
     └── src/
         ├── models/
         │   ├── User.js, Class.js, Student.js
         │   ├── NamHoc.js, Grade.js, Attendance.js
-        │   ├── ChuyenCan.js         # Điểm chuyên cần (phase 11)
+        │   ├── ChuyenCan.js         # Điểm chuyên cần
         │   ├── MeritPoint.js
         │   ├── PromotionHistory.js  # Lịch sử lên lớp
         │   └── Post.js
         ├── controllers/
+        │   ├── authController.js         # Login, signup, forgot password
         │   ├── exportController.js       # attendance, grades, tổng kết, toàn đoàn
         │   ├── notifyController.js       # Email: điểm danh, lịch lễ, bảng điểm
         │   ├── loiChuaController.js      # Scraper 3 nguồn + cache + romcal
@@ -141,19 +159,23 @@ mautam-website/
         │   ├── promoteController.js
         │   └── ...
         ├── routes/
+        │   ├── auth.js              # /login, /signup, /forgot-password
         │   ├── export.js            # /attendance, /grades, /tong-ket, /tong-ket-toan-doan
         │   ├── notify.js            # /diem-danh, /lich-le, /bang-diem
+        │   ├── liturgy.js           # /feasts (romcal + dời lễ VN)
         │   ├── chuyencan.js
         │   ├── promote.js
         │   └── ...
         ├── utils/
+        │   ├── sendEmail.js         # Nodemailer transporter factory (SMTP env vars)
         │   ├── emailTemplates.js    # 3 template HTML: điểm danh, lịch lễ, bảng điểm
         │   └── gradeCalculator.js   # Hàm dùng chung: tinhTBHocTap, tinhTongKet, phanLoai
         ├── scripts/
         │   └── test-loichua.js      # Debug script kiểm tra 3 nguồn Lời Chúa
         └── middlewares/
             ├── checkAuth.js
-            └── checkClassPermission.js
+            ├── checkClassPermission.js
+            └── errorHandler.js      # Global error handler (Mongoose/JWT/500)
 ```
 
 ---
@@ -448,6 +470,49 @@ Regex replace tiền tố viết tắt → tên đầy đủ:
 - Giờ Lễ Cố Định: dark variants cho label (`dark:text-slate-200`) và time pill
 - GioLe dark background: `dark:bg-none dark:bg-slate-950`
 - CAP_CONFIG Lễ Nhớ/Kính: `dark:shadow-none`, viền `border-slate-200`
+
+---
+
+### GIAI ĐOẠN 16b — Các tính năng nền tảng (đã tồn tại, bổ sung tài liệu)
+
+Các thành phần này được xây dựng xuyên suốt các giai đoạn 0–16 nhưng chưa được ghi lại rõ ràng:
+
+#### Trang xác thực & hồ sơ
+
+| Trang | Mô tả |
+| --- | --- |
+| `Login.jsx` | Form đăng nhập email/mật khẩu, redirect về trang trước sau khi login thành công |
+| `Signup.jsx` | Đăng ký tài khoản (hoTen, email, phone, mật khẩu), auto-login sau khi tạo |
+| `ForgotPassword.jsx` | Nhập email → server gửi link khôi phục mật khẩu |
+| `Profile.jsx` | Xem & chỉnh sửa thông tin cá nhân; upload avatar lên Firebase Storage (validate MIME, tối đa 1.5MB), gradient fallback 8 màu theo ký tự đầu tên |
+
+#### Trang tin tức bổ sung
+
+| Trang | Mô tả |
+| --- | --- |
+| `NewsDetail.jsx` | Chi tiết bài viết: ảnh đại diện, tác giả, ngày đăng, render nội dung HTML an toàn, nút quay lại |
+
+#### Components nền tảng
+
+| Component | Mô tả |
+| --- | --- |
+| `Footer.jsx` | Footer: tên đoàn, motto, năm bản quyền |
+| `RouteGuard.jsx` | HOC bảo vệ route theo role — redirect về `/login` kèm `returnTo` nếu chưa đăng nhập hoặc không đủ quyền |
+| `LoadingSpinner.jsx` | SVG spinner dùng chung, có prop `text` (mặc định "Đang tải...") |
+| `LanguageSwitcher.jsx` | Dropdown chọn ngôn ngữ VI 🇻🇳 / EN 🇺🇸, đóng khi click ngoài, đồng bộ i18next |
+
+#### Nền tảng server
+
+| File | Mô tả |
+| --- | --- |
+| `utils/sendEmail.js` | Factory tạo Nodemailer transporter từ env vars; sender name "Xứ Đoàn Mẫu Tâm" |
+| `middlewares/errorHandler.js` | Global error handler: Mongoose ValidationError → 400, duplicate key → 400, JWT lỗi → 401, khác → 500 |
+| `routes/auth.js` | `/login`, `/signup`, `/forgot-password` |
+| `routes/liturgy.js` | `/api/liturgy/feasts` — romcal + `adjustVietnameseLiturgicalCalendar` |
+
+#### Layout admin
+
+- `AdminLayout.jsx`: wrapper bọc toàn bộ khu vực admin — sidebar icon + label (desktop), bottom tab bar cố định (mobile), dark mode variants đầy đủ.
 
 ---
 

@@ -21,7 +21,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Phase](https://img.shields.io/badge/Phase-13_%E2%9C%85-8B0000?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase-16_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -32,17 +32,20 @@
 **Xứ Đoàn Anrê Phú Yên – Mẫu Tâm** là ứng dụng web quản lý dành riêng cho Huynh trưởng và Dự trưởng của tổ chức Thiếu Nhi Thánh Thể. Hệ thống số hoá toàn bộ công việc quản lý giáo lý từ điểm danh đến báo cáo cuối kỳ:
 
 - 📋 **Quản lý lớp học** theo 5 ngành: Chiên Non · Ấu Nhi · Thiếu Nhi · Nghĩa Sĩ · Hiệp Sĩ
-- ✅ **Điểm danh** hàng tuần (Chúa Nhật) — lưới scroll ngang, toggle trực tiếp
+- ✅ **Điểm danh** hàng tuần (Chúa Nhật) — lưới scroll ngang, toggle trực tiếp, thanh % tiến độ
 - 📊 **Bảng điểm** miệng / 15 phút / 1 tiết — TBM tự động + phân loại học lực
 - 📅 **Chuyên cần** — tự tính điểm từ số buổi vắng; **Tổng kết = TBM×80% + CC×20%**
 - ⬆️ **Lên lớp hàng loạt** — chọn lớp nguồn → đích, lưu lịch sử đầy đủ
 - 📤 **Xuất Excel** — điểm danh, bảng điểm, **tổng kết từng lớp** và **toàn đoàn**
-- 📊 **Dashboard thống kê** — biểu đồ học lực + chuyên cần theo từng ngành
+- 📊 **Dashboard thống kê** — SVG bar + donut chart, phân phối học lực theo từng ngành
 - 🖼️ **Avatar đoàn sinh** — upload ảnh thẻ lên Firebase Storage, tự nén
+- 👤 **Hồ sơ cá nhân** — mỗi tài khoản có trang Profile: xem/sửa thông tin, upload avatar riêng
 - 📜 **Lịch sử điểm** — xem TBM / CC / Tổng kết của mỗi em qua các năm học
 - 📧 **Email phụ huynh** — 3 loại: thông báo khẩn, điểm danh từng buổi, bảng điểm tổng kết HK
-- 📖 **Lời Chúa thông minh** — scraper 3 nguồn (tgpsaigon.net → loichua.net), cache 6 giờ, màu phụng vụ tự động
+- 📖 **Lời Chúa thông minh** — scraper 3 nguồn (tgpsaigon.net → loichua.net), cache 6 giờ, màu phụng vụ tự động, MiniCalendar điều hướng
+- ⛪ **Giờ Lễ phụng vụ** — đồng hồ real-time, hiệu ứng feast solemnity/great/memorial, dời lễ VN tự động
 - 📸 **Thư viện ảnh** — Firebase Storage, tự nén ~70%, lightbox toàn màn hình
+- 🌙 **Dark Mode** — Circular Reveal (View Transitions API), lưu localStorage, fallback system preference
 - 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18next)
 
 ---
@@ -85,33 +88,50 @@ mautam-website/
 │   ├── public/images/        # Ảnh tĩnh (Quan Thầy, logo...)
 │   └── src/
 │       ├── components/
-│       │   ├── Navbar.jsx
+│       │   ├── Navbar.jsx            # Nav + user dropdown + ThemeToggle + LanguageSwitcher
+│       │   ├── Footer.jsx            # Footer branding + motto
 │       │   ├── GradeForm.jsx         # Bảng điểm + Chuyên cần 80/20
-│       │   ├── AttendanceTable.jsx   # Điểm danh Chúa Nhật
+│       │   ├── AttendanceTable.jsx   # Điểm danh Chúa Nhật + thanh tiến độ
 │       │   ├── StudentList.jsx       # Danh sách + avatar + lịch sử điểm
-│       │   └── ExportButton.jsx
+│       │   ├── ExportButton.jsx
+│       │   ├── UrgentBanner.jsx      # Banner thông báo khẩn dismissable
+│       │   ├── RouteGuard.jsx        # Bảo vệ route theo role
+│       │   ├── LoadingSpinner.jsx    # Spinner SVG dùng chung
+│       │   ├── LanguageSwitcher.jsx  # Dropdown VI 🇻🇳 / EN 🇺🇸
+│       │   ├── ThemeToggle.jsx       # Sun/Moon + Circular Reveal
+│       │   └── QuickActionWidgets.jsx
 │       ├── pages/
 │       │   ├── Home.jsx              # Landing page 5 ngành
-│       │   ├── News.jsx              # Tin tức + lọc loại
+│       │   ├── Login.jsx             # Đăng nhập
+│       │   ├── Signup.jsx            # Đăng ký tài khoản
+│       │   ├── ForgotPassword.jsx    # Quên mật khẩu
+│       │   ├── Profile.jsx           # Hồ sơ cá nhân + avatar upload
+│       │   ├── News.jsx              # Tin tức + lọc loại + UrgentBanner
+│       │   ├── NewsDetail.jsx        # Chi tiết bài viết: ảnh, nội dung HTML, tác giả
 │       │   ├── ClassList.jsx         # Explorer 5 ngành
 │       │   ├── ClassDetail.jsx       # 3 tab: Danh sách / Điểm danh / Bảng điểm
-│       │   ├── LoiChua.jsx           # Lời Chúa + điều hướng ngày
-│       │   ├── GioLe.jsx             # Dashboard phụng vụ + đồng hồ
+│       │   ├── LoiChua.jsx           # Lời Chúa + MiniCalendar + điều hướng ngày
+│       │   ├── GioLe.jsx             # Dashboard phụng vụ + đồng hồ + feast effects
 │       │   ├── Gallery.jsx           # Thư viện ảnh Firebase
 │       │   └── admin/
-│       │       ├── AdminDashboard.jsx
+│       │       ├── AdminLayout.jsx     # Sidebar (desktop) + bottom tab (mobile)
+│       │       ├── AdminDashboard.jsx  # Quick Actions, SVG Charts, Global Search
 │       │       ├── AdminClasses.jsx    # Phân công nhân sự
-│       │       ├── AdminPromotion.jsx  # Lên lớp hàng loạt
+│       │       ├── AdminPromotion.jsx  # Lên lớp hàng loạt + lịch sử
 │       │       ├── AdminStats.jsx      # Dashboard thống kê ngành
 │       │       ├── AdminExport.jsx     # Export toàn đoàn
 │       │       ├── AdminPosts.jsx      # Quản lý tin tức / thông báo
 │       │       ├── AdminUsers.jsx      # Quản lý tài khoản + phân quyền
 │       │       └── AdminNamHoc.jsx
 │       ├── services/
-│       │   ├── api.js                # Axios + JWT interceptor
-│       │   ├── firebase.js
+│       │   ├── api.js                # Axios + JWT interceptor + 401 auto-redirect
+│       │   ├── firebase.js           # Firebase SDK init
 │       │   └── galleryService.js     # Upload + nén Firebase
-│       ├── store/AuthContext.jsx
+│       ├── store/
+│       │   ├── AuthContext.jsx       # Login/logout + updateUser + useAuth hook
+│       │   └── ThemeContext.jsx      # Dark/light + localStorage + system preference
+│       ├── utils/
+│       │   └── formatClassName.js    # Viết tắt → tên đầy đủ (XT, CN, TN, NS, HS)
 │       └── i18n.js                   # Translations VI/EN
 │
 └── server/                   # Backend Express
@@ -123,6 +143,7 @@ mautam-website/
         │   ├── MeritPoint.js
         │   └── PromotionHistory.js   # Lịch sử lên lớp
         ├── controllers/
+        │   ├── authController.js     # Login, signup, forgot password
         │   ├── exportController.js   # attendance, grades, tổng kết, toàn đoàn
         │   ├── notifyController.js   # email: điểm danh, lịch lễ, bảng điểm
         │   ├── loiChuaController.js  # scraper 3 nguồn + cache 6h + romcal
@@ -130,12 +151,14 @@ mautam-website/
         │   ├── promoteController.js
         │   └── ...
         ├── utils/
+        │   ├── sendEmail.js          # Nodemailer transporter factory
         │   ├── emailTemplates.js     # 3 template HTML có branding
         │   └── gradeCalculator.js    # tinhTBHocTap, tinhTongKet, phanLoai
-        ├── routes/                   # /export, /notify, /chuyen-can, /promote, ...
+        ├── routes/                   # /auth, /export, /notify, /liturgy, /chuyen-can, ...
         └── middlewares/
             ├── checkAuth.js
-            └── checkClassPermission.js
+            ├── checkClassPermission.js
+            └── errorHandler.js       # Global error handler (Mongoose/JWT/500)
 ```
 
 ---
@@ -220,11 +243,14 @@ Mở trình duyệt: **<http://localhost:5173>**
 | **Chuyên cần thông minh** | Tự tính điểm từ số buổi vắng (có phép −0.5đ, không phép −1đ). Modal 2 mode: nhập buổi hoặc nhập thẳng. |
 | **Tổng kết công thức** | TBM×80% + Chuyên cần×20% = Điểm tổng kết. Export Excel đầy đủ 1 lớp hoặc toàn đoàn. |
 | **Lên lớp hàng loạt** | Chọn checkbox nhiều em, chuyển sang lớp + năm học mới, lưu lịch sử có thể xem lại. |
-| **Dashboard thống kê** | Bar chart CSS phân phối học lực, TB điểm CC, % điểm danh — phân theo từng ngành. |
+| **Dashboard thống kê** | SVG bar + donut chart (không cần thư viện ngoài), phân phối học lực + % điểm danh — phân theo từng ngành. |
 | **Lịch sử điểm** | Mỗi đoàn sinh có modal xem TBM/CC/Tổng kết qua tất cả năm học đã học. |
-| **Avatar đoàn sinh** | Upload ảnh thẻ → tự nén → Firebase Storage → hiển thị trong danh sách lớp. |
-| **Email phụ huynh 3 loại** | Thông báo khẩn / điểm danh từng buổi / bảng điểm tổng kết — template HTML branding, gửi batch qua `Promise.allSettled()`. |
-| **Lời Chúa thông minh** | Scraper 3 nguồn (tgpsaigon.net → loichua.net HTML → JSON), cache 6h, tô màu lời Chúa Giêsu, màu phụng vụ tự động qua romcal. |
+| **Avatar đoàn sinh** | Upload ảnh thẻ → tự nén → Firebase Storage → hiển thị trong danh sách lớp. Gradient fallback 8 màu theo tên. |
+| **Hồ sơ cá nhân** | Trang Profile riêng cho mỗi user: xem/sửa thông tin, upload avatar (validate MIME, tối đa 1.5MB). |
+| **Dark Mode Circular Reveal** | View Transitions API clip-path `circle(0%→160%)` từ tâm nút bấm, fallback instant cho Firefox/Safari. |
+| **Email phụ huynh 3 loại** | Thông báo khẩn / điểm danh từng buổi / bảng điểm tổng kết — template HTML branding, gửi batch `Promise.allSettled()`. |
+| **Lời Chúa thông minh** | Scraper 3 nguồn (tgpsaigon.net → loichua.net HTML → JSON), cache 6h, tô màu lời Chúa Giêsu, MiniCalendar điều hướng tháng độc lập. |
+| **Giờ Lễ phụng vụ** | Feast visual effects (solemnity/great/feast/memorial gradient + glow), dời lễ VN (Lên Trời → CN VII, Mình Máu → CN tiếp). |
 | **Tính điểm tự động** | `gradeCalculator.js` dùng chung: TBM có trọng số (miệng×1, 15ph×1, 1tiết×2), Tổng kết = TBM×80%+CC×20%, phân loại học lực. |
 | **Auto-compress ảnh** | Canvas API trước khi upload Firebase — tiết kiệm ~70% dung lượng Storage. |
 | **Sắp xếp tên Việt** | `localeCompare('vi')` theo tên chính (từ cuối cùng trong họ tên). |
@@ -235,7 +261,7 @@ Mở trình duyệt: **<http://localhost:5173>**
 
 | Nhánh | Mục đích |
 | --- | --- |
-| `master` | Production — đã merge phase 1–13 |
+| `master` | Production — đã merge phase 1–16 |
 | `develop` | Integration — merge trước khi lên master |
 
 ---
