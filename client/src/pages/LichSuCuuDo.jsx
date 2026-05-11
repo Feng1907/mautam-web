@@ -277,7 +277,7 @@ const DetailModal = ({ milestone, onClose }) => {
       >
         <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
         <motion.div
-          className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl"
+          className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto no-scrollbar rounded-2xl shadow-2xl"
           style={{ background: 'linear-gradient(135deg, #1a1208 0%, #0f0d0a 100%)', border: `1px solid ${borderColor}40` }}
           initial={{ scale: 0.9, y: 30, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}

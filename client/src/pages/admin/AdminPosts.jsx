@@ -202,7 +202,7 @@ const PostForm = ({ initial, onSave, onCancel }) => {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-start justify-center px-4 py-8 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-start justify-center px-4 py-8 overflow-y-auto no-scrollbar"
         style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', background: 'rgba(30,8,8,0.45)' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

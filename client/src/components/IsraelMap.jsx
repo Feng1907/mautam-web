@@ -142,7 +142,7 @@ const InfoPanel = ({ region, selectedCity, onCityClick }) => {
     <AnimatePresence mode="wait">
       <motion.div
         key={region.id}
-        className="flex flex-col h-full overflow-y-auto"
+        className="flex flex-col h-full overflow-y-auto no-scrollbar"
         initial={{ opacity: 0, x: 16 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -16 }}

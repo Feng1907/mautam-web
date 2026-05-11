@@ -52,7 +52,7 @@ const AdminLayout = () => {
       </div>
 
       {/* Vùng nội dung */}
-      <main className="flex-1 min-w-0 overflow-y-auto p-6 pb-20 md:pb-6 dark:bg-slate-900">
+      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar p-6 pb-20 md:pb-6 dark:bg-slate-900">
         <Outlet />
       </main>
     </div>

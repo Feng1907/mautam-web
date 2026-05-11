@@ -71,7 +71,7 @@ const AssignModal = ({ lop, giaoly, onClose, onSaved }) => {
             <label className="block text-xs font-semibold text-gray-600 mb-2">
               Dự trưởng <span className="font-normal text-gray-400">(chọn nhiều)</span>
             </label>
-            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto border rounded-xl p-2"
+            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto no-scrollbar border rounded-xl p-2"
                  style={{ borderColor: '#e5d5b5' }}>
               {giaoly.map(u => (
                 <label key={u._id}

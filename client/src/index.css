@@ -173,7 +173,11 @@ html { scrollbar-width: thin; scrollbar-color: #F59E0B transparent; }
 /* Reset kế thừa: tất cả phần tử CON dùng scrollbar mặc định của browser */
 html * { scrollbar-color: initial; scrollbar-width: initial; }
 
-/* Utility class opt-in cho component cần thin scrollbar (GioLe list, modal…) */
+/* Utility: ẩn hoàn toàn thanh cuộn nhưng vẫn cuộn được */
+.no-scrollbar                  { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Utility class opt-in cho component cần thin scrollbar (GioLe list…) */
 .scrollbar-thin                            { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
 .scrollbar-thin::-webkit-scrollbar         { width: 4px; height: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track   { background: transparent; }
