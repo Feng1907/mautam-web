@@ -411,18 +411,19 @@ export default function BibleMap() {
           </defs>
 
           {/* ── Nền bản đồ địa hình ── */}
-          {/* preserveAspectRatio="none" = stretch vừa khít viewBox, không crop biên */}
+          {/* Layer 1: ảnh địa hình — stretch vừa khít viewBox, filter làm nổi màu */}
           <image
             href="/images/maps/mapsland-geography-full.webp"
             x="0" y="0" width="720" height="500"
             preserveAspectRatio="none"
+            style={{ filter: 'saturate(1.2) brightness(0.78)' }}
           />
-          {/* Lớp tối hoá để khớp dark mode — giữ chi tiết địa lý, giảm chói */}
-          <rect width="720" height="500" fill="rgba(0,0,0,0.48)" />
-          {/* Vignette viền tối tự nhiên */}
-          <radialGradient id="bm-vignette" cx="50%" cy="50%" r="70%">
+          {/* Layer 2: overlay tối nhẹ hơn — giữ chi tiết địa hình */}
+          <rect width="720" height="500" fill="rgba(0,0,0,0.32)" />
+          {/* Layer 3: vignette viền */}
+          <radialGradient id="bm-vignette" cx="50%" cy="50%" r="72%">
             <stop offset="0%"   stopColor="transparent" />
-            <stop offset="100%" stopColor="rgba(0,0,0,0.55)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0.50)" />
           </radialGradient>
           <rect width="720" height="500" fill="url(#bm-vignette)" />
 
@@ -627,15 +628,19 @@ export default function BibleMap() {
                   </>
                 )}
 
-                {/* Nhãn tên */}
+                {/* Nhãn tên — paint-order stroke trước để tạo viền đen đọc rõ trên ảnh thật */}
                 <text
                   x={loc.x}
-                  y={loc.y - (loc.marker === 'star' ? 14 : 14)}
+                  y={loc.y - 14}
                   textAnchor="middle"
                   fontSize={active ? 8.5 : 7.5}
-                  fill={active ? loc.color : `${loc.color}99`}
+                  fill={active ? loc.color : `${loc.color}cc`}
+                  stroke="rgba(0,0,0,0.85)"
+                  strokeWidth={active ? 2.5 : 2}
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
                   fontFamily='"EB Garamond", Georgia, serif'
-                  fontWeight={active ? 'bold' : 'normal'}
+                  fontWeight="bold"
                   style={{ transition: 'all 0.2s ease', userSelect: 'none', pointerEvents: 'none' }}
                 >
                   {loc.name}
