@@ -15,15 +15,31 @@
 
 html {
   overflow-x: hidden;
+  /* Hỗ trợ tiếng Việt: dùng NFC (dựng sẵn) thay vì NFD (tổ hợp) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   overflow-x: hidden;
-  font-family: 'Segoe UI', sans-serif;
+  /*
+    Font stack ưu tiên cho tiếng Việt:
+    1. Be Vietnam Pro  — thiết kế đặc biệt cho tiếng Việt, dấu không tách
+    2. Inter           — UI sans-serif hiện đại, đầy đủ Vietnamese glyphs
+    3. Segoe UI        — fallback Windows (hỗ trợ tốt tiếng Việt)
+    4. system-ui       — native OS font
+  */
+  font-family: 'Be Vietnam Pro', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: #f3f4f6;
   color: #1f2937;
   transition: background-color 0.3s, color 0.3s;
+  /* Tắt ligature tự động — tránh trình duyệt ghép/tách ký tự tiếng Việt */
+  font-variant-ligatures: none;
+  /* Đảm bảo font render đủ nét trên mọi hệ điều hành */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .dark body, body:where(.dark *) {
@@ -52,6 +68,27 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ── Vietnamese typography helpers ───────────────────────────────────────────
+   Áp dụng cho mọi text có dấu thanh tiếng Việt:
+   - font-variant-ligatures: none  → tắt ligature tự động
+   - line-height đủ rộng           → dấu không chạm hàng trên
+   - font-family ưu tiên Be Vietnam Pro
+*/
+h1, h2, h3, h4, h5, h6 {
+  font-variant-ligatures: none;
+  line-height: 1.4;
+}
+
+/* Admin dashboard headings */
+.admin-title {
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-ligatures: none;
+  line-height: 1.45;
+  color: #2D3748;
+}
+.dark .admin-title { color: #f1f5f9; }
 
 /* Tiện ích tái sử dụng */
 .btn-primary   { @apply bg-red-700 hover:bg-red-800 text-white font-semibold px-4 py-2 rounded transition cursor-pointer; }
