@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BookOpen, ChevronDown, Users, ChevronRight } from 'lucide-react';
@@ -7,6 +7,7 @@ import IsraelMap from '../components/IsraelMap';
 import CharacterCards from '../components/CharacterCards';
 import NTCharacterCards from '../components/NTCharacterCards';
 import ProphecyTable from '../components/ProphecyTable';
+import InteractiveTimeline from '../components/InteractiveTimeline';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DỮ LIỆU
@@ -277,7 +278,7 @@ const DetailModal = ({ milestone, onClose }) => {
       >
         <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
         <motion.div
-          className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl"
+          className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto no-scrollbar rounded-2xl shadow-2xl"
           style={{ background: 'linear-gradient(135deg, #1a1208 0%, #0f0d0a 100%)', border: `1px solid ${borderColor}40` }}
           initial={{ scale: 0.9, y: 30, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -506,7 +507,7 @@ const TabSelector = ({ activeTab, onSwitch }) => (
 // TAB CONTENT — OT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const OTContent = ({ onOpen, theme }) => (
+const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => (
   <div className="space-y-10">
     {/* BibleMap */}
     <div>
@@ -516,7 +517,7 @@ const OTContent = ({ onOpen, theme }) => (
           Địa lý Kinh Thánh · Cận Đông cổ đại
         </p>
       </div>
-      <BibleMap />
+      <BibleMap highlightedId={mapHighlight} />
     </div>
 
     {/* Character Cards */}
@@ -529,33 +530,8 @@ const OTContent = ({ onOpen, theme }) => (
       <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, #C8860A33)' }} />
     </div>
 
-    {/* Timeline */}
-    <div className="relative">
-      {/* Spine */}
-      <div className="hidden md:block absolute left-1/2 -translate-x-1/2 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-      <div className="md:hidden absolute left-6.5 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-
-      <div className="relative flex flex-col gap-10 md:gap-14">
-        {OT_MILESTONES.map((m, i) => (
-          <TimelineItem key={m.id} milestone={m} index={i} onOpen={onOpen} theme={theme} />
-        ))}
-      </div>
-
-      {/* End marker */}
-      <motion.div className="flex justify-center mt-14"
-        initial={{ opacity: 0, scale: 0.5 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2"
-            style={{ borderColor: '#C8860A', background: '#1a1005', boxShadow: '0 0 20px #C8860A44' }}>
-            ✦
-          </div>
-          <p className="text-[10px] text-white/25 tracking-widest uppercase">Chờ đợi Đấng Cứu Thế</p>
-        </div>
-      </motion.div>
-    </div>
+    {/* InteractiveTimeline */}
+    <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
   </div>
 );
 
@@ -563,7 +539,7 @@ const OTContent = ({ onOpen, theme }) => (
 // TAB CONTENT — NT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NTContent = ({ onOpen, theme }) => (
+const NTContent = ({ onOpen, theme, onMapSync }) => (
   <div className="space-y-10">
     {/* IsraelMap */}
     <div>
@@ -586,33 +562,8 @@ const NTContent = ({ onOpen, theme }) => (
       <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, #FFD70033)' }} />
     </div>
 
-    {/* Timeline */}
-    <div className="relative">
-      {/* Spine */}
-      <div className="hidden md:block absolute left-1/2 -translate-x-1/2 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-      <div className="md:hidden absolute left-6.5 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-
-      <div className="relative flex flex-col gap-10 md:gap-14">
-        {NT_MILESTONES.map((m, i) => (
-          <TimelineItem key={m.id} milestone={m} index={i} onOpen={onOpen} theme={theme} />
-        ))}
-      </div>
-
-      {/* End marker */}
-      <motion.div className="flex justify-center mt-14"
-        initial={{ opacity: 0, scale: 0.5 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
-            style={{ borderColor: '#FFD700', background: '#12100a', boxShadow: '0 0 28px #FFD70055' }}>
-            ✝
-          </div>
-          <p className="text-[10px] text-white/30 tracking-widest uppercase">Maranatha · Lạy Chúa Giêsu, xin hãy đến!</p>
-        </div>
-      </motion.div>
-    </div>
+    {/* InteractiveTimeline */}
+    <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
   </div>
 );
 
@@ -631,12 +582,20 @@ const slideVariants = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function LichSuCuuDo() {
-  const [activeTab, setActiveTab] = useState('ot');
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('lichsu-tab');
+    return saved === 'nt' ? 'nt' : 'ot';
+  });
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState(null);
-  const prevTab = useRef('ot');
+  const [mapHighlight, setMapHighlight] = useState(null);
+  const prevTab = useRef(activeTab);
 
   const theme = THEMES[activeTab];
+
+  useEffect(() => {
+    localStorage.setItem('lichsu-tab', activeTab);
+  }, [activeTab]);
 
   const handleSwitch = (tab) => {
     if (tab === activeTab) return;
@@ -746,7 +705,7 @@ export default function LichSuCuuDo() {
               exit="exit"
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
             >
-              <OTContent onOpen={setSelected} theme={theme} />
+              <OTContent onOpen={setSelected} theme={theme} mapHighlight={mapHighlight} onMapSync={setMapHighlight} />
             </motion.div>
           ) : (
             <motion.div
@@ -758,7 +717,7 @@ export default function LichSuCuuDo() {
               exit="exit"
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
             >
-              <NTContent onOpen={setSelected} theme={theme} />
+              <NTContent onOpen={setSelected} theme={theme} onMapSync={setMapHighlight} />
             </motion.div>
           )}
         </AnimatePresence>

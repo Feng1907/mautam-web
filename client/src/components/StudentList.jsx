@@ -78,7 +78,7 @@ const LichSuModal = ({ student, lopId, onClose }) => {
   }, [student._id, lopId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto no-scrollbar">
       <div className="w-full max-w-lg my-auto rounded-2xl shadow-2xl"
         style={{ background: '#fffcf9', border: '1px solid #e5d5b5' }}>
         <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b"
@@ -95,7 +95,7 @@ const LichSuModal = ({ student, lopId, onClose }) => {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
         </div>
 
-        <div className="px-6 py-4 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+        <div className="px-6 py-4 flex flex-col gap-4 max-h-[70vh] overflow-y-auto no-scrollbar">
           {loading && (
             <p className="text-center text-gray-400 py-6 italic text-sm">Đang tải...</p>
           )}
@@ -220,7 +220,7 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto no-scrollbar">
       <div
         className="w-full max-w-md p-6 my-auto rounded-2xl shadow-2xl"
         style={{ background: '#fffcf9', border: '1px solid #e5d5b5' }}

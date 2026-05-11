@@ -495,7 +495,7 @@ export const QuickAttendanceModal = ({ open, onClose, classes }) => {
             />
           </div>
 
-          <div className="flex flex-col gap-1 max-h-64 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-1 max-h-64 overflow-y-auto no-scrollbar pr-1">
             {fetching && (
               <div className="flex justify-center py-6">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -548,7 +548,7 @@ export const QuickAttendanceModal = ({ open, onClose, classes }) => {
           </div>
 
           {/* Danh sách */}
-          <div className="flex flex-col gap-1 max-h-56 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-1 max-h-56 overflow-y-auto no-scrollbar pr-1">
             {students.map((s, i) => {
               const present = !!attendance[s._id];
               return (

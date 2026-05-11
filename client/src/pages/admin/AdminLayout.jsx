@@ -23,7 +23,7 @@ const AdminLayout = () => {
     }`;
 
   return (
-    <div className="flex-1 flex min-h-0 bg-gray-50 dark:bg-slate-900">
+    <div className="flex-1 flex min-h-0 overflow-hidden bg-gray-50 dark:bg-slate-900">
       {/* Sidebar dọc */}
       <aside className="hidden md:flex flex-col w-52 shrink-0 bg-white border-r border-gray-100 pt-8 pb-4 gap-0.5 dark:bg-slate-800 dark:border-slate-700">
         <p className="px-4 pb-3 text-[10px] font-black tracking-[0.2em] text-gray-300 dark:text-slate-600 uppercase">
@@ -52,7 +52,7 @@ const AdminLayout = () => {
       </div>
 
       {/* Vùng nội dung */}
-      <main className="flex-1 min-w-0 overflow-y-auto p-6 pb-20 md:pb-6 dark:bg-slate-900">
+      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar p-6 pb-20 md:pb-6 dark:bg-slate-900">
         <Outlet />
       </main>
     </div>
