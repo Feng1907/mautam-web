@@ -7,6 +7,7 @@ import IsraelMap from '../components/IsraelMap';
 import CharacterCards from '../components/CharacterCards';
 import NTCharacterCards from '../components/NTCharacterCards';
 import ProphecyTable from '../components/ProphecyTable';
+import InteractiveTimeline from '../components/InteractiveTimeline';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DỮ LIỆU
@@ -529,33 +530,8 @@ const OTContent = ({ onOpen, theme }) => (
       <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, #C8860A33)' }} />
     </div>
 
-    {/* Timeline */}
-    <div className="relative">
-      {/* Spine */}
-      <div className="hidden md:block absolute left-1/2 -translate-x-1/2 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-      <div className="md:hidden absolute left-6.5 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-
-      <div className="relative flex flex-col gap-10 md:gap-14">
-        {OT_MILESTONES.map((m, i) => (
-          <TimelineItem key={m.id} milestone={m} index={i} onOpen={onOpen} theme={theme} />
-        ))}
-      </div>
-
-      {/* End marker */}
-      <motion.div className="flex justify-center mt-14"
-        initial={{ opacity: 0, scale: 0.5 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2"
-            style={{ borderColor: '#C8860A', background: '#1a1005', boxShadow: '0 0 20px #C8860A44' }}>
-            ✦
-          </div>
-          <p className="text-[10px] text-white/25 tracking-widest uppercase">Chờ đợi Đấng Cứu Thế</p>
-        </div>
-      </motion.div>
-    </div>
+    {/* InteractiveTimeline */}
+    <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} />
   </div>
 );
 
@@ -586,33 +562,8 @@ const NTContent = ({ onOpen, theme }) => (
       <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, #FFD70033)' }} />
     </div>
 
-    {/* Timeline */}
-    <div className="relative">
-      {/* Spine */}
-      <div className="hidden md:block absolute left-1/2 -translate-x-1/2 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-      <div className="md:hidden absolute left-6.5 inset-y-0 w-px" style={{ background: theme.spineLine }} />
-
-      <div className="relative flex flex-col gap-10 md:gap-14">
-        {NT_MILESTONES.map((m, i) => (
-          <TimelineItem key={m.id} milestone={m} index={i} onOpen={onOpen} theme={theme} />
-        ))}
-      </div>
-
-      {/* End marker */}
-      <motion.div className="flex justify-center mt-14"
-        initial={{ opacity: 0, scale: 0.5 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}>
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
-            style={{ borderColor: '#FFD700', background: '#12100a', boxShadow: '0 0 28px #FFD70055' }}>
-            ✝
-          </div>
-          <p className="text-[10px] text-white/30 tracking-widest uppercase">Maranatha · Lạy Chúa Giêsu, xin hãy đến!</p>
-        </div>
-      </motion.div>
-    </div>
+    {/* InteractiveTimeline */}
+    <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} />
   </div>
 );
 
