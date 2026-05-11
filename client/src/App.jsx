@@ -18,6 +18,8 @@ import ClassList      from './pages/ClassList';
 import ClassDetail    from './pages/ClassDetail';
 import Profile        from './pages/Profile';
 import Gallery        from './pages/Gallery';
+import LichSuCuuDo   from './pages/LichSuCuuDo';
+import NhanVat       from './pages/NhanVat';
 
 import AdminLayout    from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -53,6 +55,8 @@ const App = () => (
         <Route path="/tin-tuc"         element={<News />} />
         <Route path="/tin-tuc/:id"     element={<NewsDetail />} />
         <Route path="/thu-vien"        element={<Gallery />} />
+        <Route path="/lich-su-cuu-do"  element={<LichSuCuuDo />} />
+        <Route path="/nhan-vat"        element={<NhanVat />} />
 
         {/* Yêu cầu đăng nhập */}
         <Route path="/ho-so" element={

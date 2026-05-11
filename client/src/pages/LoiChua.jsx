@@ -178,13 +178,16 @@ const MiniCalendar = ({ selectedDate, onSelect }) => {
   // viewMonth điều khiển tháng đang hiển thị (tách khỏi selectedDate)
   const [viewYear,  setViewYear]  = useState(() => new Date(selectedDate + 'T00:00:00').getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date(selectedDate + 'T00:00:00').getMonth());
+  const [syncedDate, setSyncedDate] = useState(selectedDate);
 
-  // Khi selectedDate thay đổi từ ngoài → đồng bộ view
-  useEffect(() => {
+  // getDerivedStateFromProps pattern: khi selectedDate thay đổi từ ngoài,
+  // cập nhật view ngay trong render (không dùng useEffect) để tránh cascading render.
+  if (syncedDate !== selectedDate) {
     const d = new Date(selectedDate + 'T00:00:00');
+    setSyncedDate(selectedDate);
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
-  }, [selectedDate]);
+  }
 
   const prevMonth = () => { if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); } else setViewMonth(m => m - 1); };
   const nextMonth = () => {
