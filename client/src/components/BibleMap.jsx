@@ -368,29 +368,20 @@ export default function BibleMap() {
           className="w-full h-auto block"
         >
           <defs>
-            {/* Gradient nước */}
-            <linearGradient id="bm-seaGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#061828" />
-              <stop offset="100%" stopColor="#091f32" />
-            </linearGradient>
-            {/* Gradient đất liền */}
-            <linearGradient id="bm-landGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#2a2214" />
-              <stop offset="100%" stopColor="#1e1a0e" />
-            </linearGradient>
-            {/* Holy Land highlight */}
-            <radialGradient id="bm-holyGrad" cx="33%" cy="48%" r="18%">
-              <stop offset="0%" stopColor="#3a2e14" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="transparent" />
-            </radialGradient>
-
-            {/* Glow filter cho marker */}
+            {/* Glow + drop-shadow filter cho marker — mạnh hơn để nổi trên nền ảnh thật */}
             {BIBLE_LOCATIONS.map(loc => (
-              <filter key={`glow-${loc.id}`} id={`bm-glow-${loc.id}`} x="-60%" y="-60%" width="220%" height="220%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feFlood floodColor={loc.color} floodOpacity="0.9" result="color" />
-                <feComposite in="color" in2="blur" operator="in" result="glow" />
-                <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+              <filter key={`glow-${loc.id}`} id={`bm-glow-${loc.id}`} x="-80%" y="-80%" width="260%" height="260%">
+                {/* Drop shadow đen phía sau */}
+                <feDropShadow dx="0" dy="0" stdDeviation="2.5" floodColor="rgba(0,0,0,0.8)" result="shadow" />
+                {/* Glow màu */}
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+                <feFlood floodColor={loc.color} floodOpacity="0.85" result="color" />
+                <feComposite in="color" in2="blur" operator="in" result="colorGlow" />
+                <feMerge>
+                  <feMergeNode in="shadow" />
+                  <feMergeNode in="colorGlow" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
               </filter>
             ))}
 
@@ -419,19 +410,20 @@ export default function BibleMap() {
             </filter>
           </defs>
 
-          {/* ── Nền biển ── */}
-          <rect width="720" height="500" fill="url(#bm-seaGrad)" />
-
-          {/* Sóng biển (decorative) */}
-          {[60, 90, 120].map((y, i) => (
-            <path key={i}
-              d={`M 0,${y} Q 15,${y - 4} 30,${y} Q 45,${y + 4} 60,${y}`}
-              fill="none" stroke="#0d3055" strokeWidth="0.6" opacity="0.5" />
-          ))}
-
-          {/* ── Đất liền ── */}
-          <path d={MAP.land} fill="url(#bm-landGrad)" stroke="#3a3020" strokeWidth="1" />
-          <path d={MAP.land} fill="url(#bm-holyGrad)" />
+          {/* ── Nền bản đồ địa hình ── */}
+          <image
+            href="/images/maps/mapsland-geography-full.webp"
+            x="0" y="0" width="720" height="500"
+            preserveAspectRatio="xMidYMid slice"
+          />
+          {/* Lớp tối hoá để khớp dark mode — giữ chi tiết địa lý, giảm chói */}
+          <rect width="720" height="500" fill="rgba(0,0,0,0.48)" />
+          {/* Vignette viền tối tự nhiên */}
+          <radialGradient id="bm-vignette" cx="50%" cy="50%" r="70%">
+            <stop offset="0%"   stopColor="transparent" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0.55)" />
+          </radialGradient>
+          <rect width="720" height="500" fill="url(#bm-vignette)" />
 
           {/* ── Hành trình (Routes) ── */}
           {ROUTES.map(route => (
@@ -487,16 +479,16 @@ export default function BibleMap() {
           <path d={MAP.tigris} fill="none" stroke="#1e4070" strokeWidth="1.4"
             strokeLinecap="round" filter="url(#bm-riverGlow)" opacity="0.45" />
 
-          {/* ── Biển Chết & Hồ Galilê ── */}
-          <path d={MAP.deadSea}    fill="#0a2a48" stroke="#1a4a78" strokeWidth="0.8" />
-          <path d={MAP.galileeSea} fill="#0c3258" stroke="#1a4a78" strokeWidth="0.8" />
+          {/* ── Biển Chết & Hồ Galilê — overlay bán trong suốt ── */}
+          <path d={MAP.deadSea}    fill="rgba(10,42,72,0.55)"  stroke="#4a8aB8" strokeWidth="1" />
+          <path d={MAP.galileeSea} fill="rgba(12,50,88,0.55)"  stroke="#4a8aB8" strokeWidth="1" />
 
           {/* Sóng nhỏ trên Biển Chết */}
           <path d="M 248,278 Q 252,275 256,278 Q 260,281 264,278"
-            fill="none" stroke="#2a6aaa" strokeWidth="0.7" opacity="0.5" />
+            fill="none" stroke="#6aB4E8" strokeWidth="0.9" opacity="0.7" />
           {/* Sóng nhỏ trên Hồ Galilê */}
           <path d="M 251,158 Q 254,155 258,158 Q 261,161 264,158"
-            fill="none" stroke="#2a6aaa" strokeWidth="0.7" opacity="0.6" />
+            fill="none" stroke="#6aB4E8" strokeWidth="0.9" opacity="0.8" />
 
           {/* ── Route labels ── */}
           {ROUTES.map(route => {
@@ -532,7 +524,7 @@ export default function BibleMap() {
           ].map((l, i) => (
             <text key={i} x={l.x} y={l.y}
               textAnchor="middle" fontSize={l.size}
-              fill="rgba(255,255,255,0.18)"
+              fill="rgba(255,255,255,0.55)"
               fontFamily='"EB Garamond", Georgia, serif'
               fontStyle="italic"
               transform={l.angle ? `rotate(${l.angle}, ${l.x}, ${l.y})` : undefined}
