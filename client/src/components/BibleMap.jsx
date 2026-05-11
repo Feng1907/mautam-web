@@ -2,11 +2,27 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X, BookOpen, Compass } from 'lucide-react';
 
+// ─── Hệ toạ độ % → SVG units (viewBox 720×500) ───────────────────────────────
+// Dùng P(xPct, yPct) để đọc vị trí như phần trăm tấm bản đồ
+const P = (xPct, yPct) => ({ x: Math.round(xPct * 7.2), y: Math.round(yPct * 5) });
+
+// Bảng tham chiếu địa lý (tính từ góc trên-trái bản đồ Cận Đông):
+//   Tây (Ai Cập)  → 0%    |   Đông (Lưỡng Hà) → 100%
+//   Bắc (Haran)   → 0%    |   Nam  (Sinai)     → 100%
+//
+// Vùng Israel/Canaan chiếm khoảng x: 30–40%, y: 28–65%
+// Dead Sea trung tâm:  ~x:36%, y:54%
+// Sea of Galilee:       ~x:36%, y:31%
+// Jerusalem:            ~x:33%, y:51%   (Đồi Judea, phía Tây Dead Sea)
+// Bethlehem:            ~x:33%, y:54%   (9km Nam Jerusalem, cùng kinh tuyến)
+// Jericho:              ~x:37%, y:48%   (Thung lũng Jordan, Đông Bắc Jerusalem)
+// Nazareth:             ~x:31%, y:31%   (Galilee, Tây Nam hồ)
+
 // ─── Dữ liệu địa danh ────────────────────────────────────────────────────────
 const BIBLE_LOCATIONS = [
   {
     id: 'ur', name: 'Ur', region: 'Lưỡng Hà',
-    x: 615, y: 352, category: 'patriarch', color: '#CD853F', marker: 'circle',
+    ...P(85, 70), category: 'patriarch', color: '#CD853F', marker: 'circle',
     tooltip: 'Quê hương Abraham — khởi điểm cuộc hành trình đức tin',
     summary: 'Quê hương của Abraham. Thiên Chúa gọi ông rời khỏi nơi đây để đi đến vùng đất hứa.',
     verse: '"Hãy rời bỏ xứ sở, họ hàng và nhà cha ngươi." — St 12,1',
@@ -14,7 +30,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'haran', name: 'Haran', region: 'Bắc Mesopotamia',
-    x: 432, y: 68, category: 'patriarch', color: '#CD853F', marker: 'circle',
+    ...P(60, 14), category: 'patriarch', color: '#CD853F', marker: 'circle',
     tooltip: 'Điểm dừng chân đầu tiên của gia đình Abraham',
     summary: 'Điểm dừng chân của gia đình Abraham trên đường từ Ur đến Canaan. Ông ở đây cho đến khi cha là Têra qua đời.',
     verse: '"Họ rời Ur của người Canđê... họ đến Haran và ở lại đó." — St 11,31',
@@ -22,7 +38,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'sichem', name: 'Sichem', region: 'Trung tâm Canaan',
-    x: 234, y: 188, category: 'patriarch', color: '#C8860A', marker: 'circle',
+    ...P(32.5, 40), category: 'patriarch', color: '#C8860A', marker: 'circle',
     tooltip: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan',
     summary: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan và hứa ban đất này cho dòng dõi ông.',
     verse: '"Đất này, Ta sẽ ban cho dòng dõi ngươi." — St 12,7',
@@ -30,7 +46,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'hebron', name: 'Hébron', region: 'Nam Canaan',
-    x: 236, y: 290, category: 'patriarch', color: '#C8860A', marker: 'circle',
+    ...P(32.5, 60), category: 'patriarch', color: '#C8860A', marker: 'circle',
     tooltip: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất',
     summary: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất. Thiên Chúa lập Giao ước cắt bì với Abraham tại đây.',
     verse: '"Ta sẽ trở lại thăm ngươi vào mùa xuân tới." — St 18,10',
@@ -38,7 +54,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'goshen', name: 'Gôsen', region: 'Đồng bằng sông Nile',
-    x: 96, y: 368, category: 'exodus', color: '#4A90D9', marker: 'circle',
+    ...P(13, 74), category: 'exodus', color: '#4A90D9', marker: 'circle',
     tooltip: 'Dân Israel sống 430 năm ở Ai Cập trước khi Xuất hành',
     summary: 'Vùng đất màu mỡ ở Ai Cập mà Pharaô cấp cho gia tộc Giacóp. Dân Israel sống ở đây 430 năm.',
     verse: '"Hãy ở lại xứ Gôsen và gần Ta." — St 45,10',
@@ -46,7 +62,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'sinai', name: 'Núi Sinai', region: 'Bán đảo Sinai',
-    x: 188, y: 430, category: 'exodus', color: '#4A90D9', marker: 'circle',
+    ...P(26, 87), category: 'exodus', color: '#4A90D9', marker: 'circle',
     tooltip: 'Nơi Môisê nhận Mười Điều Răn và lập Giao ước với Thiên Chúa',
     summary: 'Thiên Chúa hiện ra với Môsê trong bụi gai bốc lửa. Sau Xuất hành, dân Israel nhận Mười Điều Răn tại đây.',
     verse: '"Ta là Đấng Ta Là (YHWH)." — Xh 3,14',
@@ -54,7 +70,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'kadesh', name: 'Kadesh Barnea', region: 'Sa mạc Negev',
-    x: 210, y: 348, category: 'exodus', color: '#4A90D9', marker: 'circle',
+    ...P(29, 70), category: 'exodus', color: '#4A90D9', marker: 'circle',
     tooltip: 'Nơi dân Israel ở 40 năm trong sa mạc trước khi vào Canaan',
     summary: 'Oasis trong sa mạc — căn cứ 40 năm của Israel trong hoang mạc sau khi từ chối vào Canaan.',
     verse: '"Các ngươi sẽ chăn chiên trong sa mạc 40 năm." — Ds 14,33',
@@ -62,7 +78,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'jericho', name: 'Giêricô', region: 'Thung lũng Jordan',
-    x: 254, y: 236, category: 'conquest', color: '#7B68EE', marker: 'circle',
+    ...P(37, 48), category: 'conquest', color: '#7B68EE', marker: 'circle',
     tooltip: 'Thành đầu tiên bị sụp đổ khi dân Israel vào Đất Hứa',
     summary: 'Thành phố đầu tiên bị dân Israel chiếm khi vào Canaan. Các bức tường sụp đổ khi dân thổi tù và.',
     verse: '"Hãy đi vòng quanh thành bảy lần... bức tường sẽ sụp đổ." — Gs 6,3–5',
@@ -70,7 +86,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'jerusalem', name: 'Giêrusalem', region: 'Đồi Zion / Giuđa',
-    x: 242, y: 260, category: 'kingdom', color: '#9B59B6', marker: 'star',
+    ...P(33, 51), category: 'kingdom', color: '#9B59B6', marker: 'star',
     tooltip: 'Thành Thánh — nơi Đavít lập kinh đô, Đền thờ được xây, và Đức Giêsu chịu chết và sống lại',
     summary: 'Vua Đavít chinh phục Giêrusalem và lập làm thủ đô. Salômôn xây Đền thờ. Đây là nơi Đức Giêsu chịu chết và sống lại.',
     verse: '"Giêrusalem, được xây dựng như thành đô kiên cố." — Tv 122,3',
@@ -78,7 +94,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'bethlehem', name: 'Bêlem', region: 'Nam Giuđa',
-    x: 238, y: 276, category: 'newt', color: '#FFD700', marker: 'circle',
+    ...P(33, 54), category: 'newt', color: '#FFD700', marker: 'circle',
     tooltip: 'Quê hương Đavít — nơi Đức Giêsu Kitô giáng sinh',
     summary: 'Quê hương của vua Đavít. Đức Giêsu Kitô, Con Thiên Chúa, được sinh ra tại đây.',
     verse: '"Hôm nay, một Đấng Cứu Độ đã sinh ra trong thành vua Đavít." — Lc 2,11',
@@ -86,7 +102,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'nazareth', name: 'Nadarét', region: 'Miền Galilê',
-    x: 228, y: 155, category: 'newt', color: '#FFD700', marker: 'circle',
+    ...P(31, 31), category: 'newt', color: '#FFD700', marker: 'circle',
     tooltip: 'Nơi Đức Giêsu sống 30 năm ẩn dật, sứ thần truyền tin cho Đức Maria',
     summary: 'Nơi Đức Giêsu lớn lên trong 30 năm ẩn dật với Mẹ Maria và Thánh Giuse.',
     verse: '"Ngôi Lời đã trở nên người phàm và cư ngụ giữa chúng ta." — Ga 1,14',
@@ -94,7 +110,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'galilee-lake', name: 'Biển Hồ Galilê', region: 'Miền Bắc Israel',
-    x: 262, y: 160, category: 'newt', color: '#38BDF8', marker: 'wave',
+    ...P(36, 31), category: 'newt', color: '#38BDF8', marker: 'wave',
     tooltip: 'Nơi Đức Giêsu gọi các môn đệ, đi trên mặt nước và làm nhiều phép lạ',
     summary: 'Đức Giêsu gọi các môn đệ đầu tiên — ngư phủ trên hồ này. Ngài đi trên mặt nước tại đây.',
     verse: '"Hãy theo Ta, Ta sẽ làm cho các anh thành những kẻ lưới người." — Mc 1,17',
@@ -102,7 +118,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'babylon', name: 'Babylon', region: 'Nam Lưỡng Hà',
-    x: 572, y: 292, category: 'exile', color: '#607D8B', marker: 'circle',
+    ...P(79, 58), category: 'exile', color: '#607D8B', marker: 'circle',
     tooltip: 'Nơi dân Israel bị lưu đày 587–538 TCN — các ngôn sứ loan báo Giao ước Mới',
     summary: 'Vua Nabucôđônôsor phá hủy Giêrusalem và dẫn dân Israel lưu đày về đây năm 587 TCN.',
     verse: '"Bên bờ sông Babylon, chúng tôi ngồi mà khóc." — Tv 137,1',
@@ -121,7 +137,8 @@ const ROUTES = [
     gapLength: 5,
     animDur: '18s',
     totalLen: 320,
-    d: 'M 615,352 Q 530,280 460,190 Q 448,130 432,68 Q 380,110 330,148 Q 285,165 234,188 Q 235,240 236,290',
+    // Ur(85%,70%) → Haran(60%,14%) → Sichem(32.5%,40%) → Hébron(32.5%,60%)
+    d: 'M 612,350 Q 530,275 460,190 Q 448,130 432,70 Q 390,108 340,142 Q 290,162 234,200 Q 234,250 234,300',
   },
   {
     id: 'exodus-egypt',
@@ -132,8 +149,8 @@ const ROUTES = [
     gapLength: 5,
     animDur: '10s',
     totalLen: 260,
-    // Goshen → Red Sea crossing → Sinai → Kadesh → Jericho
-    d: 'M 96,368 Q 118,388 138,398 Q 158,412 178,428 Q 190,436 196,430 Q 208,422 210,400 Q 212,375 212,360 Q 210,354 210,348 Q 212,320 230,296 Q 242,270 254,250 Q 255,244 254,236',
+    // Goshen(13%,74%) → Red Sea → Sinai(26%,87%) → Kadesh(29%,70%) → Jericho(37%,48%)
+    d: 'M 94,370 Q 118,390 140,400 Q 160,412 180,432 Q 188,438 187,435 Q 208,425 209,410 Q 210,390 209,370 Q 209,350 209,350 Q 214,325 228,305 Q 240,280 254,262 Q 262,252 266,240',
   },
 ];
 
@@ -154,9 +171,12 @@ const MAP = {
          L 110,500 L 50,480 L 14,456 L 0,430 L 0,400 L 8,368 L 0,330
          L 0,290 L 12,250 L 8,210 L 18,168 L 32,134 L 52,100 L 72,68
          L 92,46 Z`,
-  deadSea:    `M 248,261 L 256,256 L 264,262 L 266,278 L 260,297 L 250,300 L 242,292 L 240,276 Z`,
-  galileeSea: `M 250,148 L 258,144 L 266,150 L 268,162 L 260,170 L 250,168 L 244,160 Z`,
-  jordan:    `M 258,138 Q 262,155 260,172 Q 258,188 261,204 Q 264,220 260,238 Q 256,252 252,258`,
+  // Dead Sea: trung tâm ~P(36%,54%)=x:259,y:270 — hình oval dọc
+  deadSea:    `M 254,255 L 262,252 L 268,258 L 270,272 L 264,288 L 254,292 L 246,284 L 244,268 Z`,
+  // Galilee: trung tâm ~P(36%,31%)=x:259,y:155
+  galileeSea: `M 252,148 L 260,144 L 268,150 L 270,162 L 262,170 L 252,168 L 246,160 Z`,
+  // Jordan: chảy từ bắc hồ Galilê xuống Dead Sea
+  jordan:    `M 260,138 Q 264,155 262,172 Q 260,188 263,204 Q 266,220 264,236 Q 261,250 258,258`,
   nile:      `M 88,355 Q 76,378 64,410 Q 50,438 36,462 Q 22,480 8,496`,
   euphrates: `M 436,52 Q 460,88 484,132 Q 512,180 530,230 Q 548,270 562,310 Q 576,342 590,365`,
   tigris:    `M 494,20 Q 516,60 532,108 Q 550,162 566,212 Q 582,256 596,298 Q 614,332 630,358`,
@@ -418,8 +438,8 @@ export default function BibleMap() {
             preserveAspectRatio="none"
             style={{ filter: 'saturate(1.2) brightness(0.78)' }}
           />
-          {/* Layer 2: overlay tối nhẹ hơn — giữ chi tiết địa hình */}
-          <rect width="720" height="500" fill="rgba(0,0,0,0.32)" />
+          {/* Layer 2: overlay tối nhẹ — giữ chi tiết địa hình, đọc được chữ trên ảnh */}
+          <rect width="720" height="500" fill="rgba(0,0,0,0.22)" />
           {/* Layer 3: vignette viền */}
           <radialGradient id="bm-vignette" cx="50%" cy="50%" r="72%">
             <stop offset="0%"   stopColor="transparent" />
@@ -517,12 +537,12 @@ export default function BibleMap() {
           {/* ── Nhãn địa lý ── */}
           {[
             { x: 36,  y: 200, text: 'Địa Trung Hải', angle: -72, size: 9 },
-            { x: 200, y: 340, text: 'Sinai',          angle: 0,   size: 8 },
-            { x: 68,  y: 420, text: 'Ai Cập',         angle: 0,   size: 9 },
+            { x: 200, y: 390, text: 'Sinai',          angle: 0,   size: 8 },
+            { x: 68,  y: 430, text: 'Ai Cập',         angle: 0,   size: 9 },
             { x: 540, y: 160, text: 'Lưỡng Hà',       angle: 0,   size: 9 },
-            { x: 240, y: 220, text: 'CANAAN',          angle: 0,   size: 8 },
-            { x: 258, y: 283, text: 'Biển Chết',       angle: 0,   size: 6.5 },
-            { x: 258, y: 157, text: 'Galilê',          angle: 0,   size: 6 },
+            { x: 234, y: 222, text: 'CANAAN',          angle: 0,   size: 8 },
+            { x: 262, y: 274, text: 'Biển Chết',       angle: 0,   size: 6.5 },
+            { x: 262, y: 154, text: 'Galilê',          angle: 0,   size: 6 },
           ].map((l, i) => (
             <text key={i} x={l.x} y={l.y}
               textAnchor="middle" fontSize={l.size}
