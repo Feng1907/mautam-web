@@ -306,7 +306,14 @@ export default function BibleMap() {
   const [hovered, setHovered] = useState(null);
   const [selected, setSelected] = useState(null);
   const [svgRect, setSvgRect] = useState(null);
+  // Layer toggle: mỗi route có thể bật/tắt độc lập
+  const [visibleRoutes, setVisibleRoutes] = useState(
+    () => Object.fromEntries(ROUTES.map(r => [r.id, true]))
+  );
   const svgRef = useRef(null);
+
+  const toggleRoute = (id) =>
+    setVisibleRoutes(prev => ({ ...prev, [id]: !prev[id] }));
 
   useEffect(() => {
     if (!selected) return;
@@ -410,35 +417,20 @@ export default function BibleMap() {
           </radialGradient>
           <rect width="500" height="800" fill="url(#bm-vignette)" />
 
-          {/* ── Hành trình (Routes) ── */}
-          {ROUTES.map(route => (
+          {/* ── Hành trình (Routes) — toggle-able ── */}
+          {ROUTES.filter(r => visibleRoutes[r.id]).map(route => (
             <g key={route.id}>
-              {/* Shadow/glow layer */}
-              <path
-                d={route.d}
-                fill="none"
-                stroke={route.color}
-                strokeWidth={route.glow ? 3.5 : 2}
-                strokeLinecap="round"
+              <path d={route.d} fill="none" stroke={route.color}
+                strokeWidth={route.glow ? 3.5 : 2} strokeLinecap="round"
                 strokeDasharray={`${route.dashLength} ${route.gapLength}`}
                 opacity={route.glow ? 0.2 : 0.12}
-                filter={route.glow ? 'url(#bm-exodusGlow)' : 'url(#bm-patriarchGlow)'}
-              />
-              {/* Animated dashed line */}
-              <path
-                d={route.d}
-                fill="none"
-                stroke={route.color}
-                strokeWidth={route.glow ? 1.8 : 1.4}
-                strokeLinecap="round"
+                filter={route.glow ? 'url(#bm-exodusGlow)' : 'url(#bm-patriarchGlow)'} />
+              <path d={route.d} fill="none" stroke={route.color}
+                strokeWidth={route.glow ? 1.8 : 1.4} strokeLinecap="round"
                 strokeDasharray={`${route.dashLength} ${route.gapLength}`}
                 opacity={route.glow ? 0.85 : 0.6}
                 filter={route.glow ? 'url(#bm-exodusGlow)' : undefined}
-                style={{
-                  animation: `bm-dash-${route.id} ${route.animDur} linear infinite`,
-                }}
-              />
-              {/* Direction arrow at end of route */}
+                style={{ animation: `bm-dash-${route.id} ${route.animDur} linear infinite` }} />
             </g>
           ))}
 
@@ -452,6 +444,12 @@ export default function BibleMap() {
               from { stroke-dashoffset: 0; }
               to   { stroke-dashoffset: -338; }
             }
+            /* Pulse ping cho từng category — offset khác nhau để không bị đồng bộ */
+            @keyframes bm-ping-patriarch { 0%{r:7;opacity:.35} 70%{r:13;opacity:0} 100%{r:13;opacity:0} }
+            @keyframes bm-ping-conquest  { 0%{r:7;opacity:.35} 70%{r:13;opacity:0} 100%{r:13;opacity:0} }
+            @keyframes bm-ping-kingdom   { 0%{r:7;opacity:.4}  70%{r:14;opacity:0} 100%{r:14;opacity:0} }
+            @keyframes bm-ping-newt      { 0%{r:7;opacity:.35} 70%{r:13;opacity:0} 100%{r:13;opacity:0} }
+            @keyframes bm-ping-exodus    { 0%{r:7;opacity:.3}  70%{r:13;opacity:0} 100%{r:13;opacity:0} }
           `}</style>
 
           {/* ── Sông Jordan ── */}
@@ -530,87 +528,65 @@ export default function BibleMap() {
                     strokeWidth="0.8" opacity="0.45" />
                 )}
 
+                {/* Pulse ring — animate-ping effect (chỉ hiện khi không active) */}
+                {!active && (
+                  <circle cx={loc.x} cy={loc.y} r="9"
+                    fill="none" stroke={loc.color} strokeWidth="0.8" opacity="0.3"
+                    style={{ animation: `bm-ping-${loc.category} 2.5s ease-out infinite` }}
+                  />
+                )}
+
                 {loc.marker === 'star' ? (
-                  // ── Ngôi sao — Jerusalem ──
                   <>
-                    {active && (
-                      <polygon
-                        points={starPoints(loc.x, loc.y, 13)}
-                        fill="none" stroke={loc.color}
-                        strokeWidth="0.8" opacity="0.35" />
-                    )}
-                    <polygon
-                      points={starPoints(loc.x, loc.y, active ? 9 : 7)}
-                      fill={active ? loc.color : `${loc.color}99`}
-                      filter={active ? `url(#bm-glow-${loc.id})` : undefined}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
+                    {active && <polygon points={starPoints(loc.x, loc.y, 14)}
+                      fill="none" stroke={loc.color} strokeWidth="0.8" opacity="0.3" />}
+                    <polygon points={starPoints(loc.x, loc.y, active ? 9 : 6)}
+                      fill={active ? loc.color : `${loc.color}bb`}
+                      filter={`url(#bm-glow-${loc.id})`}
+                      style={{ transition: 'all 0.2s ease' }} />
                   </>
                 ) : loc.marker === 'wave' ? (
-                  // ── Sóng nước — Biển Hồ Galilê ──
                   <>
-                    <circle cx={loc.x} cy={loc.y} r={active ? 9 : 7}
+                    <circle cx={loc.x} cy={loc.y} r={active ? 9 : 6}
                       fill={active ? `${loc.color}28` : 'transparent'}
-                      stroke={loc.color}
-                      strokeWidth={active ? 1 : 0.7}
-                      opacity={active ? 1 : 0.6}
+                      stroke={loc.color} strokeWidth={active ? 1.2 : 0.8}
+                      opacity={active ? 1 : 0.7}
                       filter={active ? `url(#bm-glow-${loc.id})` : undefined}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
-                    <path d={wavePath(loc.x, loc.y - 2, 6, 2.5)}
+                      style={{ transition: 'all 0.2s ease' }} />
+                    <path d={wavePath(loc.x, loc.y - 1.5, active ? 6 : 5, 2)}
                       fill="none" stroke={loc.color}
-                      strokeWidth={active ? 1.6 : 1.2}
-                      strokeLinecap="round"
-                      opacity={active ? 1 : 0.75}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
-                    <path d={wavePath(loc.x, loc.y + 2, 5, 2)}
-                      fill="none" stroke={loc.color}
-                      strokeWidth={active ? 1.2 : 0.9}
-                      strokeLinecap="round"
-                      opacity={active ? 0.8 : 0.55}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
+                      strokeWidth={active ? 1.5 : 1.1} strokeLinecap="round"
+                      opacity={active ? 1 : 0.75} style={{ transition: 'all 0.2s ease' }} />
                   </>
                 ) : (
-                  // ── Circle — mặc định ──
                   <>
-                    <circle cx={loc.x} cy={loc.y}
-                      r={active ? 10 : 8}
-                      fill={active ? `${loc.color}22` : 'transparent'}
-                      stroke={loc.color}
-                      strokeWidth={active ? 1 : 0.6}
-                      opacity={active ? 1 : 0.5}
+                    {/* Outer ring */}
+                    <circle cx={loc.x} cy={loc.y} r={active ? 10 : 7}
+                      fill={active ? `${loc.color}25` : 'transparent'}
+                      stroke={loc.color} strokeWidth={active ? 1.2 : 0.7}
+                      opacity={active ? 1 : 0.55}
                       filter={active ? `url(#bm-glow-${loc.id})` : undefined}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
-                    <circle cx={loc.x} cy={loc.y}
-                      r={active ? 4 : 2.8}
-                      fill={loc.color}
-                      opacity={active ? 1 : 0.8}
-                      filter={active ? `url(#bm-glow-${loc.id})` : undefined}
-                      style={{ transition: 'all 0.2s ease' }}
-                    />
+                      style={{ transition: 'all 0.2s ease' }} />
+                    {/* Inner dot */}
+                    <circle cx={loc.x} cy={loc.y} r={active ? 4 : 2.5}
+                      fill={loc.color} opacity={active ? 1 : 0.85}
+                      filter={`url(#bm-glow-${loc.id})`}
+                      style={{ transition: 'all 0.2s ease' }} />
                   </>
                 )}
 
-                {/* Nhãn tên — paint-order stroke trước để tạo viền đen đọc rõ trên ảnh thật */}
-                <text
-                  x={loc.x}
-                  y={loc.y - 14}
-                  textAnchor="middle"
-                  fontSize={active ? 8.5 : 7.5}
-                  fill={active ? loc.color : `${loc.color}cc`}
-                  stroke="rgba(0,0,0,0.85)"
-                  strokeWidth={active ? 2.5 : 2}
-                  strokeLinejoin="round"
-                  paintOrder="stroke fill"
-                  fontFamily='"EB Garamond", Georgia, serif'
-                  fontWeight="bold"
-                  style={{ transition: 'all 0.2s ease', userSelect: 'none', pointerEvents: 'none' }}
-                >
-                  {loc.name}
-                </text>
+                {/* Nhãn tên — CHỈ hiện khi hover/select */}
+                {active && (
+                  <text x={loc.x} y={loc.y - 16}
+                    textAnchor="middle" fontSize="9"
+                    fill={loc.color}
+                    stroke="rgba(0,0,0,0.9)" strokeWidth="2.5"
+                    strokeLinejoin="round" paintOrder="stroke fill"
+                    fontFamily='"EB Garamond", Georgia, serif' fontWeight="bold"
+                    style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                    {loc.name}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -629,21 +605,35 @@ export default function BibleMap() {
           ))}
         </div>
 
-        {/* Route legend */}
+        {/* Route toggle — bật/tắt từng hành trình */}
         <div
-          className="absolute bottom-3 right-3 rounded-xl px-3 py-2 flex flex-col gap-1"
-          style={{ background: 'rgba(6,10,18,0.82)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)' }}
+          className="absolute bottom-3 right-3 rounded-xl px-3 py-2 flex flex-col gap-1.5"
+          style={{ background: 'rgba(6,10,18,0.88)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)' }}
         >
-          {ROUTES.map(r => (
-            <div key={r.id} className="flex items-center gap-1.5">
-              <svg width="18" height="6" viewBox="0 0 18 6">
-                <line x1="0" y1="3" x2="18" y2="3"
-                  stroke={r.color} strokeWidth="1.5"
-                  strokeDasharray="4 3" strokeLinecap="round" />
-              </svg>
-              <span className="text-[10px]" style={{ color: `${r.color}99` }}>{r.label}</span>
-            </div>
-          ))}
+          <p className="text-[9px] uppercase tracking-widest text-white/25 mb-0.5">Hành trình</p>
+          {ROUTES.map(r => {
+            const on = visibleRoutes[r.id];
+            return (
+              <button key={r.id}
+                onClick={() => toggleRoute(r.id)}
+                className="flex items-center gap-1.5 transition-opacity"
+                style={{ opacity: on ? 1 : 0.35 }}
+                title={on ? `Ẩn ${r.label}` : `Hiện ${r.label}`}
+              >
+                <svg width="18" height="6" viewBox="0 0 18 6">
+                  <line x1="0" y1="3" x2="18" y2="3"
+                    stroke={r.color} strokeWidth={on ? 2 : 1.2}
+                    strokeDasharray="4 3" strokeLinecap="round" />
+                </svg>
+                <span className="text-[10px]" style={{ color: on ? r.color : `${r.color}66` }}>
+                  {r.label}
+                </span>
+                <span className="text-[9px] ml-auto" style={{ color: on ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}>
+                  {on ? '●' : '○'}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Hint text */}
