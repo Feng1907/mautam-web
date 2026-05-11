@@ -21,6 +21,8 @@ const NT_CHARACTERS = [
     era: 'Trung tâm Cứu độ',
     heroColor: '#F59E0B',   // amber-500
     glowRgb: '245,158,11',
+    imageUrl: '/images/characters/new-testament/jesus.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Giêsu" = YHWH cứu độ · "Kitô" = Đấng được Xức dầu (Mêsia). Đây là danh hiệu duy nhất chứa đựng trọn vẹn chương trình cứu độ của Thiên Chúa (Pl 2,9–11).',
     mainEvent: 'Nhập thể tại Bêlem · Sứ vụ 3 năm rao giảng và phép lạ · Tử nạn trên thập giá · Phục sinh ngày thứ ba · Lên trời · Sai Thánh Thần.',
     role: 'Alpha và Omega — Trung tâm và Mục tiêu toàn bộ Lịch sử Cứu độ. "Không ai đến được với Chúa Cha mà không qua Thầy." — Ga 14,6',
@@ -39,6 +41,8 @@ const NT_CHARACTERS = [
     era: 'Nhập thể',
     heroColor: '#F472B6',   // pink-400
     glowRgb: '244,114,182',
+    imageUrl: '/images/characters/new-testament/mary.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Miriam" — nguồn gốc tranh luận: "Được yêu thương", "Ngôi sao biển", "Biển đắng". Mẹ là "Eva Mới": tiếng "xin vâng" đảo ngược tiếng "không" của Eva.',
     mainEvent: 'Tiếng "Xin vâng" với sứ thần (Lc 1) · Sinh Chúa Giêsu tại Bêlem · Dưới chân Thập giá không bỏ đi (Ga 19) · Cùng Hội Thánh đón Chúa Thánh Thần.',
     role: 'Mẹ Thiên Chúa (Theotokos) — "Hòm Bia Giao ước Mới", mang Đức Kitô đến thế gian. Mẫu gương đức tin hoàn hảo cho mọi Kitô hữu.',
@@ -57,6 +61,8 @@ const NT_CHARACTERS = [
     era: 'Nhập thể',
     heroColor: '#818CF8',   // indigo-400
     glowRgb: '129,140,248',
+    imageUrl: '/images/characters/new-testament/joseph.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Yosef" = "Thiên Chúa thêm vào / gia tăng". Ông Giuse trong Cựu Ước là hình bóng: cũng bị bán đi rồi trở thành người cứu gia đình — tiên trưng Đức Giêsu bị phản nộp để cứu nhân loại.',
     mainEvent: 'Nhận nuôi Đức Giêsu theo lệnh thiên thần (Mt 1) · Đưa Gia đình sang Ai Cập tránh Hêrôđê · Bảo vệ và nuôi dưỡng Gia đình Thánh tại Nadarét.',
     role: 'Người cha nuôi, đầu Gia đình Thánh — bảo vệ "mầm mống ơn cứu độ" trong những năm đầu tiên mong manh nhất của Đức Giêsu trên đời.',
@@ -75,6 +81,8 @@ const NT_CHARACTERS = [
     era: 'Dọn đường',
     heroColor: '#38BDF8',   // sky-400
     glowRgb: '56,189,248',
+    imageUrl: '/images/characters/new-testament/john-baptist.jpg',
+    imagePosition: 'center 15%',
     nameMeaning: '"Yohanan" = YHWH đã thương xót / Thiên Chúa ban ơn. Tên được sứ thần Gabriel đặt trước khi ông sinh ra — báo hiệu ông là hồng ân đặc biệt (Lc 1,13).',
     mainEvent: 'Rao giảng hoán cải ở sông Jordan · Làm phép rửa cho Đức Giêsu · Công bố "Đây là Chiên Thiên Chúa!" · Tử đạo vì dám lên án tội bất công của vua.',
     role: '"Người vĩ đại nhất sinh ra từ người phụ nữ" (Mt 11,11) — cầu nối cuối cùng giữa Cựu Ước và Tân Ước, người chỉ về Đức Kitô.',
@@ -93,6 +101,8 @@ const NT_CHARACTERS = [
     era: 'Hội Thánh',
     heroColor: '#FB923C',   // orange-400
     glowRgb: '251,146,60',
+    imageUrl: '/images/characters/new-testament/peter.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Kêpha" (Aramaic) / "Petros" (Hy Lạp) = Đá tảng. Tên nguyên thủy là Simon. Đức Giêsu đổi tên — hành động này chứa đựng sứ mạng lãnh đạo Hội Thánh.',
     mainEvent: 'Được gọi từ lưới cá · Tuyên xưng: "Thầy là Đức Kitô, Con Thiên Chúa" · Ba lần chối Chúa & hối hận · Phục hồi ở hồ Galilê · Bài giảng Lễ Ngũ Tuần · Tử đạo tại Roma.',
     role: 'Nền tảng hữu hình của Hội Thánh — "Trên đá này Ta sẽ xây Hội Thánh Ta, và quyền lực tử thần sẽ không thắng nổi." (Mt 16,18)',
@@ -111,6 +121,8 @@ const NT_CHARACTERS = [
     era: 'Hội Thánh',
     heroColor: '#34D399',   // emerald-400
     glowRgb: '52,211,153',
+    imageUrl: '/images/characters/new-testament/paul.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Paulos" (Latin) = Nhỏ bé, khiêm tốn. Tên gốc là Saolê (Saul = được hỏi/cầu xin). Sau biến cố Damascus, ông dùng tên Paulos — dấu hiệu của sự biến đổi căn bản.',
     mainEvent: 'Bắt bớ Kitô hữu gắt gao · Gặp Đức Kitô phục sinh trên đường Damascus · 3 chuyến truyền giáo đến Hy Lạp, Tiểu Á, Italia · Viết 13 thư Tân Ước · Tử đạo tại Roma.',
     role: '"Tông đồ dân ngoại" — người đem Tin Mừng vượt khỏi Palestine đến toàn Đế quốc Roma. 13 thư của ông là nền thần học Kitô giáo.',
@@ -236,6 +248,8 @@ const InfoRow = ({ type, value, heroColor }) => {
 
 const HeroCard = ({ char }) => {
   const [expanded, setExpanded] = useState(false);
+  const [imgError, setImgError]  = useState(false);
+  const showImg = char.imageUrl && !imgError;
 
   return (
     <motion.article
@@ -258,36 +272,44 @@ const HeroCard = ({ char }) => {
     >
       <div className="flex flex-col md:flex-row">
         {/* Hero visual — left on md, top on mobile */}
-        <div
-          className="relative md:w-56 h-44 md:h-auto shrink-0 flex items-center justify-center overflow-hidden"
-          style={{ background: `linear-gradient(135deg, rgba(245,158,11,0.3) 0%, rgba(180,110,0,0.15) 50%, rgba(2,6,23,0.95) 100%)` }}
-        >
-          {/* Rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-32 h-32 rounded-full" style={{ border: '1px solid rgba(245,158,11,0.12)' }} />
-            <div className="absolute w-22 h-22 rounded-full" style={{ border: '1px solid rgba(245,158,11,0.18)', width: 88, height: 88 }} />
-            <div className="absolute w-12 h-12 rounded-full" style={{ border: '1px solid rgba(245,158,11,0.25)' }} />
-          </div>
+        <div className="relative md:w-56 h-44 md:h-auto shrink-0 overflow-hidden bg-slate-900">
+          {showImg ? (
+            <img
+              src={char.imageUrl}
+              alt={char.name}
+              className="w-full h-full object-cover"
+              style={{ objectPosition: char.imagePosition ?? 'top' }}
+              onError={() => setImgError(true)}
+              loading="lazy"
+              draggable={false}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.3) 0%, rgba(180,110,0,0.15) 50%, rgba(2,6,23,0.95) 100%)' }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-32 h-32 rounded-full" style={{ border: '1px solid rgba(245,158,11,0.12)' }} />
+                <div className="absolute w-12 h-12 rounded-full" style={{ border: '1px solid rgba(245,158,11,0.25)' }} />
+              </div>
+              <motion.div
+                className="relative z-10"
+                style={{ filter: 'drop-shadow(0 0 22px rgba(245,158,11,0.7))' }}
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <CrossSVG size={52} color="#F59E0B" />
+              </motion.div>
+            </div>
+          )}
 
-          {/* Radial glow */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(circle 70px at 50% 50%, rgba(245,158,11,0.35) 0%, transparent 70%)' }}
-          />
-
-          {/* Cross icon */}
-          <motion.div
-            className="relative z-10"
-            style={{ filter: 'drop-shadow(0 0 22px rgba(245,158,11,0.7))' }}
-            animate={{ opacity: [0.9, 1, 0.9] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <CrossSVG size={52} color="#F59E0B" />
-          </motion.div>
+          {/* Bottom fade */}
+          <div className="absolute inset-x-0 bottom-0 h-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgb(2 6 23) 0%, transparent 100%)' }} />
 
           {/* Era badge */}
-          <div className="absolute top-3 left-3">
-            <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 uppercase tracking-widest">
+          <div className="absolute top-3 left-3 z-10">
+            <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 uppercase tracking-widest backdrop-blur-sm">
               {char.era}
             </span>
           </div>
@@ -373,7 +395,9 @@ const HeroCard = ({ char }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const NTCard = ({ char, index }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded]  = useState(false);
+  const [imgError, setImgError]  = useState(false);
+  const showImg = char.imageUrl && !imgError;
   const IconComponent = char.LucideIcon;
 
   return (
@@ -399,60 +423,59 @@ const NTCard = ({ char, index }) => {
         transition={{ duration: 0.2, ease: 'easeOut' }}
       >
         {/* Hero image area */}
-        <div
-          className="relative h-32 flex items-center justify-center overflow-hidden shrink-0"
-          style={{
-            background: `linear-gradient(160deg, rgba(${char.glowRgb},0.25) 0%, rgba(2,6,23,0.95) 100%)`,
-          }}
-        >
-          {/* Concentric rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-24 h-24 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.04)' }} />
-            <div className="absolute w-16 h-16 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.07)' }} />
-          </div>
-
-          {/* Radial glow */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: `radial-gradient(circle 50px at 50% 50%, rgba(${char.glowRgb},0.3) 0%, transparent 70%)` }}
-          />
-
-          {/* Era badge — top left */}
-          <div className="absolute top-2.5 left-3">
-            <span
-              className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
-              style={{
-                background: `rgba(${char.glowRgb},0.12)`,
-                color: char.heroColor,
-                border: `1px solid rgba(${char.glowRgb},0.25)`,
-              }}
+        <div className="relative aspect-4/3 overflow-hidden shrink-0 bg-slate-900">
+          {showImg ? (
+            <img
+              src={char.imageUrl}
+              alt={char.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              style={{ objectPosition: char.imagePosition ?? 'top' }}
+              onError={() => setImgError(true)}
+              loading="lazy"
+              draggable={false}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(160deg, rgba(${char.glowRgb},0.25) 0%, rgba(2,6,23,0.95) 100%)` }}
             >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-24 h-24 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.04)' }} />
+                <div className="absolute w-16 h-16 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.07)' }} />
+              </div>
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: `radial-gradient(circle 50px at 50% 50%, rgba(${char.glowRgb},0.3) 0%, transparent 70%)` }} />
+              <motion.div
+                className="relative z-10"
+                style={{ filter: `drop-shadow(0 0 14px rgba(${char.glowRgb},0.7))` }}
+                whileHover={{ scale: 1.15 }}
+                transition={{ duration: 0.25 }}
+              >
+                {IconComponent && (
+                  <IconComponent size={40} style={{ color: char.heroColor }} strokeWidth={1.5} />
+                )}
+              </motion.div>
+            </div>
+          )}
+
+          {/* Bottom fade */}
+          <div className="absolute inset-x-0 bottom-0 h-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgb(2 6 23) 0%, transparent 100%)' }} />
+
+          {/* Era badge */}
+          <div className="absolute top-2.5 left-3 z-10">
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-sm"
+              style={{ background: `rgba(${char.glowRgb},0.15)`, color: char.heroColor, border: `1px solid rgba(${char.glowRgb},0.3)` }}>
               {char.era}
             </span>
           </div>
 
-          {/* "Ứng nghiệm" badge — top right */}
-          <div className="absolute top-2.5 right-3">
+          {/* Ứng nghiệm badge */}
+          <div className="absolute top-2.5 right-3 z-10">
             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/25 uppercase tracking-wider">
               Ứng nghiệm
             </span>
           </div>
-
-          {/* Lucide icon */}
-          <motion.div
-            className="relative z-10"
-            style={{ filter: `drop-shadow(0 0 14px rgba(${char.glowRgb},0.7))` }}
-            whileHover={{ scale: 1.15 }}
-            transition={{ duration: 0.25 }}
-          >
-            {IconComponent && (
-              <IconComponent
-                size={40}
-                style={{ color: char.heroColor }}
-                strokeWidth={1.5}
-              />
-            )}
-          </motion.div>
         </div>
 
         {/* Body */}

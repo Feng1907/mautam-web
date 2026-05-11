@@ -15,6 +15,8 @@ const CHARACTERS = [
     emoji: '⛺',
     era: 'Tổ phụ',
     heroColor: '#CD853F',
+    imageUrl: '/images/characters/old-testament/abraham.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Cha của nhiều dân tộc" — từ Abram (cha được tôn trọng) đổi thành Abraham sau Giao ước cắt bì.',
     mainEvent: 'Rời Ur theo tiếng gọi Chúa; sẵn sàng dâng con trai Isaac; nhận lời hứa dòng dõi đông như sao trời.',
     role: 'Người lập nền Giao ước Cứu độ — qua ông mọi dân tộc được chúc phúc.',
@@ -31,6 +33,8 @@ const CHARACTERS = [
     emoji: '🔥',
     era: 'Xuất hành',
     heroColor: '#4A90D9',
+    imageUrl: '/images/characters/old-testament/moses.jpg',
+    imagePosition: 'center',
     nameMeaning: '"Được kéo ra khỏi nước" — công chúa Ai Cập đặt khi vớt ông từ sông Nile lúc còn là trẻ sơ sinh.',
     mainEvent: 'Gặp Thiên Chúa qua bụi gai lửa (Xh 3); lãnh đạo Xuất hành khỏi Ai Cập; nhận Mười Điều Răn trên Sinai.',
     role: 'Trung gian Giao ước giữa Thiên Chúa và dân Israel — hình bóng của Đức Kitô Trung gian Giao ước Mới.',
@@ -47,6 +51,8 @@ const CHARACTERS = [
     emoji: '👑',
     era: 'Vương quốc',
     heroColor: '#9B59B6',
+    imageUrl: '/images/characters/old-testament/david.jpg',
+    imagePosition: 'center 15%',
     nameMeaning: '"Người được yêu thương" — biểu thị tình yêu đặc biệt Thiên Chúa dành cho ông ngay từ khi còn là người chăn chiên.',
     mainEvent: 'Được xức dầu từ người chăn chiên thành vua; chiến thắng Gôliát bằng đức tin; nhận Giao ước đời đời từ Thiên Chúa (2Sm 7).',
     role: 'Nền tảng Giao ước Mêsia — "Con vua Đavít" là tước hiệu Mêsia căn bản trong Tân Ước.',
@@ -63,6 +69,8 @@ const CHARACTERS = [
     emoji: '📜',
     era: 'Ngôn sứ',
     heroColor: '#E67E22',
+    imageUrl: '/images/characters/old-testament/isaiah.jpg',
+    imagePosition: 'top',
     nameMeaning: '"Thiên Chúa cứu độ" hay "Ơn cứu độ của YHWH" — tên ông chứa đựng sứ điệp cả cuộc đời.',
     mainEvent: 'Thị kiến ngai thánh (Is 6); tiên báo trinh nữ thụ thai Emmanuel (Is 7,14); viết về Người Tôi Tớ đau khổ (Is 53).',
     role: '"Tin Mừng thứ năm" — mô tả Đức Kitô chi tiết hơn bất kỳ sách Cựu Ước nào, viết trước 700 năm.',
@@ -79,6 +87,8 @@ const CHARACTERS = [
     emoji: '🕯️',
     era: 'Lưu đày',
     heroColor: '#1ABC9C',
+    imageUrl: '/images/characters/old-testament/jeremiah.jpg',
+    imagePosition: 'center 20%',
     nameMeaning: '"Thiên Chúa nâng đỡ" — nhưng chính ông lại là ngôn sứ chịu khổ đau nhất, hình bóng của Đức Kitô.',
     mainEvent: 'Được gọi từ trước khi sinh (Gr 1); viết thư gửi người lưu đày Babylon; tiên báo Giao ước Mới ghi vào lòng (Gr 31).',
     role: 'Cầu nối Lưu đày → Tân Ước. Lời Gr 31 về Giao ước Mới là tiên tri trực tiếp nhất về Bí tích Thánh Thể.',
@@ -95,6 +105,8 @@ const CHARACTERS = [
     emoji: '⚡',
     era: 'Ngôn sứ',
     heroColor: '#F1C40F',
+    imageUrl: '/images/characters/old-testament/elijah.jpg',
+    imagePosition: 'center top',
     nameMeaning: '"Thiên Chúa của tôi là YHWH" — tên ông là lời tuyên xưng đức tin, đối nghịch với thờ Baal.',
     mainEvent: 'Chiến thắng 450 ngôn sứ Baal trên núi Carmel (1V 18); gặp Thiên Chúa trong tiếng gió hiu hiu (1V 19); được rước lên trời.',
     role: 'Tiêu biểu cho toàn bộ các ngôn sứ — đại diện trong biến cố Chúa biến hình cùng Môsê (Mt 17).',
@@ -170,7 +182,7 @@ const INFO_ICONS = {
   lesson: { Icon: Lightbulb,  label: 'Bài học',        color: '#94a3b8' },
 };
 
-const InfoRow = ({ type, value, heroColor, isExpanded }) => {
+const InfoRow = ({ type, value, heroColor }) => {
   const { Icon, label, color } = INFO_ICONS[type];
   const [open, setOpen] = useState(false);
 
@@ -231,6 +243,8 @@ const InfoRow = ({ type, value, heroColor, isExpanded }) => {
 
 const CharacterCard = ({ char, index }) => {
   const [expanded, setExpanded] = useState(false);
+  const [imgError, setImgError]  = useState(false);
+  const showImg = char.imageUrl && !imgError;
 
   return (
     <motion.div
@@ -238,9 +252,10 @@ const CharacterCard = ({ char, index }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="h-full flex flex-col"
     >
       <motion.article
-        className="rounded-2xl overflow-hidden flex flex-col h-full"
+        className="group rounded-2xl overflow-hidden flex flex-col h-full"
         style={{
           background: 'rgba(255,255,255,0.05)',
           backdropFilter: 'blur(14px)',
@@ -254,61 +269,67 @@ const CharacterCard = ({ char, index }) => {
         }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
-        {/* ── Hero image area ── */}
-        <div
-          className="relative h-36 flex items-center justify-center overflow-hidden shrink-0"
-          style={{
-            background: `linear-gradient(160deg, ${char.heroColor}28 0%, rgba(2,6,23,0.95) 100%)`,
-          }}
-        >
-          {/* Concentric decorative rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div
-              className="w-28 h-28 rounded-full"
-              style={{ border: '1px solid rgba(255,255,255,0.04)' }}
-            />
-            <div
-              className="absolute w-20 h-20 rounded-full"
-              style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-            />
-          </div>
+        {/* ── Hero image area — aspect-4/3 đồng nhất ── */}
+        <div className="relative aspect-4/3 overflow-hidden shrink-0 bg-slate-900">
 
-          {/* Radial glow behind emoji */}
+          {showImg ? (
+            /* ── Ảnh thật ── */
+            <img
+              src={char.imageUrl}
+              alt={char.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              style={{ objectPosition: char.imagePosition ?? 'center' }}
+              onError={() => setImgError(true)}
+              loading="lazy"
+              draggable={false}
+            />
+          ) : (
+            /* ── Fallback: gradient + emoji ── */
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(160deg, ${char.heroColor}28 0%, rgba(2,6,23,0.95) 100%)` }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-28 h-28 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.04)' }} />
+                <div className="absolute w-20 h-20 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.06)' }} />
+              </div>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: `radial-gradient(circle 60px at 50% 50%, ${char.heroColor}30 0%, transparent 70%)` }}
+              />
+              <span className="relative z-10 text-5xl select-none"
+                style={{ filter: `drop-shadow(0 0 18px ${char.heroColor}55)` }}>
+                {char.emoji}
+              </span>
+            </div>
+          )}
+
+          {/* Glow overlay khi hover */}
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle 60px at 50% 50%, ${char.heroColor}30 0%, transparent 70%)`,
-            }}
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{ background: `radial-gradient(ellipse 80% 70% at 50% 50%, ${char.heroColor}22 0%, transparent 70%)` }}
+          />
+
+          {/* Bottom fade */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgb(2 6 23) 0%, rgba(2,6,23,0.5) 60%, transparent 100%)' }}
           />
 
           {/* Era badge */}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-2.5 left-2.5 z-10">
             <span
-              className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
-              style={{
-                background: 'rgba(245,158,11,0.12)',
-                color: 'rgb(251,191,36)',
-                border: '1px solid rgba(245,158,11,0.25)',
-              }}
+              className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest backdrop-blur-sm"
+              style={{ background: 'rgba(245,158,11,0.15)', color: 'rgb(251,191,36)', border: '1px solid rgba(245,158,11,0.3)' }}
             >
               {char.era}
             </span>
           </div>
 
-          {/* Bible reference badge */}
-          <div className="absolute top-3 right-3">
+          {/* Bible ref */}
+          <div className="absolute top-2.5 right-2.5 z-10">
             <span className="text-[9px] text-slate-500 font-mono">{char.bibleRef.split('·')[0].trim()}</span>
           </div>
-
-          {/* Large emoji */}
-          <motion.div
-            className="relative z-10 text-5xl select-none"
-            style={{ filter: `drop-shadow(0 0 18px ${char.heroColor}55)` }}
-            whileHover={{ scale: 1.1, rotate: [-1, 1, -1, 0] }}
-            transition={{ duration: 0.4 }}
-          >
-            {char.emoji}
-          </motion.div>
         </div>
 
         {/* ── Card body ── */}
