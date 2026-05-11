@@ -30,8 +30,13 @@ const Navbar = () => {
 
   const linkClass = ({ isActive }) =>
     isActive
-      ? 'relative text-sm font-medium text-[#D4AF37] pb-0.5 border-b border-[#D4AF37]'
-      : 'relative text-sm font-medium text-white/85 hover:text-white pb-0.5 border-b border-transparent hover:border-[#D4AF37] transition-colors duration-200';
+      ? 'px-4 py-2 rounded-lg text-sm font-medium text-[#D4AF37] bg-white/10 transition-all duration-200'
+      : 'px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/8 transition-all duration-200';
+
+  const mobileLinkClass = ({ isActive }) =>
+    isActive
+      ? 'block px-3 py-2 rounded-lg text-sm font-medium text-[#D4AF37] bg-white/10 transition-all duration-200'
+      : 'block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200';
 
   // Nav links built from t() — filtered by auth/role
   const NAV_LINKS = [
@@ -39,6 +44,7 @@ const Navbar = () => {
     { to: '/gio-le',  label: t('nav.liturgy') },
     { to: '/tin-tuc', label: t('nav.news')    },
     { to: '/thu-vien',label: t('nav.gallery') },
+    { to: '/lich-su-cuu-do', label: 'Lịch sử' },
     { to: '/lop-hoc', label: t('nav.classes'), authRequired: true },
     { to: '/admin',   label: t('nav.admin'),   adminOnly: true    },
   ];
@@ -48,8 +54,15 @@ const Navbar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 shadow-md" style={{ background: '#8B0000' }}>
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+    <header
+      className="sticky top-0 z-50"
+      style={{
+        background: '#8B0000',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: '0 2px 16px rgba(0,0,0,0.40), 0 1px 0 rgba(212,175,55,0.08)',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 text-white leading-tight shrink-0">
@@ -76,7 +89,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-2">
           {visibleLinks.map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}>
               {l.label}
@@ -174,36 +187,56 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden px-4 pb-4 flex flex-col gap-3" style={{ background: '#6e0000' }}>
+        <div
+          className="md:hidden px-4 pt-2 pb-4 flex flex-col gap-1"
+          style={{ background: '#6e0000', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
           {visibleLinks.map(l => (
-            <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}
+            <NavLink key={l.to} to={l.to} end={l.to === '/'} className={mobileLinkClass}
               onClick={() => setMenuOpen(false)}>
               {l.label}
             </NavLink>
           ))}
-          {/* Language switcher in mobile menu */}
-          <div className="pt-1 border-t border-[#D4AF37]/20">
-            <LanguageSwitcher />
+          {/* Language switcher + auth actions */}
+          <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1">
+            <div className="px-1 pb-1">
+              <LanguageSwitcher />
+            </div>
+            {user ? (
+              <>
+                <Link
+                  to="/ho-so"
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  👤 {t('nav.profile')}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-left px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
+                >
+                  {t('nav.logout')}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t('nav.login')}
+                </Link>
+                <Link
+                  to="/dang-ky"
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t('nav.register')}
+                </Link>
+              </>
+            )}
           </div>
-          {user ? (
-            <>
-              <Link to="/ho-so" className="text-white/80 text-sm" onClick={() => setMenuOpen(false)}>
-                👤 {t('nav.profile')}
-              </Link>
-              <button onClick={handleLogout} className="text-left text-white/80 text-sm">
-                {t('nav.logout')}
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="text-white/80 text-sm" onClick={() => setMenuOpen(false)}>
-                {t('nav.login')}
-              </Link>
-              <Link to="/dang-ky" className="text-white/80 text-sm" onClick={() => setMenuOpen(false)}>
-                {t('nav.register')}
-              </Link>
-            </>
-          )}
         </div>
       )}
     </header>
