@@ -15,87 +15,91 @@ const P = (xPct, yPct) => ({ x: Math.round(xPct * 5), y: Math.round(yPct * 8) })
 //   Hebron:     x≈42%, y≈70%   | Dead Sea:   x≈60%, y≈67%
 //   Beersheba:  x≈32%, y≈79%
 
-// ─── Dữ liệu địa danh (toạ độ đọc từ ảnh Đất Thánh gốc) ─────────────────────
+// ─── Dữ liệu địa danh (toạ độ đọc trực tiếp từ ảnh mapsland-geography-full.jpg) ──
 const BIBLE_LOCATIONS = [
-  // ── Tổ phụ (trong bản đồ) ──
   {
-    id: 'sichem', name: 'Sichem', region: 'Samaria',
-    ...P(42, 49), category: 'patriarch', color: '#C8860A', marker: 'circle',
-    tooltip: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan',
-    summary: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan và hứa ban đất này cho dòng dõi ông.',
-    verse: '"Đất này, Ta sẽ ban cho dòng dõi ngươi." — St 12,7',
-    catechism: 'GLCG 145: Abraham đã tuân theo tiếng gọi của Thiên Chúa bằng đức tin.',
+    id: 'sidon', name: 'Si Đôn', region: 'Phê-ni-xi',
+    ...P(46, 7), category: 'newt', color: '#A78BFA', marker: 'circle',
+    tooltip: 'Đức Giêsu đi đến vùng Tia và Si Đôn, chữa lành con gái bà người Canaan',
+    summary: 'Thành phố cảng Phê-ni-xi ở phía Bắc. Đức Giêsu đã đến vùng này và chữa lành con gái bà người Canaan.',
+    verse: '"Đức Giêsu rút lui về miền Tia và Si Đôn." — Mt 15,21',
+    catechism: 'GLCG 543: Ơn cứu độ dành cho mọi dân tộc.',
   },
   {
-    id: 'hebron', name: 'Hébron', region: 'Nam Canaan',
-    ...P(42, 70), category: 'patriarch', color: '#C8860A', marker: 'circle',
-    tooltip: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất',
-    summary: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất. Thiên Chúa lập Giao ước cắt bì với Abraham tại đây.',
-    verse: '"Ta sẽ trở lại thăm ngươi vào mùa xuân tới." — St 18,10',
-    catechism: 'GLCG 706: Ở Hébron, lời hứa về dòng dõi bắt đầu trở nên cụ thể.',
-  },
-  // ── Xuất hành ──
-  {
-    id: 'beersheba', name: 'Bê E Sê Ba', region: 'Negev',
-    ...P(32, 79), category: 'exodus', color: '#4A90D9', marker: 'circle',
-    tooltip: 'Cửa ngõ sa mạc — điểm dừng của các Tổ phụ và dân Israel trong hành trình',
-    summary: 'Thành phố cực nam của Israel. Đây là điểm dừng của Abraham, Isaac và là nơi dân Israel tập hợp trước khi tiếp tục hành trình.',
-    verse: '"Từ Đan đến Bê E Sê Ba" — thành ngữ chỉ toàn bộ đất Israel (Tl 20,1)',
-    catechism: 'GLCG 62: Thiên Chúa dùng hoàn cảnh khó khăn để thực hiện kế hoạch cứu độ.',
-  },
-  {
-    id: 'jericho', name: 'Giêricô', region: 'Thung lũng Jordan',
-    ...P(57, 60), category: 'conquest', color: '#7B68EE', marker: 'circle',
-    tooltip: 'Thành đầu tiên sụp đổ khi dân Israel vào Đất Hứa',
-    summary: 'Thành phố đầu tiên bị dân Israel chiếm khi vào Canaan. Các bức tường sụp đổ khi dân thổi tù và.',
-    verse: '"Hãy đi vòng quanh thành bảy lần... bức tường sẽ sụp đổ." — Gs 6,3–5',
-    catechism: 'GLCG 1093: Chinh phục Canaan báo hiệu cuộc chiến thiêng liêng.',
-  },
-  // ── Vương quốc ──
-  {
-    id: 'jerusalem', name: 'Giêrusalem', region: 'Đồi Zion',
-    ...P(46, 62), category: 'kingdom', color: '#9B59B6', marker: 'star',
-    tooltip: 'Thành Thánh — kinh đô Đavít, Đền thờ Salômôn, nơi Đức Giêsu chịu chết và sống lại',
-    summary: 'Vua Đavít chinh phục Giêrusalem và lập làm thủ đô. Salômôn xây Đền thờ. Đây là nơi Đức Giêsu chịu chết và sống lại.',
-    verse: '"Giêrusalem, được xây dựng như thành đô kiên cố." — Tv 122,3',
-    catechism: 'GLCG 585: Đức Giêsu hoàn tất việc thờ phượng của Đền thờ bằng chính thân mình Ngài.',
-  },
-  // ── Tân Ước ──
-  {
-    id: 'bethlehem', name: 'Bêlem', region: 'Nam Giuđa',
-    ...P(46, 65), category: 'newt', color: '#FFD700', marker: 'circle',
-    tooltip: 'Quê hương Đavít — nơi Đức Giêsu Kitô giáng sinh',
-    summary: 'Quê hương của vua Đavít. Đức Giêsu Kitô, Con Thiên Chúa, được sinh ra tại đây theo lời tiên tri.',
-    verse: '"Hôm nay, một Đấng Cứu Độ đã sinh ra trong thành vua Đavít." — Lc 2,11',
-    catechism: 'GLCG 437: "Bêlem" nghĩa là "nhà bánh mì" — hình bóng của Bánh Thánh Thể.',
+    id: 'tyre', name: 'Tia', region: 'Phê-ni-xi',
+    ...P(38, 17), category: 'newt', color: '#A78BFA', marker: 'circle',
+    tooltip: 'Thành phố biển Phê-ni-xi — Đức Giêsu đi qua và rao giảng cho dân ngoại',
+    summary: 'Thành phố cảng cổ đại Phê-ni-xi. Đức Giêsu đã đi qua vùng này trong hành trình sứ vụ.',
+    verse: '"Khốn cho ngươi, Khơrazim! Khốn cho ngươi, Bếtxaiđa! Vì nếu các phép lạ được làm ở Tia..." — Mt 11,21',
+    catechism: 'GLCG 543: Ơn cứu độ dành cho mọi dân tộc.',
   },
   {
     id: 'nazareth', name: 'Nadarét', region: 'Galilê',
-    ...P(43, 35), category: 'newt', color: '#FFD700', marker: 'circle',
-    tooltip: 'Nơi Đức Giêsu sống 30 năm ẩn dật, sứ thần Gabriel truyền tin cho Đức Maria',
+    ...P(44, 36), category: 'newt', color: '#FFD700', marker: 'circle',
+    tooltip: 'Nơi Đức Giêsu sống 30 năm ẩn dật — sứ thần Gabriel truyền tin cho Đức Maria',
     summary: 'Nơi Đức Giêsu lớn lên trong 30 năm ẩn dật với Mẹ Maria và Thánh Giuse. Sứ thần truyền tin tại đây.',
     verse: '"Ngôi Lời đã trở nên người phàm và cư ngụ giữa chúng ta." — Ga 1,14',
     catechism: 'GLCG 533: Đời sống ẩn dật tại Nadarét dạy ta giá trị lao động và sống gia đình.',
   },
   {
     id: 'galilee-lake', name: 'Biển Hồ Galilê', region: 'Bắc Israel',
-    ...P(64, 34), category: 'newt', color: '#38BDF8', marker: 'wave',
+    ...P(62, 32), category: 'newt', color: '#38BDF8', marker: 'wave',
     tooltip: 'Nơi Đức Giêsu gọi các môn đệ, đi trên mặt nước và làm nhiều phép lạ',
     summary: 'Đức Giêsu gọi các môn đệ đầu tiên — Simon, Anrê, Giacôbê, Gioan — là những ngư phủ trên hồ này.',
     verse: '"Hãy theo Ta, Ta sẽ làm cho các anh thành những kẻ lưới người." — Mc 1,17',
     catechism: 'GLCG 878: Nhóm Mười Hai đặt nền tảng cho cơ cấu tông truyền của Hội Thánh.',
   },
   {
-    id: 'sidon', name: 'Si Đôn', region: 'Phê ni xi',
-    ...P(38, 11), category: 'newt', color: '#A78BFA', marker: 'circle',
-    tooltip: 'Đức Giêsu đi đến vùng Tia và Si Đôn, chữa lành con gái bà người Canaan',
-    summary: 'Thành phố cảng Phê-ni-xi ở phía Bắc. Đức Giêsu đã đến vùng này và chữa lành con gái bà người Canaan.',
-    verse: '"Đức Giêsu rút lui về miền Tia và Si Đôn." — Mt 15,21',
-    catechism: 'GLCG 543: Ơn cứu độ dành cho mọi dân tộc.',
+    id: 'sichem', name: 'Sikhem', region: 'Samaria',
+    ...P(47, 54), category: 'patriarch', color: '#C8860A', marker: 'circle',
+    tooltip: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan',
+    summary: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan và hứa ban đất này cho dòng dõi ông.',
+    verse: '"Đất này, Ta sẽ ban cho dòng dõi ngươi." — St 12,7',
+    catechism: 'GLCG 145: Abraham đã tuân theo tiếng gọi của Thiên Chúa bằng đức tin.',
+  },
+  {
+    id: 'jericho', name: 'Giêrikhô', region: 'Thung lũng Jordan',
+    ...P(56, 68), category: 'conquest', color: '#7B68EE', marker: 'circle',
+    tooltip: 'Thành đầu tiên sụp đổ khi dân Israel vào Đất Hứa',
+    summary: 'Thành phố đầu tiên bị dân Israel chiếm khi vào Canaan. Các bức tường sụp đổ khi dân thổi tù và.',
+    verse: '"Hãy đi vòng quanh thành bảy lần... bức tường sẽ sụp đổ." — Gs 6,3–5',
+    catechism: 'GLCG 1093: Chinh phục Canaan báo hiệu cuộc chiến thiêng liêng.',
+  },
+  {
+    id: 'jerusalem', name: 'Giêrusalem', region: 'Giuđa',
+    ...P(42, 70), category: 'kingdom', color: '#9B59B6', marker: 'star',
+    tooltip: 'Thành Thánh — kinh đô Đavít, Đền thờ Salômôn, nơi Đức Giêsu chịu chết và sống lại',
+    summary: 'Vua Đavít chinh phục Giêrusalem và lập làm thủ đô. Salômôn xây Đền thờ. Đây là nơi Đức Giêsu chịu chết và sống lại.',
+    verse: '"Giêrusalem, được xây dựng như thành đô kiên cố." — Tv 122,3',
+    catechism: 'GLCG 585: Đức Giêsu hoàn tất việc thờ phượng của Đền thờ bằng chính thân mình Ngài.',
+  },
+  {
+    id: 'bethlehem', name: 'Bêlem', region: 'Giuđa',
+    ...P(46, 73), category: 'newt', color: '#FFD700', marker: 'circle',
+    tooltip: 'Quê hương Đavít — nơi Đức Giêsu Kitô giáng sinh',
+    summary: 'Quê hương của vua Đavít. Đức Giêsu Kitô, Con Thiên Chúa, được sinh ra tại đây theo lời tiên tri.',
+    verse: '"Hôm nay, một Đấng Cứu Độ đã sinh ra trong thành vua Đavít." — Lc 2,11',
+    catechism: 'GLCG 437: "Bêlem" nghĩa là "nhà bánh mì" — hình bóng của Bánh Thánh Thể.',
+  },
+  {
+    id: 'hebron', name: 'Khéprôn', region: 'Giuđa',
+    ...P(43, 78), category: 'patriarch', color: '#C8860A', marker: 'circle',
+    tooltip: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất',
+    summary: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất. Thiên Chúa lập Giao ước cắt bì với Abraham tại đây.',
+    verse: '"Ta sẽ trở lại thăm ngươi vào mùa xuân tới." — St 18,10',
+    catechism: 'GLCG 706: Ở Khéprôn, lời hứa về dòng dõi bắt đầu trở nên cụ thể.',
+  },
+  {
+    id: 'beersheba', name: 'Bơe Seva', region: 'Negev',
+    ...P(41, 88), category: 'exodus', color: '#4A90D9', marker: 'circle',
+    tooltip: 'Cửa ngõ sa mạc — điểm dừng của các Tổ phụ và dân Israel trong hành trình',
+    summary: 'Thành phố cực nam của Israel. Điểm dừng của Abraham, Isaac — "Từ Đan đến Bơe Seva" là thành ngữ chỉ toàn bộ đất Israel.',
+    verse: '"Từ Đan đến Bơe Seva" — thành ngữ chỉ toàn bộ đất Israel (Tl 20,1)',
+    catechism: 'GLCG 62: Thiên Chúa dùng hoàn cảnh khó khăn để thực hiện kế hoạch cứu độ.',
   },
 ];
 
-// ─── Hành trình (Routes) — trong bản đồ Israel ───────────────────────────────
+// ─── Hành trình (Routes) ─────────────────────────────────────────────────────
 const ROUTES = [
   {
     id: 'patriarch',
@@ -105,8 +109,8 @@ const ROUTES = [
     dashLength: 7,
     gapLength: 5,
     animDur: '18s',
-    // Vào từ Bắc (Haran) → Si Đôn → Sichem(42%,49%) → Hébron(42%,70%)
-    d: 'M 192,0 Q 200,50 195,90 Q 192,90 210,392 Q 210,490 210,560',
+    // Từ Đông Bắc (Haran) → vào Galilee → Sikhem(47%,54%) → Khéprôn(43%,78%)
+    d: 'M 420,0 Q 370,60 320,130 Q 270,200 240,290 Q 237,370 235,432 Q 226,530 215,624',
   },
   {
     id: 'exodus',
@@ -116,8 +120,8 @@ const ROUTES = [
     dashLength: 8,
     gapLength: 5,
     animDur: '10s',
-    // Vào từ Nam (Sinai/Ai Cập) → Bê E Sê Ba(32%,79%) → Giêricô(57%,60%)
-    d: 'M 220,800 Q 200,760 180,720 Q 165,680 162,632 Q 175,600 220,565 Q 255,540 272,505 Q 278,484 285,480',
+    // Từ Nam (Sinai) → Bơe Seva(41%,88%) → lên Giêrikhô(56%,68%)
+    d: 'M 205,800 Q 205,748 205,704 Q 225,658 255,628 Q 268,600 274,568 Q 278,558 280,544',
   },
 ];
 
@@ -131,15 +135,14 @@ const CATEGORY_META = {
   newt:      { label: 'Tân Ước',    glow: '#FFD700' },
 };
 
-// ─── SVG Map Shapes (toạ độ trong viewBox 500×800) ────────────────────────────
+// ─── SVG Map Shapes — căn theo ảnh mapsland-geography-full.jpg ───────────────
 const MAP = {
-  // Dead Sea: x≈58%, y≈63–75% → trong viewBox 500×800
-  // Hình oval dọc, trung tâm ~x:295, y:540
-  deadSea: `M 282,504 L 295,498 L 308,506 L 314,528 L 312,558 L 302,576 L 288,572 L 275,552 L 272,526 Z`,
-  // Sea of Galilee: x≈60–66%, y≈32–37%
-  galileeSea: `M 302,257 L 315,252 L 328,258 L 334,270 L 330,286 L 318,292 L 305,286 L 299,274 Z`,
-  // Jordan River: từ Galilee (x:318,y:292) xuống Dead Sea (x:290,y:504)
-  jordan: `M 316,292 Q 314,340 310,390 Q 307,440 300,478 Q 295,492 290,504`,
+  // Dead Sea (Biển Chét): x≈52–67%, y≈78–91% → SVG 500×800
+  deadSea: `M 268,626 L 285,618 L 302,626 L 316,648 L 318,674 L 308,698 L 290,710 L 270,702 L 258,678 L 256,652 Z`,
+  // Sea of Galilee (Biển Hồ Galilê): x≈58–67%, y≈30–37%
+  galileeSea: `M 295,242 L 310,238 L 326,246 L 334,260 L 330,278 L 318,286 L 304,280 L 296,268 Z`,
+  // Jordan River (Sông Giodan): từ Galilê xuống Biển Chét
+  jordan: `M 312,286 Q 310,350 308,420 Q 305,490 300,552 Q 296,585 278,626`,
 };
 
 // ─── Marker shapes ────────────────────────────────────────────────────────────
@@ -393,13 +396,13 @@ export default function BibleMap() {
           {/* ── Nền bản đồ địa hình ── */}
           {/* Layer 1: ảnh địa hình — stretch vừa khít viewBox, filter làm nổi màu */}
           <image
-            href="/images/maps/mapsland-geography-full.webp"
+            href="/images/maps/mapsland-geography-full.jpg"
             x="0" y="0" width="500" height="800"
             preserveAspectRatio="none"
             style={{ filter: 'saturate(1.15) brightness(0.82)' }}
           />
-          {/* Layer 2: overlay tối nhẹ */}
-          <rect width="500" height="800" fill="rgba(0,0,0,0.18)" />
+          {/* Layer 2: overlay tối — ảnh cream cần đủ tối để marker nổi */}
+          <rect width="500" height="800" fill="rgba(0,0,0,0.42)" />
           {/* Layer 3: vignette viền */}
           <radialGradient id="bm-vignette" cx="50%" cy="50%" r="72%">
             <stop offset="0%"   stopColor="transparent" />
@@ -459,23 +462,23 @@ export default function BibleMap() {
           <path d={MAP.deadSea}    fill="rgba(10,42,72,0.45)" stroke="#5aaad8" strokeWidth="1.2" />
           <path d={MAP.galileeSea} fill="rgba(12,50,88,0.45)" stroke="#5aaad8" strokeWidth="1.2" />
           {/* Sóng Biển Chết */}
-          <path d="M 284,530 Q 290,526 296,530 Q 302,534 308,530"
-            fill="none" stroke="#6aB4E8" strokeWidth="1" opacity="0.6" />
+          <path d="M 276,658 Q 285,653 294,658 Q 303,663 312,658"
+            fill="none" stroke="#6aB4E8" strokeWidth="1.2" opacity="0.65" />
           {/* Sóng Galilê */}
-          <path d="M 308,271 Q 315,267 322,271 Q 329,275 336,271"
-            fill="none" stroke="#6aB4E8" strokeWidth="1" opacity="0.7" />
+          <path d="M 303,263 Q 312,258 321,263 Q 330,268 339,263"
+            fill="none" stroke="#6aB4E8" strokeWidth="1.2" opacity="0.75" />
 
           {/* ── Mũi tên off-map: Ai Cập/Sinai (Nam), Lưỡng Hà (Bắc-Đông) ── */}
           <g opacity="0.55" style={{ pointerEvents: 'none' }}>
             {/* Ai Cập ← phía Nam */}
-            <text x="220" y="792" textAnchor="middle" fontSize="8" fill="#4A90D9"
+            <text x="210" y="793" textAnchor="middle" fontSize="8" fill="#4A90D9"
               fontFamily='"EB Garamond", Georgia, serif' fontStyle="italic">
               ↓ Ai Cập · Sinai · Gôsen
             </text>
             {/* Lưỡng Hà → phía Bắc-Đông */}
-            <text x="460" y="30" textAnchor="end" fontSize="8" fill="#CD853F"
+            <text x="468" y="22" textAnchor="end" fontSize="8" fill="#CD853F"
               fontFamily='"EB Garamond", Georgia, serif' fontStyle="italic">
-              Haran · Ur · Babylon →
+              Haran · Ur · Babylon ↗
             </text>
           </g>
 
