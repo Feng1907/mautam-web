@@ -24,6 +24,7 @@
 | 15 | Dark Mode toàn diện + Circular Reveal + Phụng vụ Việt Nam (dời lễ) | Hoàn thành |
 | 16 | Chuẩn hóa tên lớp, fix Avatar, fix Calendar, tối ưu UI ClassList & GioLe | Hoàn thành |
 | 17 | Module Lịch sử Cứu độ — Timeline, SVG Maps, Character Cards, ProphecyTable | Hoàn thành |
+| 17b | Nâng cấp BibleMap & InteractiveTimeline — bản đồ địa hình, UX bảo tàng số | Hoàn thành |
 | 18 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
 
 ---
@@ -655,6 +656,82 @@ public/images/characters/
 | `react-hooks/set-state-in-effect` | `LoiChua.jsx` | Chuyển sang getDerivedStateFromProps pattern: so sánh `syncedDate !== selectedDate` trong render body |
 | `no-unused-vars` (Link2) | `CharacterCollection.jsx` | Xóa khỏi Lucide import |
 | `no-unused-vars` (isExpanded) | `CharacterCards.jsx` | Xóa khỏi destructuring InfoRow |
+
+---
+
+### GIAI ĐOẠN 17b — Nâng cấp BibleMap & InteractiveTimeline — Hoàn thành
+
+Nâng cấp toàn diện module Lịch sử Cứu độ thành trải nghiệm "bảo tàng kỹ thuật số" với bản đồ địa hình thật, timeline tương tác nâng cao, và đồng bộ bản đồ–timeline real-time.
+
+#### BibleMap.jsx — Bản đồ địa hình thật
+
+- **Ảnh nền thật**: `mapsland-geography-full.jpg` — bản đồ Israel tiếng Việt rõ ràng (portrait ~1:1.6)
+- **viewBox 500×800** (portrait) thay cho 720×500 landscape cũ — khớp đúng tỷ lệ ảnh
+- **Helper `P(x%, y%)`**: toạ độ marker định nghĩa bằng phần trăm, tự scale theo màn hình
+- **Toạ độ chính xác** đọc từ ảnh gốc:
+
+| Địa danh | x% | y% | Tên trên ảnh |
+| --- | --- | --- | --- |
+| Si Đôn | 46 | 7 | Xiđôn |
+| Tia (Tyre) | 38 | 17 | Tia |
+| Nadarét | 44 | 36 | Galilê |
+| Biển Hồ Galilê | 62 | 32 | Biển Hồ Galilê |
+| Sikhem | 47 | 54 | Sikhem |
+| Giêrikhô | 56 | 68 | Giêrikhô |
+| Giêrusalem ★ | 42 | 70 | Giêrusalem |
+| Bêlem | 46 | 73 | Bêlem (đúng phía Nam) |
+| Khéprôn | 43 | 78 | Khéprôn |
+| Bơe Seva | 41 | 88 | Bơe Seva |
+
+- **Nhãn marker ẩn mặc định**: chỉ hiện khi hover/click (active) — bản đồ nền sạch, không bị che
+- **Pulse ring animation** per-category (`@keyframes bm-ping-*`) — markers có cảm giác "sống"
+- **Toggle layer routes**: panel góc phải dưới, click bật/tắt độc lập từng hành trình
+- **`highlightedId` prop**: nhận ID từ InteractiveTimeline → extra pulse ring 1.2s khi bản đồ được sync
+- **Hành trình animated**:
+  - Patriarch (amber): Từ Đông Bắc → Sikhem → Khéprôn
+  - Exodus (xanh + exodusGlow): Từ Nam (Sinai) → Bơe Seva → Giêrikhô
+- **Mũi tên off-map**: "↓ Ai Cập · Sinai" và "Haran · Ur · Babylon ↗"
+- **Star marker** cho Giêrusalem, **wave marker** cho Biển Hồ Galilê
+- **CSS filter**: `saturate(1.2) brightness(0.78)` + overlay `rgba(0,0,0,0.42)` + vignette
+
+#### InteractiveTimeline.jsx — Timeline "Bảo tàng số"
+
+- **Bố cục zigzag alternating**: card trái/phải xen kẽ, spine dọc trung tâm trên desktop
+- **Glassmorphism cards**: `backdrop-blur-14px`, border + glow theo màu giai đoạn
+- **Font tách biệt**: Title `EB Garamond serif` · Summary `Inter sans-serif` · Verse `EB Garamond italic`
+- **Verse quote**: `border-left 3px solid` + italic + nền gradient nhẹ theo accent màu
+- **Progress Spine**: đường kẻ sáng dần theo scroll — fill % = index mốc hiện tại / tổng
+- **Character avatar buttons**: mỗi card có row nhân vật, click → `CharacterPopup` với vai trò đầy đủ
+- **Location Popup** (`MapPin` button): tên địa danh + ghi chú + badge nhân vật liên quan
+- **`onMapSync` prop**: hover card → emit locationId → `BibleMap` pulse highlight địa danh tương ứng
+- **Sidebar nav sticky** (`top: 88px`): `IntersectionObserver` auto-highlight mốc đang xem, click smooth-scroll
+- **`MILESTONE_TO_MAP_LOC`**: mapping 9 milestone → BibleMap location ID
+
+| Milestone | BibleMap loc |
+| --- | --- |
+| to-phu | hebron |
+| xuat-hanh | beersheba |
+| vuong-quoc, luu-day, hoi-huong, kho-nan, hien-xuong | jerusalem |
+| nhap-the | bethlehem |
+| su-vu | galilee-lake |
+
+- **`MILESTONE_META`**: dữ liệu vị trí + nhân vật đầy đủ cho tất cả 10 mốc (OT + NT)
+- **`AmbientToggle`**: nút bật/tắt nhạc nền `/audio/ambient-middle-east.mp3` (volume 0.18, loop)
+- **`SalvationFooter`**: 4 nhân vật Môsê / Đức Giêsu / Gioan / Thánh Giuse với emoji, vai trò, verse
+
+#### Scrollbar — Giải pháp triệt để double scrollbar
+
+- **`html *::-webkit-scrollbar { display: none }`** + **`html * { scrollbar-width: none }`** — ẩn TOÀN BỘ scrollbar phụ
+- Chỉ `html` element giữ amber 4px scrollbar (page-level)
+- **`.no-scrollbar`** utility class áp cho 8 component có `overflow-y-auto`
+- **`.scrollbar-thin`** opt-in 3px trắng mờ cho GioLe list
+- **AdminLayout**: thêm `overflow-hidden` trên outer div — admin pages chỉ scroll trong `<main>`
+
+#### Thay đổi trong LichSuCuuDo.jsx
+
+- `mapHighlight` state + `setMapHighlight` truyền vào `OTContent`/`NTContent` → xuống `BibleMap`
+- Tab state persist qua `localStorage` ('lichsu-tab')
+- `InteractiveTimeline` thay thế hoàn toàn `TimelineItem` inline
 
 ---
 
