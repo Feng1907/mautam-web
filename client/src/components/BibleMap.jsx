@@ -302,7 +302,7 @@ const LegendDot = ({ color, label }) => (
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function BibleMap() {
+export default function BibleMap({ highlightedId = null }) {
   const [hovered, setHovered] = useState(null);
   const [selected, setSelected] = useState(null);
   const [svgRect, setSvgRect] = useState(null);
@@ -512,7 +512,8 @@ export default function BibleMap() {
           {BIBLE_LOCATIONS.map(loc => {
             const isHov = hovered === loc.id;
             const isSel = selected?.id === loc.id;
-            const active = isHov || isSel;
+            const isExtHl = highlightedId === loc.id;
+            const active = isHov || isSel || isExtHl;
 
             return (
               <g key={loc.id}
@@ -526,6 +527,12 @@ export default function BibleMap() {
                   <circle cx={loc.x} cy={loc.y} r={14}
                     fill="none" stroke={loc.color}
                     strokeWidth="0.8" opacity="0.45" />
+                )}
+                {/* Extra pulse khi được highlight từ timeline bên ngoài */}
+                {isExtHl && (
+                  <circle cx={loc.x} cy={loc.y} r="18"
+                    fill="none" stroke={loc.color} strokeWidth="1.2" opacity="0.55"
+                    style={{ animation: `bm-ping-${loc.category} 1.2s ease-out infinite` }} />
                 )}
 
                 {/* Pulse ring — animate-ping effect (chỉ hiện khi không active) */}

@@ -507,7 +507,7 @@ const TabSelector = ({ activeTab, onSwitch }) => (
 // TAB CONTENT — OT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const OTContent = ({ onOpen, theme }) => (
+const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => (
   <div className="space-y-10">
     {/* BibleMap */}
     <div>
@@ -517,7 +517,7 @@ const OTContent = ({ onOpen, theme }) => (
           Địa lý Kinh Thánh · Cận Đông cổ đại
         </p>
       </div>
-      <BibleMap />
+      <BibleMap highlightedId={mapHighlight} />
     </div>
 
     {/* Character Cards */}
@@ -531,7 +531,7 @@ const OTContent = ({ onOpen, theme }) => (
     </div>
 
     {/* InteractiveTimeline */}
-    <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} />
+    <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
   </div>
 );
 
@@ -539,7 +539,7 @@ const OTContent = ({ onOpen, theme }) => (
 // TAB CONTENT — NT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NTContent = ({ onOpen, theme }) => (
+const NTContent = ({ onOpen, theme, onMapSync }) => (
   <div className="space-y-10">
     {/* IsraelMap */}
     <div>
@@ -563,7 +563,7 @@ const NTContent = ({ onOpen, theme }) => (
     </div>
 
     {/* InteractiveTimeline */}
-    <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} />
+    <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
   </div>
 );
 
@@ -588,6 +588,7 @@ export default function LichSuCuuDo() {
   });
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState(null);
+  const [mapHighlight, setMapHighlight] = useState(null);
   const prevTab = useRef(activeTab);
 
   const theme = THEMES[activeTab];
@@ -704,7 +705,7 @@ export default function LichSuCuuDo() {
               exit="exit"
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
             >
-              <OTContent onOpen={setSelected} theme={theme} />
+              <OTContent onOpen={setSelected} theme={theme} mapHighlight={mapHighlight} onMapSync={setMapHighlight} />
             </motion.div>
           ) : (
             <motion.div
@@ -716,7 +717,7 @@ export default function LichSuCuuDo() {
               exit="exit"
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
             >
-              <NTContent onOpen={setSelected} theme={theme} />
+              <NTContent onOpen={setSelected} theme={theme} onMapSync={setMapHighlight} />
             </motion.div>
           )}
         </AnimatePresence>
