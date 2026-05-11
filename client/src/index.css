@@ -159,17 +159,23 @@ body {
               0 6px 24px rgba(251,191,36,0.40);
 }
 
-/* ── Global scrollbar — 4px amber, chỉ hiện khi cuộn ───────────────────── */
+/* ── Scrollbar — chỉ trang chính (html) dùng amber, inner elements dùng mặc định ── */
+
+/* Chrome/Safari: chỉ html element */
 html::-webkit-scrollbar              { width: 4px; }
 html::-webkit-scrollbar-track        { background: transparent; }
 html::-webkit-scrollbar-thumb        { background-color: #F59E0B; border-radius: 9999px; }
 html::-webkit-scrollbar-thumb:hover  { background-color: #D4AF37; }
 html::-webkit-scrollbar-corner       { background: transparent; }
 
-/* Firefox */
+/* Firefox: scrollbar-color KHAI THỪA xuống children — phải reset ngay lập tức */
 html { scrollbar-width: thin; scrollbar-color: #F59E0B transparent; }
+/* Reset kế thừa: tất cả phần tử CON dùng scrollbar mặc định của browser */
+html * { scrollbar-color: initial; scrollbar-width: initial; }
 
-/* Utility class khi cần scroll nội bộ component */
-.scrollbar-thin::-webkit-scrollbar       { width: 4px; height: 4px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background-color: #F59E0B; border-radius: 9999px; }
+/* Utility class opt-in cho component cần thin scrollbar (GioLe list, modal…) */
+.scrollbar-thin                            { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+.scrollbar-thin::-webkit-scrollbar         { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track   { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb   { background-color: rgba(255,255,255,0.25); border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.4); }
