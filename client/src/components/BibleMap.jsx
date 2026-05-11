@@ -411,10 +411,11 @@ export default function BibleMap() {
           </defs>
 
           {/* ── Nền bản đồ địa hình ── */}
+          {/* preserveAspectRatio="none" = stretch vừa khít viewBox, không crop biên */}
           <image
             href="/images/maps/mapsland-geography-full.webp"
             x="0" y="0" width="720" height="500"
-            preserveAspectRatio="xMidYMid slice"
+            preserveAspectRatio="none"
           />
           {/* Lớp tối hoá để khớp dark mode — giữ chi tiết địa lý, giảm chói */}
           <rect width="720" height="500" fill="rgba(0,0,0,0.48)" />
