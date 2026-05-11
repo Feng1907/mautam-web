@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BookOpen, ChevronDown, Users, ChevronRight } from 'lucide-react';
@@ -631,12 +631,19 @@ const slideVariants = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function LichSuCuuDo() {
-  const [activeTab, setActiveTab] = useState('ot');
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('lichsu-tab');
+    return saved === 'nt' ? 'nt' : 'ot';
+  });
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState(null);
-  const prevTab = useRef('ot');
+  const prevTab = useRef(activeTab);
 
   const theme = THEMES[activeTab];
+
+  useEffect(() => {
+    localStorage.setItem('lichsu-tab', activeTab);
+  }, [activeTab]);
 
   const handleSwitch = (tab) => {
     if (tab === activeTab) return;

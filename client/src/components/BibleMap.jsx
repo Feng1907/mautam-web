@@ -4,7 +4,7 @@ import { MapPin, X, BookOpen, Compass } from 'lucide-react';
 
 // ─── Dữ liệu địa danh Kinh Thánh ─────────────────────────────────────────────
 // Toạ độ (x, y) trong viewBox 720×500
-export const BIBLE_LOCATIONS = [
+const BIBLE_LOCATIONS = [
   {
     id: 'ur',
     name: 'Ur',
@@ -313,9 +313,10 @@ export default function BibleMap() {
     return () => document.removeEventListener('mousedown', handler);
   }, [selected]);
 
-  const getSvgRect = () => svgRef.current?.getBoundingClientRect() ?? null;
+  const [svgRect, setSvgRect] = useState(null);
 
   const handleMarkerClick = (loc) => {
+    setSvgRect(svgRef.current?.getBoundingClientRect() ?? null);
     setSelected(prev => prev?.id === loc.id ? null : loc);
   };
 
@@ -595,7 +596,7 @@ export default function BibleMap() {
       {/* ── Popover (rendered outside SVG, in DOM) ── */}
       <LocationPopover
         loc={selected}
-        svgRect={getSvgRect()}
+        svgRect={svgRect}
         onClose={() => setSelected(null)}
       />
     </div>
