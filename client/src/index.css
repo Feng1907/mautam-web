@@ -159,27 +159,27 @@ body {
               0 6px 24px rgba(251,191,36,0.40);
 }
 
-/* ── Scrollbar — chỉ trang chính (html) dùng amber, inner elements dùng mặc định ── */
+/* ── Scrollbar strategy ──────────────────────────────────────────────────────
+   Page-level (html): amber 4px  — chỉ 1 thanh cuộn chính
+   Mọi element con:  ẩn hoàn toàn — không còn scrollbar xám/cam chồng nhau
+   Opt-in .scrollbar-thin:  thin white (dùng khi cần thấy có thể cuộn)
+   ──────────────────────────────────────────────────────────────────────────── */
 
-/* Chrome/Safari: chỉ html element */
+/* 1. Page scrollbar — amber */
 html::-webkit-scrollbar              { width: 4px; }
 html::-webkit-scrollbar-track        { background: transparent; }
 html::-webkit-scrollbar-thumb        { background-color: #F59E0B; border-radius: 9999px; }
 html::-webkit-scrollbar-thumb:hover  { background-color: #D4AF37; }
 html::-webkit-scrollbar-corner       { background: transparent; }
-
-/* Firefox: scrollbar-color KHAI THỪA xuống children — phải reset ngay lập tức */
 html { scrollbar-width: thin; scrollbar-color: #F59E0B transparent; }
-/* Reset kế thừa: tất cả phần tử CON dùng scrollbar mặc định của browser */
-html * { scrollbar-color: initial; scrollbar-width: initial; }
 
-/* Utility: ẩn hoàn toàn thanh cuộn nhưng vẫn cuộn được */
-.no-scrollbar                  { scrollbar-width: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
+/* 2. ẨN TOÀN BỘ scrollbar của tất cả element con — triệt để */
+html *::-webkit-scrollbar { display: none; }
+html * { scrollbar-width: none; }
 
-/* Utility class opt-in cho component cần thin scrollbar (GioLe list…) */
-.scrollbar-thin                            { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
-.scrollbar-thin::-webkit-scrollbar         { width: 4px; height: 4px; }
+/* 3. Opt-in: element muốn hiện thanh cuộn mỏng thêm class này */
+.scrollbar-thin::-webkit-scrollbar         { display: block; width: 3px; height: 3px; }
 .scrollbar-thin::-webkit-scrollbar-track   { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb   { background-color: rgba(255,255,255,0.25); border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb   { background-color: rgba(255,255,255,0.22); border-radius: 9999px; }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.4); }
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent; }
