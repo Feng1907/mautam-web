@@ -346,8 +346,7 @@ export default function BibleMap() {
           ref={svgRef}
           viewBox="0 0 720 500"
           preserveAspectRatio="xMidYMid meet"
-          className="w-full block"
-          style={{ maxHeight: 480 }}
+          className="w-full h-auto block"
         >
           <defs>
             {/* Gradient nước */}
