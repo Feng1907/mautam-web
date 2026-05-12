@@ -21,7 +21,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Phase](https://img.shields.io/badge/Phase-16_%E2%9C%85-8B0000?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase-17c_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -47,6 +47,9 @@
 - 📸 **Thư viện ảnh** — Firebase Storage, tự nén ~70%, lightbox toàn màn hình
 - 🌙 **Dark Mode** — Circular Reveal (View Transitions API), lưu localStorage, fallback system preference
 - 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18next)
+- 🗺️ **Module Lịch sử Cứu độ** — 2 tab CỰU ƯỚC/TÂN ƯỚC, bản đồ SVG địa hình thật, nhân vật tiêu biểu, bảng lời tiên tri, InteractiveTimeline bảo tàng số
+- 🛡️ **Admin Suite nâng cao** — Audit Log nhật ký hoạt động, RBAC permission matrix, Backup & Chốt niên học
+- 📰 **News UI nâng cấp** — Mesh gradient hero, featured card, Playfair Display, reading time estimate, fade-in stagger
 
 ---
 
@@ -57,7 +60,7 @@
 - ⚛️ **React 19** + **Vite** — UI framework
 - 🎨 **Tailwind CSS 4** — Utility-first styling
 - 🎞️ **Framer Motion 12** — Animations & page transitions
-- 🔤 **EB Garamond + Inter** — Typography tiếng Việt
+- 🔤 **Be Vietnam Pro + EB Garamond + Inter + Playfair Display** — Typography tiếng Việt tối ưu
 - 🔀 **React Router v7** — Client-side routing
 - 🌍 **i18next** — Đa ngôn ngữ VI/EN
 - 🔥 **Firebase Storage** — Ảnh gallery + avatar đoàn sinh
@@ -99,20 +102,25 @@ mautam-website/
 │       │   ├── LoadingSpinner.jsx    # Spinner SVG dùng chung
 │       │   ├── LanguageSwitcher.jsx  # Dropdown VI 🇻🇳 / EN 🇺🇸
 │       │   ├── ThemeToggle.jsx       # Sun/Moon + Circular Reveal
-│       │   └── QuickActionWidgets.jsx
+│       │   ├── QuickActionWidgets.jsx
+│       │   ├── Toast.jsx             # ToastProvider + useToast (success/error/warning/info)
+│       │   ├── ConfirmModal.jsx      # Safety modal trước destructive actions
+│       │   └── Skeleton.jsx          # SkeletonTable/Row/Card/Line
 │       ├── pages/
 │       │   ├── Home.jsx              # Landing page 5 ngành
 │       │   ├── Login.jsx             # Đăng nhập
 │       │   ├── Signup.jsx            # Đăng ký tài khoản
 │       │   ├── ForgotPassword.jsx    # Quên mật khẩu
 │       │   ├── Profile.jsx           # Hồ sơ cá nhân + avatar upload
-│       │   ├── News.jsx              # Tin tức + lọc loại + UrgentBanner
+│       │   ├── News.jsx              # Tin tức — mesh gradient hero, featured card, reading time
 │       │   ├── NewsDetail.jsx        # Chi tiết bài viết: ảnh, nội dung HTML, tác giả
 │       │   ├── ClassList.jsx         # Explorer 5 ngành
 │       │   ├── ClassDetail.jsx       # 3 tab: Danh sách / Điểm danh / Bảng điểm
 │       │   ├── LoiChua.jsx           # Lời Chúa + MiniCalendar + điều hướng ngày
 │       │   ├── GioLe.jsx             # Dashboard phụng vụ + đồng hồ + feast effects
 │       │   ├── Gallery.jsx           # Thư viện ảnh Firebase
+│       │   ├── LichSuCuuDo.jsx       # 2 tab CỰU ƯỚC/TÂN ƯỚC — BibleMap, Timeline, CharacterCards
+│       │   ├── NhanVat.jsx           # Trang nhân vật — lưới 3×3 với filter OT/NT
 │       │   └── admin/
 │       │       ├── AdminLayout.jsx     # Sidebar (desktop) + bottom tab (mobile)
 │       │       ├── AdminDashboard.jsx  # Quick Actions, SVG Charts, Global Search
@@ -122,7 +130,10 @@ mautam-website/
 │       │       ├── AdminExport.jsx     # Export toàn đoàn
 │       │       ├── AdminPosts.jsx      # Quản lý tin tức / thông báo
 │       │       ├── AdminUsers.jsx      # Quản lý tài khoản + phân quyền
-│       │       └── AdminNamHoc.jsx
+│       │       ├── AdminNamHoc.jsx
+│       │       ├── AdminAuditLog.jsx   # Nhật ký hoạt động — timeline, avatar, filter, pagination
+│       │       ├── AdminRBAC.jsx       # Phân quyền vai trò — matrix 8×4, toggle, protected roles
+│       │       └── AdminBackup.jsx     # Sao lưu xlsx/json, chốt niên học
 │       ├── services/
 │       │   ├── api.js                # Axios + JWT interceptor + 401 auto-redirect
 │       │   ├── firebase.js           # Firebase SDK init
@@ -254,6 +265,12 @@ Mở trình duyệt: **<http://localhost:5173>**
 | **Tính điểm tự động** | `gradeCalculator.js` dùng chung: TBM có trọng số (miệng×1, 15ph×1, 1tiết×2), Tổng kết = TBM×80%+CC×20%, phân loại học lực. |
 | **Auto-compress ảnh** | Canvas API trước khi upload Firebase — tiết kiệm ~70% dung lượng Storage. |
 | **Sắp xếp tên Việt** | `localeCompare('vi')` theo tên chính (từ cuối cùng trong họ tên). |
+| **Module Lịch sử Cứu độ** | BibleMap SVG địa hình thật, InteractiveTimeline zigzag glassmorphism, CharacterCollection 3×3, ProphecyTable 9 cặp OT↔NT, sync bản đồ–timeline real-time. |
+| **Admin Audit Log** | Nhật ký hoạt động timeline, action badges 6 loại, filter theo user/action, avatar real users, click-to-profile. |
+| **Admin RBAC** | Permission matrix 8 module × 4 quyền, toggle switch, tạo vai trò tùy chỉnh, 3 vai trò hệ thống protected. |
+| **Admin Backup** | Xuất dữ liệu `.xlsx` + `.json`, chốt niên học với ConfirmModal, cảnh báo nếu > 7 ngày chưa backup. |
+| **News UI nâng cấp** | Mesh gradient hero, FeaturedCard layout ngang, Playfair Display, reading time ước tính, `whileInView` stagger fade-in. |
+| **Font tiếng Việt tối ưu** | Be Vietnam Pro (font thiết kế riêng cho Việt), `font-variant-ligatures: none` toàn cục, `lang="vi"` đúng trên `<html>`. |
 
 ---
 
@@ -261,8 +278,8 @@ Mở trình duyệt: **<http://localhost:5173>**
 
 | Nhánh | Mục đích |
 | --- | --- |
-| `master` | Production — đã merge phase 1–16 |
-| `develop` | Integration — merge trước khi lên master |
+| `master` | Production — đã merge phase 1–17b |
+| `develop` | Integration — phase 17c (Admin Suite, News UI, Font) đang phát triển |
 
 ---
 
