@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './store/AuthContext';
 import { ThemeProvider } from './store/ThemeContext';
+import { ToastProvider } from './components/Toast';
 import Navbar        from './components/Navbar';
 import Footer        from './components/Footer';
 import RouteGuard    from './components/RouteGuard';
@@ -19,7 +20,7 @@ import ClassDetail    from './pages/ClassDetail';
 import Profile        from './pages/Profile';
 import Gallery        from './pages/Gallery';
 import LichSuCuuDo   from './pages/LichSuCuuDo';
-import NhanVat       from './pages/NhanVat';
+import NhanVat        from './pages/NhanVat';
 
 import AdminLayout    from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -30,6 +31,9 @@ import AdminExport    from './pages/admin/AdminExport';
 import AdminNamHoc    from './pages/admin/AdminNamHoc';
 import AdminPromotion from './pages/admin/AdminPromotion';
 import AdminStats     from './pages/admin/AdminStats';
+import AdminAuditLog  from './pages/admin/AdminAuditLog';
+import AdminRBAC      from './pages/admin/AdminRBAC';
+import AdminBackup    from './pages/admin/AdminBackup';
 
 // Footer ẩn trong khu vực /admin
 const ConditionalFooter = () => {
@@ -41,6 +45,7 @@ const ConditionalFooter = () => {
 const App = () => (
   <ThemeProvider>
   <AuthProvider>
+  <ToastProvider>
     <BrowserRouter>
       <Navbar />
       <UrgentBanner />
@@ -81,10 +86,14 @@ const App = () => (
           <Route path="nien-hoc"     element={<AdminPromotion />} />
           <Route path="thong-ke"     element={<AdminStats />} />
           <Route path="export"       element={<AdminExport />} />
+          <Route path="lich-su"      element={<AdminAuditLog />} />
+          <Route path="phan-quyen"   element={<AdminRBAC />} />
+          <Route path="sao-luu"      element={<AdminBackup />} />
         </Route>
       </Routes>
       <ConditionalFooter />
     </BrowserRouter>
+  </ToastProvider>
   </AuthProvider>
   </ThemeProvider>
 );

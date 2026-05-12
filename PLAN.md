@@ -25,6 +25,7 @@
 | 16 | Chuẩn hóa tên lớp, fix Avatar, fix Calendar, tối ưu UI ClassList & GioLe | Hoàn thành |
 | 17 | Module Lịch sử Cứu độ — Timeline, SVG Maps, Character Cards, ProphecyTable | Hoàn thành |
 | 17b | Nâng cấp BibleMap & InteractiveTimeline — bản đồ địa hình, UX bảo tàng số | Hoàn thành |
+| 17c | Advanced Admin Suite (Audit Log, RBAC, Backup, Toast), News UI nâng cấp, Font Be Vietnam Pro | Hoàn thành |
 | 18 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
 
 ---
@@ -109,6 +110,9 @@ mautam-website/
 │       │   ├── LanguageSwitcher.jsx # Dropdown VI 🇻🇳 / EN 🇺🇸 (i18next)
 │       │   ├── ThemeToggle.jsx      # Sun/Moon toggle + Circular Reveal
 │       │   ├── QuickActionWidgets.jsx  # 5 widget nhanh trong AdminDashboard
+│       │   ├── Toast.jsx            # ToastProvider + useToast hook (success/error/warning/info)
+│       │   ├── ConfirmModal.jsx     # Safety modal backdrop blur trước destructive actions
+│       │   ├── Skeleton.jsx         # SkeletonTable/Row/Card/Line — loading placeholder
 │       │   ├── BibleMap.jsx         # SVG bản đồ Cận Đông — 12 địa danh, popover, legend
 │       │   ├── IsraelMap.jsx        # SVG 3 vùng Israel — hover panel, accordion thành phố
 │       │   ├── CharacterCards.jsx   # 6 nhân vật Cựu Ước — accordion, gold particles, ảnh
@@ -139,7 +143,10 @@ mautam-website/
 │       │       ├── AdminExport.jsx     # Export toàn đoàn
 │       │       ├── AdminPosts.jsx      # Quản lý tin tức / thông báo (CRUD + ảnh)
 │       │       ├── AdminUsers.jsx      # Quản lý tài khoản + phân quyền
-│       │       └── AdminNamHoc.jsx     # Quản lý năm học
+│       │       ├── AdminNamHoc.jsx     # Quản lý năm học
+│       │       ├── AdminAuditLog.jsx   # Nhật ký hoạt động — timeline, filter, pagination, avatar
+│       │       ├── AdminRBAC.jsx       # Phân quyền vai trò — matrix 8×4, toggle switch, protected roles
+│       │       └── AdminBackup.jsx     # Sao lưu dữ liệu xlsx/json, chốt niên học
 │       ├── services/
 │       │   ├── api.js               # Axios + JWT interceptor + 401 auto-redirect
 │       │   ├── firebase.js          # Firebase SDK init (Storage + Firestore)
@@ -735,6 +742,81 @@ Nâng cấp toàn diện module Lịch sử Cứu độ thành trải nghiệm "
 
 ---
 
+### GIAI ĐOẠN 17c — Advanced Admin Suite, News UI & Font — Hoàn thành
+
+#### Shared Components mới
+
+| Component | Mô tả |
+| --- | --- |
+| `Toast.jsx` | `ToastProvider` context + `useToast` hook — 4 loại: success/error/warning/info, auto-dismiss, stack tối đa 3 cái |
+| `ConfirmModal.jsx` | Safety modal backdrop blur + spring animation — nút xác nhận đỏ, dùng trước destructive actions |
+| `Skeleton.jsx` | `SkeletonTable`, `SkeletonRow`, `SkeletonCard`, `SkeletonLine` — loading placeholder cho các trang admin |
+
+#### AdminAuditLog (`/admin/lich-su`)
+
+- Timeline Table với action badges màu: Thêm (xanh) / Sửa (vàng) / Xóa (đỏ) / Cấp quyền (tím) / Login (xám) / Xuất (lam)
+- Search realtime + filter theo loại action, pagination 12 rows/trang
+- Skeleton Screen khi loading
+- **v2 (dab1318)**: Fetch `/api/users` → seed mock logs với tên/avatar thật
+  - `UserCell`: avatar (ảnh hoặc initials màu), tên đầy đủ, role badge nhỏ bên dưới
+  - `getRoleMeta`: phân biệt Admin / Huynh trưởng / Dự trưởng / GLV / Phụ huynh
+  - `UserDropdown`: chọn user từ danh sách có avatar thay vì nhập text
+  - `TARGETS_BY_ROLE`: đối tượng phù hợp vai trò (admin→hệ thống, ht→lớp học…)
+  - Click tên user → navigate `/admin/nguoi-dung?highlight={userId}`
+  - Nút "Xóa bộ lọc" khi đang lọc
+
+#### AdminRBAC (`/admin/phan-quyen`)
+
+- Permission Matrix: 8 module × 4 quyền (Xem / Sửa / Xóa / Phê duyệt)
+- Toggle Switch thay checkbox, role sidebar có thể collapse
+- Tạo vai trò mới tùy chỉnh, xóa với `ConfirmModal`
+- 3 vai trò hệ thống protected (Admin, GLV, Phụ huynh) — không xóa được
+
+#### AdminBackup (`/admin/sao-luu`)
+
+- Xuất dữ liệu định dạng `.xlsx` + `.json`, download blob trực tiếp
+- "Chốt Niên học" với warning + `ConfirmModal` xác nhận trước khi khóa
+- Trạng thái "Lần sao lưu cuối" + cảnh báo tự động nếu > 7 ngày chưa backup
+
+#### AdminLayout — Grouped Sidebar
+
+- 4 nhóm: **Tổng quan** / **Nội dung** / **Niên học** / **Hệ thống**
+- Collapsible group headers, compact link style
+- 3 route mới đăng ký trong `App.jsx`: `/admin/lich-su`, `/admin/phan-quyen`, `/admin/sao-luu`
+
+#### RBAC bảng phân quyền (cập nhật)
+
+| Chức năng | Admin |
+| --- | --- |
+| Xem Audit Log | OK |
+| Quản lý RBAC | OK |
+| Sao lưu & Chốt niên học | OK |
+
+#### News.jsx — UI/UX nâng cấp
+
+- **Font Playfair Display** (600/700/800) — tiêu đề bài viết sang trọng
+- **HeroBanner**: mesh gradient 4 radial + linear (`#8B0000 → #4A0000`), SVG cross pattern 4% opacity
+- **FeaturedCard**: post đầu tiên layout ngang (`sm:flex-row`), badge "Nổi bật", image 2/5 + text 3/5
+- **PostCard**: `aspect-ratio 16/9`, `loading="lazy"`, gradient placeholder theo `loai`
+- **Smooth Lift hover**: `translateY(-4px)` + shadow rộng (inline style transition)
+- **Reading time**: ước tính từ `tomTat + tieuDe` (180 từ/phút), hiện bên cạnh ngày đăng
+- **Nút "Đọc"**: pill button `bg-red/8 → hover bg-red text-white`
+- **`whileInView` fade-in up** với stagger delay theo cột (Framer Motion)
+- **`font-variant-ligatures: none`** trên mọi heading tiếng Việt
+- Responsive: 1 cột → `sm:2` → `lg:3`
+
+#### Font & Typography (Be Vietnam Pro)
+
+- **`lang="vi"`** trên `<html>` — browser nhận diện ngôn ngữ tiếng Việt đúng
+- **Be Vietnam Pro** (ital, wght 300–800) — font thiết kế riêng cho tiếng Việt, thêm vào Google Fonts
+- Stack font: `'Be Vietnam Pro', 'Inter', 'Segoe UI', system-ui`
+- **`font-variant-ligatures: none`** toàn cục — tắt ligature tự động gây nhòe chữ Việt
+- `-webkit-font-smoothing: antialiased` + `text-rendering: optimizeLegibility` trên `body`
+- `h1–h6`: `line-height: 1.4` + `font-variant-ligatures: none`
+- Utility class **`.admin-title`**: Be Vietnam Pro 700, `line-height: 1.45` — dùng trong các trang admin
+
+---
+
 ### GIAI ĐOẠN 18 — Tối ưu hiệu năng & Production — Sắp tới
 
 - PWA offline support (Service Worker, cache assets)
@@ -751,7 +833,7 @@ Nâng cấp toàn diện module Lịch sử Cứu độ thành trải nghiệm "
 | Phần | Công nghệ |
 | --- | --- |
 | Frontend | React 19, Vite, React Router v7, Framer Motion 12 |
-| Styling | Tailwind CSS 4, EB Garamond, Inter, Dark Mode (View Transitions API) |
+| Styling | Tailwind CSS 4, Be Vietnam Pro, EB Garamond, Inter, Playfair Display, Dark Mode (View Transitions API) |
 | Backend | Node.js, Express 5, Mongoose 9 |
 | Database | MongoDB → MongoDB Atlas (prod) |
 | Auth | JWT (7 ngày), bcryptjs |

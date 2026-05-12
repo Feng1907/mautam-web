@@ -1,165 +1,241 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Newspaper, Bell, BellRing, LayoutGrid, ArrowRight, CalendarDays } from 'lucide-react';
+import { Newspaper, Bell, BellRing, LayoutGrid, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// ─── Font constants ───────────────────────────────────────────────────────────
+const SERIF   = '"Playfair Display", "EB Garamond", Georgia, serif';
+const SANS    = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
+
+// ─── Filter config ────────────────────────────────────────────────────────────
 const FILTERS = [
-  { value: '',            label: 'Tất cả',          Icon: LayoutGrid  },
-  { value: 'tintuc',      label: 'Tin tức',          Icon: Newspaper   },
-  { value: 'thongbao',    label: 'Thông báo',        Icon: Bell        },
-  { value: 'thongbaokhan',label: 'Khẩn',             Icon: BellRing    },
+  { value: '',             label: 'Tất cả',   Icon: LayoutGrid },
+  { value: 'tintuc',       label: 'Tin tức',  Icon: Newspaper  },
+  { value: 'thongbao',     label: 'Thông báo',Icon: Bell       },
+  { value: 'thongbaokhan', label: 'Khẩn',     Icon: BellRing   },
 ];
 
 const LOAI_CFG = {
-  tintuc:       { label: 'Tin tức',   pill: 'bg-sky-100 text-sky-700 border-sky-200'        },
-  thongbao:     { label: 'Thông báo', pill: 'bg-gray-100 text-gray-600 border-gray-200'     },
-  thongbaokhan: { label: '🔔 Khẩn',   pill: 'bg-red-100 text-red-700 border-red-200'        },
+  tintuc:       { label: 'Tin tức',    pill: 'bg-sky-100/90 text-sky-700 border-sky-200',         grad: 'from-sky-900/40 to-blue-950/60' },
+  thongbao:     { label: 'Thông báo',  pill: 'bg-white/90 text-gray-600 border-gray-200',         grad: 'from-gray-800/40 to-slate-900/60' },
+  thongbaokhan: { label: '🔔 Khẩn',    pill: 'bg-red-100/90 text-red-700 border-red-200',         grad: 'from-red-900/60 to-rose-950/80' },
+};
+const defaultCfg = LOAI_CFG.tintuc;
+
+// Gradient placeholders khi không có ảnh — theo từng loại
+const PLACEHOLDER_GRADS = {
+  tintuc:       'linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%)',
+  thongbao:     'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
+  thongbaokhan: 'linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)',
+  _default:     'linear-gradient(135deg, #3d1515 0%, #5c1e1e 50%, #3a0a0a 100%)',
 };
 
-const SERIF  = '"EB Garamond", Lora, Georgia, serif';
-const SANS   = '"Inter", system-ui, sans-serif';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmtDate = (iso) =>
+  new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
 
-// ── Watermark Thánh giá SVG ────────────────────────────────────────────────────
-const CrossWatermark = () => (
-  <svg
-    className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-[0.028]"
-    xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
-  >
+const readingTime = (text = '') => {
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 180)) + ' phút đọc';
+};
+
+// ─── SVG pattern overlay (thánh giá mảnh) ────────────────────────────────────
+const CrossPattern = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-[0.04]"
+    xmlns="http://www.w3.org/2000/svg" aria-hidden>
     <defs>
-      <pattern id="news-cross" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-        <rect x="44" y="18" width="12" height="64" rx="3" fill="#8B0000" />
-        <rect x="24" y="34" width="52" height="12" rx="3" fill="#8B0000" />
-        <circle cx="50" cy="14" r="5" fill="none" stroke="#8B0000" strokeWidth="2.5" />
+      <pattern id="nc-cross" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+        <rect x="36.5" y="16" width="7" height="48" rx="2" fill="white" />
+        <rect x="20" y="28" width="40" height="7" rx="2" fill="white" />
       </pattern>
     </defs>
-    <rect width="100%" height="100%" fill="url(#news-cross)" />
+    <rect width="100%" height="100%" fill="url(#nc-cross)" />
   </svg>
 );
 
-// ── Hero Banner ────────────────────────────────────────────────────────────────
+// ─── Hero Banner ──────────────────────────────────────────────────────────────
 const HeroBanner = () => (
-  <div
-    className="relative overflow-hidden rounded-2xl mb-8"
-    style={{
-      background: 'linear-gradient(135deg, #3d0a0a 0%, #8B0000 45%, #6e1a1a 100%)',
-      minHeight: '160px',
-    }}
-  >
-    {/* Church silhouette watermark */}
-    <div
-      className="absolute inset-0 opacity-[0.07]"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M100 10 L100 40 M85 25 L115 25' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Crect x='70' y='40' width='60' height='80' fill='white'/%3E%3Cpolygon points='70,40 100,15 130,40' fill='white'/%3E%3Crect x='85' y='90' width='30' height='30' fill='%238B0000'/%3E%3C/svg%3E")`,
-        backgroundRepeat: 'repeat',
-        backgroundSize: '180px',
-      }}
-    />
-    {/* Gradient overlay */}
-    <div className="absolute inset-0 bg-linear-to-r from-black/20 via-transparent to-black/10" />
+  <div className="relative overflow-hidden rounded-2xl mb-8" style={{ minHeight: 172 }}>
+    {/* Mesh gradient background */}
+    <div className="absolute inset-0" style={{
+      background: `
+        radial-gradient(ellipse at 15% 10%,  #8B0000 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 90%,  #4A0000 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 10%,  #6B0000 0%, transparent 40%),
+        radial-gradient(ellipse at 20% 90%,  #5c1010 0%, transparent 45%),
+        linear-gradient(145deg, #3d0a0a 0%, #4A0000 50%, #350808 100%)
+      `,
+    }} />
 
-    <div className="relative px-8 py-10 text-center">
-      <p className="text-[#D4AF37]/80 text-xs tracking-[0.3em] uppercase mb-3 font-medium" style={{ fontFamily: SANS }}>
+    {/* Pattern overlay */}
+    <CrossPattern />
+
+    {/* Vignette edges */}
+    <div className="absolute inset-0 bg-linear-to-b from-black/15 via-transparent to-black/25" />
+
+    <div className="relative px-8 py-11 text-center">
+      <p className="text-[#D4AF37]/75 text-[11px] tracking-[0.35em] uppercase mb-3 font-medium"
+        style={{ fontFamily: SANS }}>
         Xứ Đoàn Anrê Phú Yên · Mẫu Tâm
       </p>
-      <h1
-        className="text-white leading-tight mb-2"
-        style={{ fontFamily: SERIF, fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 600 }}
-      >
+      <h1 className="text-white leading-tight mb-2.5"
+        style={{ fontFamily: SERIF, fontSize: 'clamp(1.65rem, 4vw, 2.5rem)', fontWeight: 700,
+          letterSpacing: '-0.01em', fontVariantLigatures: 'none' }}>
         Tin Tức &amp; Thông Báo
       </h1>
-      <p className="text-white/60 text-sm mt-2" style={{ fontFamily: SANS }}>
+      <p className="text-white/52 text-[13px] tracking-wide"
+        style={{ fontFamily: SANS, fontWeight: 400, letterSpacing: '0.04em' }}>
         Cập nhật thông tin mới nhất từ Xứ Đoàn
       </p>
     </div>
   </div>
 );
 
-// ── Post Card ──────────────────────────────────────────────────────────────────
-const PostCard = ({ post }) => {
-  const cfg = LOAI_CFG[post.loai] || LOAI_CFG.tintuc;
+// ─── Featured Post (1st post, full-width horizontal) ─────────────────────────
+const FeaturedCard = ({ post }) => {
+  const cfg = LOAI_CFG[post.loai] ?? defaultCfg;
+  const grad = PLACEHOLDER_GRADS[post.loai] ?? PLACEHOLDER_GRADS._default;
+  const summary = post.tomTat || '';
 
   return (
-    <Link
-      to={`/tin-tuc/${post._id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 dark:bg-slate-800 dark:border-slate-700"
-      style={{
-        background: 'rgba(255,252,249,0.85)',
-        borderColor: '#e5d5b5',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        boxShadow: '0 2px 12px rgba(139,0,0,0.05)',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = '#D4AF37';
-        e.currentTarget.style.boxShadow = '0 8px 28px rgba(139,0,0,0.12)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = '#e5d5b5';
-        e.currentTarget.style.boxShadow = '0 2px 12px rgba(139,0,0,0.05)';
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      className="mb-6"
     >
-      {/* Ảnh đại diện */}
-      <div className="relative overflow-hidden bg-amber-50" style={{ aspectRatio: '16/9' }}>
-        {post.anhDaiDien ? (
-          <img
-            src={post.anhDaiDien}
-            alt={post.tieuDe}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #fdf6e3, #f5e6c8)' }}
-          >
-            <span className="text-5xl opacity-20 select-none">✝</span>
-          </div>
-        )}
-        {/* Badge loại */}
-        <span
-          className={`absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border backdrop-blur-sm ${cfg.pill}`}
-        >
-          {cfg.label}
-        </span>
-      </div>
-
-      {/* Nội dung */}
-      <div className="flex flex-col flex-1 p-4">
-        <h2
-          className="font-semibold leading-snug mb-2 line-clamp-2 group-hover:text-[#8B0000] transition-colors"
-          style={{ fontFamily: SERIF, fontSize: '1.05rem', color: '#3d1515' }}
-        >
-          {post.tieuDe}
-        </h2>
-        {post.tomTat && (
-          <p
-            className="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 flex-1 mb-3"
-            style={{ fontFamily: SANS }}
-          >
-            {post.tomTat}
-          </p>
-        )}
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#f0e0c0]/60">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400" style={{ fontFamily: SANS }}>
-            <CalendarDays className="w-3.5 h-3.5" />
-            {new Date(post.createdAt).toLocaleDateString('vi-VN')}
-            {post.tacGia?.hoTen && (
-              <span className="ml-1 text-gray-300">· {post.tacGia.hoTen}</span>
-            )}
-          </div>
-          <span className="text-xs text-[#8B0000] font-medium flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-            Đọc <ArrowRight className="w-3 h-3" />
+      <Link to={`/tin-tuc/${post._id}`}
+        className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border transition-all duration-300 dark:bg-slate-800 dark:border-slate-700"
+        style={{
+          background: 'rgba(255,252,249,0.9)',
+          borderColor: '#e5d5b5',
+          boxShadow: '0 2px 16px rgba(139,0,0,0.06)',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(139,0,0,0.14)'; e.currentTarget.style.borderColor = '#D4AF37'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 16px rgba(139,0,0,0.06)'; e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.transform = ''; }}
+      >
+        {/* Image */}
+        <div className="relative overflow-hidden sm:w-2/5 shrink-0" style={{ aspectRatio: '16/9' }}>
+          {post.anhDaiDien ? (
+            <img src={post.anhDaiDien} alt={post.tieuDe} loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: grad }}>
+              <span className="text-6xl opacity-15 select-none text-white">✝</span>
+            </div>
+          )}
+          <span className={`absolute top-3 left-3 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border backdrop-blur-sm ${cfg.pill}`}>
+            {cfg.label}
+          </span>
+          {/* Featured badge */}
+          <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D4AF37] text-[#3d1515] uppercase tracking-wide">
+            Nổi bật
           </span>
         </div>
-      </div>
-    </Link>
+
+        {/* Content */}
+        <div className="flex flex-col flex-1 p-5 sm:p-6 justify-center">
+          <h2 className="font-bold leading-snug mb-3 line-clamp-2 group-hover:text-[#8B0000] transition-colors"
+            style={{ fontFamily: SERIF, fontSize: 'clamp(1.1rem, 2vw, 1.35rem)', color: '#3d1515',
+              fontWeight: 700, fontVariantLigatures: 'none' }}>
+            {post.tieuDe}
+          </h2>
+          {summary && (
+            <p className="text-sm leading-relaxed line-clamp-3 mb-4"
+              style={{ fontFamily: SANS, color: '#4A5568' }}>
+              {summary}
+            </p>
+          )}
+          <div className="flex items-center justify-between mt-auto pt-3 border-t border-[#f0e0c0]/60">
+            <div className="flex items-center gap-3 text-xs text-gray-400" style={{ fontFamily: SANS }}>
+              <span className="flex items-center gap-1"><CalendarDays size={12} />{fmtDate(post.createdAt)}</span>
+              <span className="flex items-center gap-1"><Clock size={12} />{readingTime(summary + ' ' + post.tieuDe)}</span>
+            </div>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-[#8B0000] bg-[#8B0000]/8 px-3 py-1.5 rounded-full group-hover:bg-[#8B0000] group-hover:text-white transition-all duration-200">
+              Đọc ngay <ArrowRight size={12} />
+            </span>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
   );
 };
 
-// ── Trang News ─────────────────────────────────────────────────────────────────
-const News = () => {
+// ─── Post Card (regular grid) ─────────────────────────────────────────────────
+const PostCard = ({ post, index }) => {
+  const cfg  = LOAI_CFG[post.loai] ?? defaultCfg;
+  const grad = PLACEHOLDER_GRADS[post.loai] ?? PLACEHOLDER_GRADS._default;
+  const summary = post.tomTat || '';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.38, ease: 'easeOut', delay: (index % 3) * 0.07 }}
+    >
+      <Link to={`/tin-tuc/${post._id}`}
+        className="group flex flex-col overflow-hidden rounded-2xl border h-full transition-all duration-300 dark:bg-slate-800 dark:border-slate-700"
+        style={{
+          background: 'rgba(255,252,249,0.9)',
+          borderColor: '#e5d5b5',
+          boxShadow: '0 2px 12px rgba(139,0,0,0.05)',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 16px 40px rgba(139,0,0,0.13)'; e.currentTarget.style.borderColor = '#D4AF37'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(139,0,0,0.05)'; e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.transform = ''; }}
+      >
+        {/* Thumbnail 16:9 */}
+        <div className="relative overflow-hidden bg-amber-50/50" style={{ aspectRatio: '16/9' }}>
+          {post.anhDaiDien ? (
+            <img src={post.anhDaiDien} alt={post.tieuDe} loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: grad }}>
+              <span className="text-5xl opacity-12 select-none text-white">✝</span>
+            </div>
+          )}
+          <span className={`absolute top-2.5 left-2.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border backdrop-blur-sm ${cfg.pill}`}>
+            {cfg.label}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-col flex-1 p-4">
+          <h2 className="font-semibold leading-snug mb-2 line-clamp-2 group-hover:text-[#8B0000] transition-colors"
+            style={{ fontFamily: SERIF, fontSize: '1rem', color: '#3d1515',
+              fontWeight: 600, fontVariantLigatures: 'none' }}>
+            {post.tieuDe}
+          </h2>
+          {summary && (
+            <p className="text-[13px] leading-relaxed line-clamp-2 flex-1 mb-3"
+              style={{ fontFamily: SANS, color: '#4A5568' }}>
+              {summary}
+            </p>
+          )}
+          <div className="flex items-center justify-between mt-auto pt-2.5 border-t border-[#f0e0c0]/50">
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400" style={{ fontFamily: SANS }}>
+                <CalendarDays size={10} />{fmtDate(post.createdAt)}
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-gray-300" style={{ fontFamily: SANS }}>
+                <Clock size={9} />{readingTime(summary + ' ' + post.tieuDe)}
+              </span>
+            </div>
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-[#8B0000] bg-[#8B0000]/8 px-2.5 py-1 rounded-full group-hover:bg-[#8B0000] group-hover:text-white transition-all duration-200 shrink-0">
+              Đọc <ArrowRight size={10} />
+            </span>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+export default function News() {
   const [posts,   setPosts]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [loai,    setLoai]    = useState('');
@@ -173,72 +249,53 @@ const News = () => {
       .finally(() => setLoading(false));
   }, [loai]);
 
+  const [featured, ...rest] = posts;
+
   return (
-    <main
-      className="relative flex-1 page-container min-h-screen bg-page"
-      style={{ fontFamily: SANS }}
-    >
-      <CrossWatermark />
+    <main className="relative flex-1 page-container min-h-screen bg-page" style={{ fontFamily: SANS }}>
+      <HeroBanner />
 
-      <div className="relative">
-        <HeroBanner />
-
-        {/* Pill filter bar */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {FILTERS.map(({ value, label, Icon }) => {
-            const active = loai === value;
-            return (
-              <button
-                key={value}
-                onClick={() => setLoai(value)}
-                className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border font-medium transition-all ${
-                  active
-                    ? 'text-white border-[#8B0000] shadow-sm'
-                    : 'text-gray-600 dark:text-slate-300 border-[#e5d5b5] dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 hover:border-[#D4AF37] hover:text-[#5a1a1a]'
-                }`}
-                style={active ? { background: 'linear-gradient(135deg, #8B0000, #6e1a1a)' } : {}}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Danh sách bài */}
-        {loading ? (
-          <LoadingSpinner />
-        ) : posts.length === 0 ? (
-          <div className="text-center py-20">
-            <span className="text-5xl block mb-4 opacity-20">✝</span>
-            <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>Chưa có bài viết nào.</p>
-          </div>
-        ) : (
-          <motion.div
-            className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: {},
-              show: { transition: { staggerChildren: 0.07 } },
-            }}
-          >
-            {posts.map(p => (
-              <motion.div
-                key={p._id}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  show:   { opacity: 1, y: 0, transition: { duration: 0.28, ease: 'easeOut' } },
-                }}
-              >
-                <PostCard post={p} />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
+      {/* Pill filter bar */}
+      <div className="flex gap-2 mb-7 flex-wrap">
+        {FILTERS.map(({ value, label, Icon }) => {
+          const active = loai === value;
+          return (
+            <button key={value} onClick={() => setLoai(value)}
+              className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border font-medium transition-all duration-200 ${
+                active
+                  ? 'text-white border-[#8B0000] shadow-sm'
+                  : 'text-gray-600 dark:text-slate-300 border-[#e5d5b5] dark:border-slate-600 bg-white/80 dark:bg-slate-800/80 hover:border-[#D4AF37] hover:text-[#5a1a1a] dark:hover:text-amber-300'
+              }`}
+              style={active ? { background: 'linear-gradient(135deg, #8B0000, #5a1010)', fontFamily: SANS } : { fontFamily: SANS }}>
+              <Icon size={13} />{label}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Posts */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : posts.length === 0 ? (
+        <div className="text-center py-24">
+          <span className="text-5xl block mb-4 opacity-20">✝</span>
+          <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>Chưa có bài viết nào.</p>
+        </div>
+      ) : (
+        <>
+          {/* Featured post */}
+          {featured && <FeaturedCard post={featured} />}
+
+          {/* Grid 3 cột */}
+          {rest.length > 0 && (
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((p, i) => (
+                <PostCard key={p._id} post={p} index={i} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </main>
   );
-};
-
-export default News;
+}
