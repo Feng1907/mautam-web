@@ -46,9 +46,10 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
 
   // Vị trí của admin (tuỳ chọn)
   const [requireLoc, setRequireLoc] = useState(false);
-  const [adminGps, setAdminGps] = useState(null);  // { lat, lng }
-  const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | ok | error
-  const [maxDistance, setMaxDistance] = useState(200); // mét
+  const [adminGps, setAdminGps] = useState(null);       // { lat, lng, accuracy }
+  const [adminAddress, setAdminAddress] = useState(''); // địa chỉ từ reverse geocode
+  const [gpsStatus, setGpsStatus] = useState('idle');   // idle | loading | ok | error
+  const [maxDistance, setMaxDistance] = useState(200);  // mét
 
   const { remaining, display, expired } = useCountdown(session?.expiresAt);
 
@@ -57,20 +58,35 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
     ? Math.round((remaining / session.ttlSeconds) * 100)
     : 100;
 
-  // Lấy GPS của admin khi bật toggle vị trí
+  // Lấy GPS + reverse geocode địa chỉ qua Nominatim (OpenStreetMap, miễn phí)
   const fetchAdminGps = useCallback(() => {
-    if (!navigator.geolocation) {
-      setGpsStatus('error');
-      return;
-    }
+    if (!navigator.geolocation) { setGpsStatus('error'); return; }
     setGpsStatus('loading');
+    setAdminAddress('');
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setAdminGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      async (pos) => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        setAdminGps({ lat, lng, accuracy: Math.round(accuracy) });
         setGpsStatus('ok');
+        // Reverse geocode Nominatim
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`,
+            { headers: { 'Accept-Language': 'vi' } }
+          );
+          const data = await res.json();
+          const a = data.address || {};
+          const parts = [
+            a.road || a.pedestrian || a.footway,
+            a.suburb || a.neighbourhood || a.quarter,
+            a.city_district || a.district,
+            a.city || a.town || a.village,
+          ].filter(Boolean);
+          setAdminAddress(parts.join(', ') || data.display_name?.split(',').slice(0, 3).join(',') || '');
+        } catch { /* geocode lỗi — không sao, vẫn có tọa độ */ }
       },
       () => setGpsStatus('error'),
-      { timeout: 8000, enableHighAccuracy: true }
+      { timeout: 10000, enableHighAccuracy: true }
     );
   }, []);
 
@@ -264,24 +280,73 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                         </div>
                       </button>
                       {requireLoc && (
-                        <div className="px-4 pb-3 space-y-2">
-                          {/* GPS status */}
-                          <div className="flex items-center gap-2 text-xs">
-                            {gpsStatus === 'loading' && <Loader2 size={12} className="animate-spin text-amber-400" />}
-                            {gpsStatus === 'ok' && <ShieldCheck size={12} style={{ color: '#22c55e' }} />}
-                            {gpsStatus === 'error' && <MapPinOff size={12} className="text-red-400" />}
-                            <span style={{ color: gpsStatus === 'ok' ? '#22c55e' : gpsStatus === 'error' ? '#f87171' : 'rgba(255,255,255,0.4)' }}>
-                              {gpsStatus === 'idle' && 'Đang chờ vị trí...'}
-                              {gpsStatus === 'loading' && 'Đang lấy vị trí...'}
-                              {gpsStatus === 'ok' && `Đã lấy vị trí (${adminGps?.lat?.toFixed(4)}, ${adminGps?.lng?.toFixed(4)})`}
-                              {gpsStatus === 'error' && 'Không lấy được vị trí'}
-                            </span>
-                            {gpsStatus === 'error' && (
-                              <button onClick={fetchAdminGps} className="text-amber-400 underline">Thử lại</button>
-                            )}
-                          </div>
+                        <div className="px-4 pb-4 space-y-3">
+
+                          {/* GPS status row */}
+                          {gpsStatus === 'loading' && (
+                            <div className="flex items-center gap-2 text-xs text-amber-400">
+                              <Loader2 size={12} className="animate-spin" />
+                              Đang lấy vị trí GPS...
+                            </div>
+                          )}
+                          {gpsStatus === 'error' && (
+                            <div className="flex items-center gap-2 text-xs text-red-400">
+                              <MapPinOff size={12} />
+                              Không lấy được vị trí
+                              <button onClick={fetchAdminGps}
+                                className="ml-1 flex items-center gap-1 text-amber-400 underline">
+                                <RefreshCw size={10} /> Thử lại
+                              </button>
+                            </div>
+                          )}
+                          {gpsStatus === 'ok' && adminGps && (
+                            <div className="space-y-2">
+                              {/* Địa chỉ + tọa độ + nút refresh */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-1.5 min-w-0">
+                                  <MapPin size={12} className="shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
+                                  <div className="min-w-0">
+                                    {adminAddress ? (
+                                      <p className="text-xs font-medium text-white/80 leading-tight">{adminAddress}</p>
+                                    ) : (
+                                      <p className="text-xs text-white/40 italic">Đang tra địa chỉ...</p>
+                                    )}
+                                    <p className="text-[10px] text-white/30 mt-0.5 font-mono">
+                                      {adminGps.lat.toFixed(5)}, {adminGps.lng.toFixed(5)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <button onClick={fetchAdminGps} title="Cập nhật lại vị trí"
+                                  className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition"
+                                  style={{ color: '#D4AF37' }}>
+                                  <RefreshCw size={12} />
+                                </button>
+                              </div>
+
+                              {/* Độ chính xác GPS */}
+                              <div className="flex items-center gap-1.5 text-[11px]">
+                                <ShieldCheck size={11} style={{ color: adminGps.accuracy > 50 ? '#ef4444' : '#22c55e' }} />
+                                <span style={{ color: adminGps.accuracy > 50 ? '#ef4444' : 'rgba(255,255,255,0.45)' }}>
+                                  Độ chính xác: ±{adminGps.accuracy}m
+                                  {adminGps.accuracy > 50 && ' — Sai số quá lớn, hãy cập nhật lại!'}
+                                </span>
+                              </div>
+
+                              {/* Mini map OpenStreetMap */}
+                              <div className="rounded-xl overflow-hidden border border-white/10" style={{ height: 130 }}>
+                                <iframe
+                                  title="mini-map"
+                                  width="100%" height="130"
+                                  style={{ border: 'none', display: 'block' }}
+                                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${adminGps.lng - 0.003},${adminGps.lat - 0.002},${adminGps.lng + 0.003},${adminGps.lat + 0.002}&layer=mapnik&marker=${adminGps.lat},${adminGps.lng}`}
+                                  loading="lazy"
+                                />
+                              </div>
+                            </div>
+                          )}
+
                           {/* Bán kính */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-white/40 shrink-0">Bán kính:</span>
                             {[50, 100, 200, 500].map(m => (
                               <button key={m} onClick={() => setMaxDistance(m)}
@@ -289,11 +354,10 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                                 style={maxDistance === m
                                   ? { background: 'rgba(212,175,55,0.25)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.4)' }
                                   : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }
-                                }>
-                                {m}m
-                              </button>
+                                }>{m}m</button>
                             ))}
                           </div>
+
                         </div>
                       )}
                     </div>
