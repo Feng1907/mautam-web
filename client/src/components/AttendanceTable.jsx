@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { CheckCircle2, Minus, Loader2, Search, Mail, X } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { CheckCircle2, Minus, Loader2, Search, Mail, X, Radio } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
 
@@ -104,6 +104,8 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
   const [records,    setRecords]    = useState([]);
   const [saving,     setSaving]     = useState({});
   const [loading,    setLoading]    = useState(true);
+  const [liveCount,  setLiveCount]  = useState(null); // số em đã check-in hôm nay (null = chưa live)
+  const pollRef = useRef(null);
 
   useEffect(() => {
     api.get('/namhoc').then(r => {
@@ -114,28 +116,52 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
     }).catch(() => {});
   }, []);
 
+  // Fetch chỉ records (dùng cho cả load đầu và polling)
+  const fetchRecords = useCallback(async (namHocId, silent = false) => {
+    try {
+      const res = await api.get(`/attendance/${lopId}`, { params: { namHocId } });
+      setRecords(res.data.data);
+      // Cập nhật live count cho ngày hôm nay
+      const t = new Date().toISOString().slice(0, 10);
+      setLiveCount(res.data.data.filter(r => r.date === t && r.present).length);
+    } catch {
+      // silent fail khi polling
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [lopId]);
+
   useEffect(() => {
     if (!selNamHoc) return;
-    
+
     let cancelled = false;
+    setLoading(true);
 
-    Promise.all([
-      api.get('/attendance/sundays', {
-        params: { startDate: selNamHoc.ngayBatDau, endDate: selNamHoc.ngayKetThuc },
-      }),
-      api.get(`/attendance/${lopId}`, { params: { namHocId: selNamHoc._id } }),
-    ]).then(([sunRes, recRes]) => {
-      if (!cancelled) {
-        setSundays(sunRes.data.data);
-        setRecords(recRes.data.data);
-        setLoading(false);
-      }
-    }).catch(() => {
-      if (!cancelled) setLoading(false);
-    });
+    api.get('/attendance/sundays', {
+      params: { startDate: selNamHoc.ngayBatDau, endDate: selNamHoc.ngayKetThuc },
+    }).then(r => {
+      if (!cancelled) setSundays(r.data.data);
+    }).catch(() => {});
 
-    return () => { cancelled = true; };
-  }, [lopId, selNamHoc]);
+    fetchRecords(selNamHoc._id);
+
+    // ── Polling 5s khi ngày hôm nay nằm trong năm học đang hoạt động ──────────
+    const todayInRange =
+      selNamHoc.dangHoatDong &&
+      new Date() >= new Date(selNamHoc.ngayBatDau) &&
+      new Date() <= new Date(selNamHoc.ngayKetThuc);
+
+    if (todayInRange) {
+      pollRef.current = setInterval(() => {
+        fetchRecords(selNamHoc._id, true); // silent — không hiện loading
+      }, 5000);
+    }
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollRef.current);
+    };
+  }, [lopId, selNamHoc, fetchRecords]);
 
   const getPresent = (studentId, date) =>
     records.find(r => r.student === studentId && r.date === date)?.present ?? false;
@@ -259,8 +285,16 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
           </div>
         </div>
 
-        {/* Phải: Thống kê + Xuất Excel */}
+        {/* Phải: Thống kê + Live badge + Xuất Excel */}
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Badge LIVE — chỉ hiện khi đang polling (năm học active, hôm nay trong kỳ) */}
+          {liveCount !== null && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+              bg-red-50 border border-red-200 text-red-600 select-none">
+              <Radio size={11} className="animate-pulse" />
+              LIVE · {liveCount}/{students.length} có mặt
+            </div>
+          )}
           <span className="text-sm text-gray-500">
             Tổng buổi: <strong className="text-gray-700">{sundays.length}</strong>
             &nbsp;·&nbsp;
