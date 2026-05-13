@@ -110,6 +110,8 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
       }
       const { data } = await api.post('/attendance/qr-session', body);
       setSession(data.data);
+      nextSessionRef.current = null;
+      preGenRef.current = false;
     } catch (e) {
       setError(e.response?.data?.message || 'Không tạo được mã QR.');
     } finally {
@@ -141,18 +143,47 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
     w.print();
   };
 
-  const reset = () => setSession(null);
+  const reset = () => {
+    setSession(null);
+    nextSessionRef.current = null;
+  };
 
-  // Auto-refresh QR khi hết hạn — tự tạo token mới không cần nhấn nút
-  const autoRefreshRef = useRef(false);
+  // Pre-generate QR mới khi còn 5 giây — swap tức thì khi hết hạn
+  const nextSessionRef = useRef(null);
+  const preGenRef = useRef(false);
+
   useEffect(() => {
-    if (!expired || !session || autoRefreshRef.current) return;
-    autoRefreshRef.current = true;
-    // Delay 800ms để animation "HẾT HẠN" hiển thị thoáng qua
-    const t = setTimeout(() => {
-      generate().finally(() => { autoRefreshRef.current = false; });
-    }, 800);
-    return () => clearTimeout(t);
+    if (!session || preGenRef.current) return;
+    if (remaining <= 5 && remaining > 0) {
+      preGenRef.current = true;
+      // Gọi API ngầm, lưu vào ref
+      (async () => {
+        try {
+          const body = { lopId, date, ttlMinutes: ttl };
+          if (requireLoc && adminGps) {
+            body.lat = adminGps.lat;
+            body.lng = adminGps.lng;
+            body.maxDistance = maxDistance;
+          }
+          const { data } = await api.post('/attendance/qr-session', body);
+          nextSessionRef.current = data.data;
+        } catch { /* nếu lỗi, fallback về generate() bình thường */ }
+      })();
+    }
+  }, [remaining, session, lopId, date, ttl, requireLoc, adminGps, maxDistance]);
+
+  useEffect(() => {
+    if (!expired || !session) return;
+    if (nextSessionRef.current) {
+      // Swap tức thì — không delay, không gọi API
+      setSession(nextSessionRef.current);
+      nextSessionRef.current = null;
+      preGenRef.current = false;
+    } else {
+      // Fallback nếu pre-gen chưa kịp xong
+      preGenRef.current = false;
+      generate();
+    }
   }, [expired, session, generate]);
 
   return (
