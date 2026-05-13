@@ -8,9 +8,9 @@ import { QrCode, X, RefreshCw, Clock, Loader2, ChevronDown, MapPin, MapPinOff, S
 import api from '../services/api';
 
 const TTL_OPTIONS = [
+  { label: '1 phút', value: 1 },
+  { label: '2 phút', value: 2 },
   { label: '3 phút', value: 3 },
-  { label: '5 phút', value: 5 },
-  { label: '10 phút', value: 10 },
 ];
 
 // ── Countdown hook ────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
   const [open, setOpen] = useState(false);
   const [lopId, setLopId] = useState(defaultLopId || '');
   const [date, setDate] = useState(defaultDate || new Date().toISOString().slice(0, 10));
-  const [ttl, setTtl] = useState(5);
+  const [ttl, setTtl] = useState(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [session, setSession] = useState(null); // { qrDataUrl, expiresAt, requiresLocation, ... }
