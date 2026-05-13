@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { X, BookOpen, ChevronDown, Users, ChevronRight } from 'lucide-react';
 import BibleMap from '../components/BibleMap';
 import IsraelMap from '../components/IsraelMap';
@@ -507,9 +507,13 @@ const TabSelector = ({ activeTab, onSwitch }) => (
 // TAB CONTENT — OT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => (
+const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => {
+  const { scrollY } = useScroll();
+  const mapParallaxY = useTransform(scrollY, [0, 900], [0, -55]);
+
+  return (
   <div className="space-y-10">
-    {/* BibleMap */}
+    {/* BibleMap with parallax */}
     <div>
       <div className="flex items-center gap-2 mb-3">
         <div className="w-1 h-4 rounded-full" style={{ background: '#D4AF37' }} />
@@ -517,7 +521,9 @@ const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => (
           Địa lý Kinh Thánh · Cận Đông cổ đại
         </p>
       </div>
-      <BibleMap highlightedId={mapHighlight} />
+      <motion.div style={{ y: mapParallaxY, willChange: 'transform' }}>
+        <BibleMap highlightedId={mapHighlight} />
+      </motion.div>
     </div>
 
     {/* Character Cards */}
@@ -533,7 +539,8 @@ const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => (
     {/* InteractiveTimeline */}
     <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
   </div>
-);
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB CONTENT — NT

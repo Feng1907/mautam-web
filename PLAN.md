@@ -26,6 +26,7 @@
 | 17 | Module Lịch sử Cứu độ — Timeline, SVG Maps, Character Cards, ProphecyTable | Hoàn thành |
 | 17b | Nâng cấp BibleMap & InteractiveTimeline — bản đồ địa hình, UX bảo tàng số | Hoàn thành |
 | 17c | Advanced Admin Suite (Audit Log, RBAC, Backup, Toast), News UI nâng cấp, Font Be Vietnam Pro | Hoàn thành |
+| 17d | BibleMapTimeline "Bảo tàng kỹ thuật số" — Parallax, Map Auto-Zoom, Spine Orb, Active Pulse Rings | Hoàn thành |
 | 18 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
 
 ---

@@ -21,7 +21,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Phase](https://img.shields.io/badge/Phase-17c_%E2%9C%85-8B0000?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase-17d_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -48,6 +48,7 @@
 - 🌙 **Dark Mode** — Circular Reveal (View Transitions API), lưu localStorage, fallback system preference
 - 🌐 **Đa ngôn ngữ** Tiếng Việt / English (i18next)
 - 🗺️ **Module Lịch sử Cứu độ** — 2 tab CỰU ƯỚC/TÂN ƯỚC, bản đồ SVG địa hình thật, nhân vật tiêu biểu, bảng lời tiên tri, InteractiveTimeline bảo tàng số
+- 🏛️ **BibleMapTimeline "Bảo tàng kỹ thuật số"** — Parallax depth effect (bản đồ trôi chậm hơn khi scroll), Map Auto-Zoom vào địa danh khi hover thẻ sự kiện, Spine Progress Orb phát sáng di chuyển, Active Pulse Rings tỏa sóng trên milestone đang xem
 - 🛡️ **Admin Suite nâng cao** — Audit Log nhật ký hoạt động, RBAC permission matrix, Backup & Chốt niên học
 - 📰 **News UI nâng cấp** — Mesh gradient hero, featured card, Playfair Display, reading time estimate, fade-in stagger
 

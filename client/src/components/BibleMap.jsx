@@ -330,6 +330,7 @@ export default function BibleMap({ highlightedId = null }) {
   };
 
   const hoveredLoc = BIBLE_LOCATIONS.find(l => l.id === hovered) ?? null;
+  const zoomLoc = highlightedId ? BIBLE_LOCATIONS.find(l => l.id === highlightedId) : null;
 
   return (
     <div data-bible-map className="relative w-full" style={{ fontFamily: '"Inter", system-ui, sans-serif' }}>
@@ -351,6 +352,16 @@ export default function BibleMap({ highlightedId = null }) {
           boxShadow: '0 4px 32px #00000066, inset 0 1px 0 #D4AF3715',
         }}
       >
+        <motion.div
+          className="w-full"
+          animate={{ scale: zoomLoc ? 1.38 : 1 }}
+          style={{
+            transformOrigin: zoomLoc
+              ? `${(zoomLoc.x / 500) * 100}% ${(zoomLoc.y / 800) * 100}%`
+              : '50% 50%',
+          }}
+          transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+        >
         <svg
           ref={svgRef}
           viewBox="0 0 500 800"
@@ -601,6 +612,7 @@ export default function BibleMap({ highlightedId = null }) {
           {/* ── Hover Tooltip ── */}
           <HoverTooltip loc={hoveredLoc && !selected ? hoveredLoc : null} />
         </svg>
+        </motion.div>
 
         {/* ── Legend ── */}
         <div
