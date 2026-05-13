@@ -315,21 +315,25 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                     </button>
                   </>
                 ) : (
-                  /* ── Hiển thị QR + countdown — flex column, không absolute ── */
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:20 }}>
+                  /* ── Hiển thị QR + countdown ── */
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
 
                     {/* CSS animations */}
                     <style>{`
                       @keyframes qr-warn-pulse {
-                        from { box-shadow: 0 0 0 0 rgba(239,68,68,0.0); }
-                        to   { box-shadow: 0 0 0 10px rgba(239,68,68,0.35); }
+                        from { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+                        to   { box-shadow: 0 0 0 12px rgba(239,68,68,0.4); }
                       }
-                      @keyframes qr-blink {
-                        0%,100% { opacity:1; } 50% { opacity:0.55; }
+                      @keyframes qr-shake {
+                        0%,100%{ transform:translateX(0); }
+                        20%    { transform:translateX(-4px); }
+                        40%    { transform:translateX(4px); }
+                        60%    { transform:translateX(-3px); }
+                        80%    { transform:translateX(3px); }
                       }
                     `}</style>
 
-                    {/* 1 ── Vòng tròn đếm ngược (120×120, không absolute) */}
+                    {/* 1 ── Vòng tròn với số đếm ngược bên trong */}
                     {(() => {
                       const S = 120, SW = 7, R = (S - SW) / 2;
                       const CIRC = 2 * Math.PI * R;
@@ -337,45 +341,66 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                       const col  = expired || warn ? '#ef4444'
                         : progress > 30 ? '#F8D444' : '#f97316';
                       return (
-                        <svg width={S} height={S} style={{ transform:'rotate(-90deg)', flexShrink:0 }}>
-                          <circle cx={S/2} cy={S/2} r={R}
-                            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={SW} />
-                          <circle cx={S/2} cy={S/2} r={R}
-                            fill="none" stroke={col} strokeWidth={SW} strokeLinecap="round"
-                            strokeDasharray={CIRC}
-                            strokeDashoffset={CIRC * (1 - progress / 100)}
-                            style={{
-                              transition: 'stroke-dashoffset 1s linear, stroke 0.4s',
-                              filter: `drop-shadow(0 0 ${warn ? 8 : 4}px ${col}${warn ? '' : '90'})`,
-                              animation: warn ? 'qr-blink 0.8s ease-in-out infinite' : 'none',
-                            }}
-                          />
-                        </svg>
+                        <div style={{ position:'relative', width:S, height:S, flexShrink:0 }}>
+                          {/* SVG ring */}
+                          <svg width={S} height={S}
+                            style={{ position:'absolute', inset:0, transform:'rotate(-90deg)' }}>
+                            <circle cx={S/2} cy={S/2} r={R}
+                              fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={SW} />
+                            <circle cx={S/2} cy={S/2} r={R}
+                              fill="none" stroke={col} strokeWidth={SW} strokeLinecap="round"
+                              strokeDasharray={CIRC}
+                              strokeDashoffset={CIRC * (1 - progress / 100)}
+                              style={{
+                                transition: 'stroke-dashoffset 1s linear, stroke 0.4s',
+                                filter: `drop-shadow(0 0 ${warn ? 8 : 3}px ${col})`,
+                              }}
+                            />
+                          </svg>
+                          {/* Số đếm ngược căn giữa vòng tròn */}
+                          <div style={{
+                            position:'absolute', inset:0,
+                            display:'flex', flexDirection:'column',
+                            alignItems:'center', justifyContent:'center',
+                            animation: warn ? 'qr-shake 0.5s ease-in-out infinite' : 'none',
+                          }}>
+                            <span style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 900,
+                              fontSize: expired ? 13 : 22,
+                              lineHeight: 1,
+                              color: col,
+                              textShadow: warn ? `0 0 10px ${col}` : 'none',
+                              transition: 'color 0.4s',
+                              letterSpacing: '0.02em',
+                            }}>
+                              {expired ? 'HẾT HẠN' : display}
+                            </span>
+                            {!expired && (
+                              <span style={{ color:'rgba(255,255,255,0.3)', fontSize:9, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>
+                                còn lại
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       );
                     })()}
 
-                    {/* 2 ── Mã QR (nền trắng, border-radius, padding) */}
+                    {/* 2 ── Mã QR */}
                     <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: '#ffffff',
-                      borderRadius: 16,
-                      padding: 10,
-                      width: 220, height: 220,
-                      flexShrink: 0,
-                      position: 'relative',
+                      position:'relative',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      background:'#ffffff', borderRadius:16, padding:10,
+                      width:220, height:220, flexShrink:0,
+                      boxShadow:'0 4px 24px rgba(0,0,0,0.4)',
                       animation: remaining <= 10 && !expired
                         ? 'qr-warn-pulse 0.8s ease-in-out infinite alternate' : 'none',
-                      boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
                     }}>
-                      <img
-                        src={session.qrDataUrl}
-                        alt="QR điểm danh"
+                      <img src={session.qrDataUrl} alt="QR điểm danh"
                         style={{
-                          width: '100%', height: '100%',
-                          objectFit: 'contain',
+                          width:'100%', height:'100%', objectFit:'contain', borderRadius:8,
                           filter: expired ? 'grayscale(1) opacity(0.25)' : 'none',
                           transition: 'filter 0.3s',
-                          borderRadius: 8,
                         }}
                       />
                       {expired && (
@@ -389,31 +414,9 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                       )}
                     </div>
 
-                    {/* 3 ── Text đếm ngược + thông tin */}
-                    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                      <span style={{
-                        fontFamily: 'monospace',
-                        fontWeight: 900,
-                        fontSize: 32,
-                        lineHeight: 1,
-                        letterSpacing: '0.05em',
-                        color: expired ? '#ef4444'
-                          : remaining <= 10 ? '#ef4444'
-                          : progress > 30 ? '#F8D444' : '#f97316',
-                        textShadow: remaining <= 10 && !expired
-                          ? '0 0 14px rgba(239,68,68,0.7)' : 'none',
-                        animation: remaining <= 10 && !expired
-                          ? 'qr-blink 0.8s ease-in-out infinite' : 'none',
-                      }}>
-                        {display}
-                      </span>
-                      <span style={{ color:'rgba(255,255,255,0.35)', fontSize:11, textTransform:'uppercase', letterSpacing:'0.12em' }}>
-                        {expired ? 'Đã hết hạn' : 'còn lại'}
-                      </span>
-                    </div>
-
+                    {/* 3 ── Lớp + ngày */}
                     <p className="text-white/40 text-xs text-center">
-                      Lớp: <span className="text-white/70">{classes.find(c => c._id === session.lopId)?.tenLop}</span>
+                      Lớp: <span className="text-white/70">{classes.find(c => c._id === session.lopId)?.tenLop || defaultLopName}</span>
                       {' · '}Ngày: <span className="text-white/70">{session.date}</span>
                     </p>
                     {session.requiresLocation && (
