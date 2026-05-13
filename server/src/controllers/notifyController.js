@@ -14,6 +14,14 @@ const ChuyenCan            = require('../models/ChuyenCan');
 const sendEmail            = require('../utils/sendEmail');
 const { diemDanhTemplate, lichLeTemplate, bangDiemTemplate } = require('../utils/emailTemplates');
 const { LOAI_DIEM, tinhTBHocTap, tinhTongKet, phanLoai } = require('../utils/gradeCalculator');
+const { logger, emailBatchLogger } = require('../utils/logger');
+
+const logEmailBatchError = (context, payload) => {
+  const meta = { context, ...payload };
+
+  logger.error(`[${context}] Loi gui email ${payload.email}: ${payload.error}`);
+  emailBatchLogger.error('Email batch send failed', meta);
+};
 
 // ── Helper: lấy tuần tới (thứ Hai → Chúa Nhật) ───────────────────────────────
 const getTuanToi = () => {
@@ -89,7 +97,14 @@ exports.guiDiemDanh = async (req, res, next) => {
         sent++;
       } catch (err) {
         errors.push({ student: sv.hoTen, email, error: err.message });
-        console.error(`[notify] Lỗi gửi email ${email}:`, err.message);
+        logEmailBatchError('notify/diem-danh', {
+          email,
+          student: sv.hoTen,
+          studentId: sv._id,
+          lopId,
+          date,
+          error: err.message,
+        });
       }
     });
 
@@ -183,7 +198,14 @@ exports.guiLichLe = async (req, res, next) => {
           sent++;
         } catch (err) {
           errors.push({ student: sv.hoTen, email, error: err.message });
-          console.error(`[notify] Lỗi gửi email ${email}:`, err.message);
+          logEmailBatchError('notify/lich-le', {
+            email,
+            student: sv.hoTen,
+            studentId: sv._id,
+            lopId: lop._id,
+            tuanTu,
+            error: err.message,
+          });
         }
       });
 
@@ -289,7 +311,15 @@ exports.guiBangDiem = async (req, res, next) => {
         sent++;
       } catch (err) {
         errors.push({ student: sv.hoTen, email, error: err.message });
-        console.error(`[notify/bang-diem] Lỗi gửi ${email}:`, err.message);
+        logEmailBatchError('notify/bang-diem', {
+          email,
+          student: sv.hoTen,
+          studentId: sv._id,
+          lopId,
+          hocKy,
+          namHocId: namHoc._id,
+          error: err.message,
+        });
       }
 
       // Delay 100ms giữa mỗi email để tránh spam filter

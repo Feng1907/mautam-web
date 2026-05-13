@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Newspaper, Bell, BellRing, LayoutGrid, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
 // ─── Font constants ───────────────────────────────────────────────────────────
 const SERIF   = '"Playfair Display", "EB Garamond", Georgia, serif';
@@ -253,6 +255,12 @@ export default function News() {
 
   return (
     <main className="relative flex-1 page-container min-h-screen bg-page" style={{ fontFamily: SANS }}>
+      <Helmet>
+        <title>Tin Tức | Mẫu Tâm</title>
+        <meta property="og:title" content="Tin Tức | Mẫu Tâm" />
+        <meta property="og:description" content="Tin tức và thông báo mới nhất từ Xứ Đoàn Anrê Phú Yên – Mẫu Tâm." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       <HeroBanner />
 
       {/* Pill filter bar */}

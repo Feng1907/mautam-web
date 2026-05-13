@@ -1,25 +1,33 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X, BookOpen, Compass } from 'lucide-react';
+
+const BIBLE_MAP_IMAGE = '/images/maps/mapsland-geography-full.jpg';
+const BIBLE_MAP_SRCSET = [
+  `${BIBLE_MAP_IMAGE} 500w`,
+  `${BIBLE_MAP_IMAGE} 893w`,
+  `${BIBLE_MAP_IMAGE} 1200w`,
+].join(', ');
 
 // ─── Hệ toạ độ % → SVG units (viewBox 500×800, portrait — khớp ảnh Đất Thánh) ──
 // Ảnh mapsland-geography-full.webp là bản đồ Israel portrait (~1:1.6 ratio)
 // viewBox 500×800 giữ đúng tỷ lệ, P(x%,y%) ánh xạ vị trí đọc từ ảnh gốc
 const P = (xPct, yPct) => ({ x: Math.round(xPct * 5), y: Math.round(yPct * 8) });
 
-// Tọa độ đọc trực tiếp từ ảnh gốc (góc trên-trái = 0,0):
-//   Sidon:      x≈38%, y≈11%   | Tyre:       x≈22%, y≈18%
-//   Nazareth:   x≈43%, y≈35%   | Galilee Lk: x≈64%, y≈34%
-//   Samaria:    x≈42%, y≈49%   | Jericho:    x≈57%, y≈60%
-//   Jerusalem:  x≈46%, y≈62%   | Bethlehem:  x≈46%, y≈65%
-//   Hebron:     x≈42%, y≈70%   | Dead Sea:   x≈60%, y≈67%
-//   Beersheba:  x≈32%, y≈79%
+// Tọa độ đo trực tiếp từ ảnh gốc 893×1295px (góc trên-trái = 0,0):
+//   Sidon:      x≈43%, y≈6%    | Tyre:       x≈40%, y≈15%
+//   Nazareth:   x≈44%, y≈36%   | Galilee Lk: x≈63%, y≈32%
+//   Sichem:     x≈44%, y≈47%   | Jericho:    x≈53%, y≈66%
+//   Jerusalem:  x≈42%, y≈66%   | Bethlehem:  x≈45%, y≈69%
+//   Hebron:     x≈41%, y≈75%   | Dead Sea:   x≈57–64%, y≈65–80%
+//   Beersheba:  x≈35%, y≈84%
 
 // ─── Dữ liệu địa danh (toạ độ đọc trực tiếp từ ảnh mapsland-geography-full.jpg) ──
 const BIBLE_LOCATIONS = [
   {
     id: 'sidon', name: 'Si Đôn', region: 'Phê-ni-xi',
-    ...P(46, 7), category: 'newt', color: '#A78BFA', marker: 'circle',
+    ...P(43, 6), category: 'newt', color: '#A78BFA', marker: 'circle',
     tooltip: 'Đức Giêsu đi đến vùng Tia và Si Đôn, chữa lành con gái bà người Canaan',
     summary: 'Thành phố cảng Phê-ni-xi ở phía Bắc. Đức Giêsu đã đến vùng này và chữa lành con gái bà người Canaan.',
     verse: '"Đức Giêsu rút lui về miền Tia và Si Đôn." — Mt 15,21',
@@ -27,7 +35,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'tyre', name: 'Tia', region: 'Phê-ni-xi',
-    ...P(38, 17), category: 'newt', color: '#A78BFA', marker: 'circle',
+    ...P(40, 15), category: 'newt', color: '#A78BFA', marker: 'circle',
     tooltip: 'Thành phố biển Phê-ni-xi — Đức Giêsu đi qua và rao giảng cho dân ngoại',
     summary: 'Thành phố cảng cổ đại Phê-ni-xi. Đức Giêsu đã đi qua vùng này trong hành trình sứ vụ.',
     verse: '"Khốn cho ngươi, Khơrazim! Khốn cho ngươi, Bếtxaiđa! Vì nếu các phép lạ được làm ở Tia..." — Mt 11,21',
@@ -43,7 +51,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'galilee-lake', name: 'Biển Hồ Galilê', region: 'Bắc Israel',
-    ...P(62, 32), category: 'newt', color: '#38BDF8', marker: 'wave',
+    ...P(63, 32), category: 'newt', color: '#38BDF8', marker: 'wave',
     tooltip: 'Nơi Đức Giêsu gọi các môn đệ, đi trên mặt nước và làm nhiều phép lạ',
     summary: 'Đức Giêsu gọi các môn đệ đầu tiên — Simon, Anrê, Giacôbê, Gioan — là những ngư phủ trên hồ này.',
     verse: '"Hãy theo Ta, Ta sẽ làm cho các anh thành những kẻ lưới người." — Mc 1,17',
@@ -51,7 +59,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'sichem', name: 'Sikhem', region: 'Samaria',
-    ...P(47, 54), category: 'patriarch', color: '#C8860A', marker: 'circle',
+    ...P(44, 47), category: 'patriarch', color: '#C8860A', marker: 'circle',
     tooltip: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan',
     summary: 'Nơi đầu tiên Thiên Chúa hiện ra với Abraham tại Canaan và hứa ban đất này cho dòng dõi ông.',
     verse: '"Đất này, Ta sẽ ban cho dòng dõi ngươi." — St 12,7',
@@ -59,7 +67,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'jericho', name: 'Giêrikhô', region: 'Thung lũng Jordan',
-    ...P(56, 68), category: 'conquest', color: '#7B68EE', marker: 'circle',
+    ...P(53, 66), category: 'conquest', color: '#7B68EE', marker: 'circle',
     tooltip: 'Thành đầu tiên sụp đổ khi dân Israel vào Đất Hứa',
     summary: 'Thành phố đầu tiên bị dân Israel chiếm khi vào Canaan. Các bức tường sụp đổ khi dân thổi tù và.',
     verse: '"Hãy đi vòng quanh thành bảy lần... bức tường sẽ sụp đổ." — Gs 6,3–5',
@@ -67,7 +75,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'jerusalem', name: 'Giêrusalem', region: 'Giuđa',
-    ...P(42, 70), category: 'kingdom', color: '#9B59B6', marker: 'star',
+    ...P(42, 66), category: 'kingdom', color: '#9B59B6', marker: 'star',
     tooltip: 'Thành Thánh — kinh đô Đavít, Đền thờ Salômôn, nơi Đức Giêsu chịu chết và sống lại',
     summary: 'Vua Đavít chinh phục Giêrusalem và lập làm thủ đô. Salômôn xây Đền thờ. Đây là nơi Đức Giêsu chịu chết và sống lại.',
     verse: '"Giêrusalem, được xây dựng như thành đô kiên cố." — Tv 122,3',
@@ -75,7 +83,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'bethlehem', name: 'Bêlem', region: 'Giuđa',
-    ...P(46, 73), category: 'newt', color: '#FFD700', marker: 'circle',
+    ...P(45, 69), category: 'newt', color: '#FFD700', marker: 'circle',
     tooltip: 'Quê hương Đavít — nơi Đức Giêsu Kitô giáng sinh',
     summary: 'Quê hương của vua Đavít. Đức Giêsu Kitô, Con Thiên Chúa, được sinh ra tại đây theo lời tiên tri.',
     verse: '"Hôm nay, một Đấng Cứu Độ đã sinh ra trong thành vua Đavít." — Lc 2,11',
@@ -83,7 +91,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'hebron', name: 'Khéprôn', region: 'Giuđa',
-    ...P(43, 78), category: 'patriarch', color: '#C8860A', marker: 'circle',
+    ...P(41, 75), category: 'patriarch', color: '#C8860A', marker: 'circle',
     tooltip: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất',
     summary: 'Nơi Abraham, Isaac và Giacóp sống và được chôn cất. Thiên Chúa lập Giao ước cắt bì với Abraham tại đây.',
     verse: '"Ta sẽ trở lại thăm ngươi vào mùa xuân tới." — St 18,10',
@@ -91,7 +99,7 @@ const BIBLE_LOCATIONS = [
   },
   {
     id: 'beersheba', name: 'Bơe Seva', region: 'Negev',
-    ...P(41, 88), category: 'exodus', color: '#4A90D9', marker: 'circle',
+    ...P(35, 84), category: 'exodus', color: '#4A90D9', marker: 'circle',
     tooltip: 'Cửa ngõ sa mạc — điểm dừng của các Tổ phụ và dân Israel trong hành trình',
     summary: 'Thành phố cực nam của Israel. Điểm dừng của Abraham, Isaac — "Từ Đan đến Bơe Seva" là thành ngữ chỉ toàn bộ đất Israel.',
     verse: '"Từ Đan đến Bơe Seva" — thành ngữ chỉ toàn bộ đất Israel (Tl 20,1)',
@@ -109,8 +117,8 @@ const ROUTES = [
     dashLength: 7,
     gapLength: 5,
     animDur: '18s',
-    // Từ Đông Bắc (Haran) → vào Galilee → Sikhem(47%,54%) → Khéprôn(43%,78%)
-    d: 'M 420,0 Q 370,60 320,130 Q 270,200 240,290 Q 237,370 235,432 Q 226,530 215,624',
+    // Từ Đông Bắc (Haran) → vào Galilee → Sikhem(44%,47%) → Khéprôn(41%,75%)
+    d: 'M 420,0 Q 370,60 318,128 Q 268,198 244,282 Q 232,355 222,376 Q 216,450 210,530 Q 207,565 205,600',
   },
   {
     id: 'exodus',
@@ -120,8 +128,8 @@ const ROUTES = [
     dashLength: 8,
     gapLength: 5,
     animDur: '10s',
-    // Từ Nam (Sinai) → Bơe Seva(41%,88%) → lên Giêrikhô(56%,68%)
-    d: 'M 205,800 Q 205,748 205,704 Q 225,658 255,628 Q 268,600 274,568 Q 278,558 280,544',
+    // Từ Nam (Sinai) → Bơe Seva(35%,84%) → lên Giêrikhô(53%,66%)
+    d: 'M 175,800 Q 175,736 175,672 Q 195,638 222,610 Q 242,588 257,562 Q 262,546 265,528',
   },
 ];
 
@@ -137,12 +145,12 @@ const CATEGORY_META = {
 
 // ─── SVG Map Shapes — căn theo ảnh mapsland-geography-full.jpg ───────────────
 const MAP = {
-  // Dead Sea (Biển Chét): x≈52–67%, y≈78–91% → SVG 500×800
-  deadSea: `M 268,626 L 285,618 L 302,626 L 316,648 L 318,674 L 308,698 L 290,710 L 270,702 L 258,678 L 256,652 Z`,
-  // Sea of Galilee (Biển Hồ Galilê): x≈58–67%, y≈30–37%
-  galileeSea: `M 295,242 L 310,238 L 326,246 L 334,260 L 330,278 L 318,286 L 304,280 L 296,268 Z`,
-  // Jordan River (Sông Giodan): từ Galilê xuống Biển Chét
-  jordan: `M 312,286 Q 310,350 308,420 Q 305,490 300,552 Q 296,585 278,626`,
+  // Dead Sea (Biển Chết): đo từ ảnh gốc — N:56.9%/65%, E:63.6%/71.7%, S:58.2%/79.7%, W:54.2%/73.2%
+  deadSea: `M 284,520 L 311,536 L 318,574 L 312,614 L 291,638 L 278,622 L 271,586 L 274,538 Z`,
+  // Sea of Galilee (Biển Hồ Galilê): đo từ ảnh gốc — top:60%/28%, E:68%/32%, S:61%/36%, W:58%/30%
+  galileeSea: `M 300,222 L 336,241 L 339,262 L 330,281 L 307,286 L 293,269 L 290,242 Z`,
+  // Jordan River: từ đáy Galilê (307,286) xuống đỉnh Biển Chết (284,520)
+  jordan: `M 307,286 Q 305,350 302,420 Q 298,470 290,508 Q 286,516 284,520`,
 };
 
 // ─── Marker shapes ────────────────────────────────────────────────────────────
@@ -230,17 +238,21 @@ const LocationPopover = ({ loc, svgRect, onClose }) => {
   const scaleY = svgRect.height / 800;
   const screenX = svgRect.left + loc.x * scaleX;
   const screenY = svgRect.top  + loc.y * scaleY;
-  let left = screenX + PAD;
+
+  // Nếu left của marker vượt 70% chiều rộng bản đồ → hiện popup bên trái
+  const showOnLeft = screenX > svgRect.left + svgRect.width * 0.7;
+  let left = showOnLeft ? screenX - W - PAD : screenX + PAD;
   let top  = screenY - H_EST / 2;
-  if (left + W > window.innerWidth - 8) left = screenX - W - PAD;
+  if (left < 8) left = 8;
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
   if (top < 8) top = 8;
   if (top + H_EST > window.innerHeight - 8) top = window.innerHeight - H_EST - 8;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         key={loc.id}
-        className="fixed z-50 shadow-2xl rounded-2xl overflow-hidden"
+        className="fixed z-9999 shadow-2xl rounded-2xl overflow-hidden"
         style={{
           left, top, width: W,
           background: 'linear-gradient(135deg, #12100c 0%, #0d0b08 100%)',
@@ -289,7 +301,8 @@ const LocationPopover = ({ loc, svgRect, onClose }) => {
           </div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
@@ -335,17 +348,25 @@ export default function BibleMap({ highlightedId = null }) {
   return (
     <div data-bible-map className="relative w-full" style={{ fontFamily: '"Inter", system-ui, sans-serif' }}>
       {/* ── Title bar ── */}
-      <div className="flex items-center gap-3 mb-4">
-        <Compass size={18} style={{ color: '#D4AF37' }} />
-        <h2 className="font-bold text-lg"
-          style={{ fontFamily: '"EB Garamond", Georgia, serif', color: '#D4AF37' }}>
-          Bản đồ Vùng Đất Kinh Thánh
-        </h2>
+      <div className="flex flex-col gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 rounded-full shrink-0" style={{ background: '#D4AF37' }} />
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#D4AF3788' }}>
+            Địa lý Kinh Thánh · Cận Đông cổ đại
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Compass size={18} style={{ color: '#D4AF37' }} />
+          <h2 className="font-bold text-lg"
+            style={{ fontFamily: '"EB Garamond", Georgia, serif', color: '#D4AF37' }}>
+            Bản đồ Vùng Đất Kinh Thánh
+          </h2>
+        </div>
       </div>
 
       {/* ── Map container ── */}
       <div
-        className="relative rounded-2xl overflow-hidden"
+        className="relative rounded-2xl"
         style={{
           background: '#060e18',
           border: '1px solid #D4AF3722',
@@ -353,7 +374,7 @@ export default function BibleMap({ highlightedId = null }) {
         }}
       >
         <motion.div
-          className="w-full"
+          className="relative w-full"
           animate={{ scale: zoomLoc ? 1.38 : 1 }}
           style={{
             transformOrigin: zoomLoc
@@ -362,11 +383,34 @@ export default function BibleMap({ highlightedId = null }) {
           }}
           transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
         >
+        <picture className="absolute inset-0 block h-full w-full pointer-events-none select-none">
+          <source
+            media="(max-width: 640px)"
+            srcSet={BIBLE_MAP_SRCSET}
+            sizes="calc(100vw - 32px)"
+          />
+          <source
+            media="(max-width: 1024px)"
+            srcSet={BIBLE_MAP_SRCSET}
+            sizes="min(90vw, 640px)"
+          />
+          <img
+            src={BIBLE_MAP_IMAGE}
+            srcSet={BIBLE_MAP_SRCSET}
+            sizes="min(100vw - 48px, 896px)"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-fill"
+            style={{ filter: 'saturate(1.15) brightness(0.82)' }}
+          />
+        </picture>
         <svg
           ref={svgRef}
           viewBox="0 0 500 800"
           preserveAspectRatio="xMidYMid meet"
-          className="w-full h-auto block"
+          className="relative z-10 w-full h-auto block"
         >
           <defs>
             {/* Glow + drop-shadow filter cho marker — mạnh hơn để nổi trên nền ảnh thật */}
@@ -411,14 +455,7 @@ export default function BibleMap({ highlightedId = null }) {
             </filter>
           </defs>
 
-          {/* ── Nền bản đồ địa hình ── */}
-          {/* Layer 1: ảnh địa hình — stretch vừa khít viewBox, filter làm nổi màu */}
-          <image
-            href="/images/maps/mapsland-geography-full.jpg"
-            x="0" y="0" width="500" height="800"
-            preserveAspectRatio="none"
-            style={{ filter: 'saturate(1.15) brightness(0.82)' }}
-          />
+          {/* ── Lớp phủ bản đồ địa hình — ảnh nền được phục vụ bởi <picture> responsive phía sau SVG ── */}
           {/* Layer 2: overlay tối — ảnh cream cần đủ tối để marker nổi */}
           <rect width="500" height="800" fill="rgba(0,0,0,0.42)" />
           {/* Layer 3: vignette viền */}
@@ -470,11 +507,11 @@ export default function BibleMap({ highlightedId = null }) {
           {/* ── Biển Chết & Hồ Galilê — overlay tăng cường ── */}
           <path d={MAP.deadSea}    fill="rgba(10,42,72,0.45)" stroke="#5aaad8" strokeWidth="1.2" />
           <path d={MAP.galileeSea} fill="rgba(12,50,88,0.45)" stroke="#5aaad8" strokeWidth="1.2" />
-          {/* Sóng Biển Chết */}
-          <path d="M 276,658 Q 285,653 294,658 Q 303,663 312,658"
+          {/* Sóng Biển Chết — căn giữa shape mới (x≈291, y≈578) */}
+          <path d="M 279,576 Q 288,571 297,576 Q 306,581 315,576"
             fill="none" stroke="#6aB4E8" strokeWidth="1.2" opacity="0.65" />
-          {/* Sóng Galilê */}
-          <path d="M 303,263 Q 312,258 321,263 Q 330,268 339,263"
+          {/* Sóng Galilê — căn giữa shape mới (x≈315, y≈256) */}
+          <path d="M 302,258 Q 312,253 322,258 Q 332,263 340,258"
             fill="none" stroke="#6aB4E8" strokeWidth="1.2" opacity="0.75" />
 
           {/* ── Mũi tên off-map: Ai Cập/Sinai (Nam), Lưỡng Hà (Bắc-Đông) ── */}
@@ -494,8 +531,8 @@ export default function BibleMap({ highlightedId = null }) {
           {/* ── Route labels ── */}
           {ROUTES.map(route => {
             const labelPos = route.id === 'patriarch'
-              ? { x: 165, y: 300 }
-              : { x: 175, y: 700 };
+              ? { x: 160, y: 290 }
+              : { x: 158, y: 695 };
             return (
               <text key={`lbl-${route.id}`}
                 x={labelPos.x} y={labelPos.y}

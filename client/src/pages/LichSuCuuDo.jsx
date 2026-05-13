@@ -1,13 +1,26 @@
-import { useState, useRef, useEffect } from 'react';
+import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { X, BookOpen, ChevronDown, Users, ChevronRight } from 'lucide-react';
-import BibleMap from '../components/BibleMap';
+import ErrorBoundary from '../components/ErrorBoundary';
 import IsraelMap from '../components/IsraelMap';
-import CharacterCards from '../components/CharacterCards';
-import NTCharacterCards from '../components/NTCharacterCards';
-import ProphecyTable from '../components/ProphecyTable';
-import InteractiveTimeline from '../components/InteractiveTimeline';
+import { DEFAULT_OG_IMAGE } from '../utils/seo';
+
+const BibleMap = lazy(() => import('../components/BibleMap'));
+const CharacterCards = lazy(() => import('../components/CharacterCards'));
+const NTCharacterCards = lazy(() => import('../components/NTCharacterCards'));
+const ProphecyTable = lazy(() => import('../components/ProphecyTable'));
+const InteractiveTimeline = lazy(() => import('../components/InteractiveTimeline'));
+
+const LazySectionFallback = ({ minHeight = 240 }) => (
+  <div
+    className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/45"
+    style={{ minHeight }}
+  >
+    <span className="text-xs font-semibold uppercase tracking-[0.22em]">Dang tai...</span>
+  </div>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DỮ LIỆU
@@ -320,116 +333,6 @@ const DetailModal = ({ milestone, onClose }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MILESTONE CARD & TIMELINE ITEM
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const MilestoneCard = ({ milestone, onOpen, mobile, theme }) => {
-  const { label, period, summary, verse, accent, borderColor, badgeLabel, badgeStyle } = milestone;
-  const era = theme.badgeEra;
-  return (
-    <motion.button
-      onClick={() => onOpen(milestone)}
-      className={`group/card w-full text-left rounded-2xl p-4 md:p-5 shadow-xl ${mobile ? '' : 'max-w-sm'}`}
-      style={{ background: 'rgba(12,10,7,0.85)', backdropFilter: 'blur(14px)', border: `1px solid ${borderColor}30`, boxShadow: `0 4px 24px ${accent}18` }}
-      whileHover={{ scale: 1.02, boxShadow: `0 8px 36px ${accent}35`, borderColor: `${borderColor}70` }}
-      transition={{ duration: 0.18 }}
-    >
-      {/* Badges */}
-      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-          style={era}>
-          {era.label}
-        </span>
-        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-          style={badgeStyle}>
-          {badgeLabel}
-        </span>
-      </div>
-      {/* Title */}
-      <h3 className="font-bold mb-2 leading-tight"
-        style={{ fontFamily: '"EB Garamond", Georgia, serif', fontSize: '1.15rem', color: borderColor }}>
-        {label}
-      </h3>
-      {/* Period */}
-      <p className="text-[11px] mb-2" style={{ color: `${accent}99` }}>{period}</p>
-      {/* Summary */}
-      <p className="text-white/60 text-sm leading-relaxed mb-3">{summary}</p>
-      {/* Verse */}
-      <p className="text-xs italic leading-relaxed border-l-2 pl-2.5"
-        style={{ color: `${borderColor}88`, borderColor: `${borderColor}45` }}>
-        {verse}
-      </p>
-      {/* CTA */}
-      <div className="flex items-center gap-1.5 mt-3 text-xs font-medium opacity-0 group-hover/card:opacity-100 transition-opacity duration-200"
-        style={{ color: borderColor }}>
-        <BookOpen size={12} />
-        <span>Xem bài giáo lý</span>
-      </div>
-    </motion.button>
-  );
-};
-
-const TimelineItem = ({ milestone, index, onOpen, theme }) => {
-  const isRight = index % 2 === 0;
-  return (
-    <motion.div
-      className="relative flex items-start"
-      initial={{ opacity: 0, y: 36 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-70px' }}
-      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-    >
-      {/* Desktop layout */}
-      <div className={`hidden md:flex w-full ${isRight ? 'flex-row' : 'flex-row-reverse'}`}>
-        <div className="w-[calc(50%-28px)] flex justify-end pr-6">
-          {isRight && <MilestoneCard milestone={milestone} onOpen={onOpen} theme={theme} />}
-        </div>
-        <div className="flex flex-col items-center shrink-0 w-14">
-          <motion.button
-            onClick={() => onOpen(milestone)}
-            className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full text-xl border-2 shadow-lg"
-            style={{
-              background: `radial-gradient(circle at 35% 35%, ${milestone.accent}dd, ${milestone.accent}77)`,
-              borderColor: milestone.borderColor,
-              boxShadow: `0 0 18px ${milestone.accent}50`,
-            }}
-            whileHover={{ scale: 1.14 }}
-            whileTap={{ scale: 0.94 }}
-          >
-            {milestone.emoji}
-          </motion.button>
-        </div>
-        <div className="w-[calc(50%-28px)] flex justify-start pl-6">
-          {!isRight && <MilestoneCard milestone={milestone} onOpen={onOpen} theme={theme} />}
-        </div>
-      </div>
-
-      {/* Mobile layout */}
-      <div className="flex md:hidden w-full gap-4">
-        <div className="flex flex-col items-center shrink-0">
-          <motion.button
-            onClick={() => onOpen(milestone)}
-            className="flex items-center justify-center w-11 h-11 rounded-full text-base border-2 shadow-md"
-            style={{
-              background: `radial-gradient(circle at 35% 35%, ${milestone.accent}dd, ${milestone.accent}77)`,
-              borderColor: milestone.borderColor,
-              boxShadow: `0 0 12px ${milestone.accent}42`,
-            }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.94 }}
-          >
-            {milestone.emoji}
-          </motion.button>
-        </div>
-        <div className="flex-1 pb-4">
-          <MilestoneCard milestone={milestone} onOpen={onOpen} mobile theme={theme} />
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // TAB SELECTOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -522,12 +425,22 @@ const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => {
         </p>
       </div>
       <motion.div style={{ y: mapParallaxY, willChange: 'transform' }}>
-        <BibleMap highlightedId={mapHighlight} />
+        <ErrorBoundary
+          boundaryName="BibleMap"
+          title="Khong tai duoc ban do Kinh Thanh"
+          description="Ban do tuong tac dang gap loi. Cac noi dung lich su ben duoi van co the tiep tuc xem."
+        >
+          <Suspense fallback={<LazySectionFallback minHeight={420} />}>
+            <BibleMap highlightedId={mapHighlight} />
+          </Suspense>
+        </ErrorBoundary>
       </motion.div>
     </div>
 
     {/* Character Cards */}
-    <CharacterCards />
+    <Suspense fallback={<LazySectionFallback minHeight={360} />}>
+      <CharacterCards />
+    </Suspense>
 
     {/* Divider */}
     <div className="flex items-center gap-4">
@@ -537,7 +450,9 @@ const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => {
     </div>
 
     {/* InteractiveTimeline */}
-    <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
+    <Suspense fallback={<LazySectionFallback minHeight={480} />}>
+      <InteractiveTimeline milestones={OT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
+    </Suspense>
   </div>
   );
 };
@@ -560,7 +475,9 @@ const NTContent = ({ onOpen, theme, onMapSync }) => (
     </div>
 
     {/* NT Character Cards */}
-    <NTCharacterCards />
+    <Suspense fallback={<LazySectionFallback minHeight={360} />}>
+      <NTCharacterCards />
+    </Suspense>
 
     {/* Divider */}
     <div className="flex items-center gap-4">
@@ -570,7 +487,9 @@ const NTContent = ({ onOpen, theme, onMapSync }) => (
     </div>
 
     {/* InteractiveTimeline */}
-    <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
+    <Suspense fallback={<LazySectionFallback minHeight={480} />}>
+      <InteractiveTimeline milestones={NT_MILESTONES} theme={theme} onOpen={onOpen} onMapSync={onMapSync} />
+    </Suspense>
   </div>
 );
 
@@ -619,6 +538,12 @@ export default function LichSuCuuDo() {
       animate={{ background: theme.pageBg }}
       transition={{ duration: 0.7 }}
     >
+      <Helmet>
+        <title>Lịch Sử Cứu Độ | Mẫu Tâm</title>
+        <meta property="og:title" content="Lịch Sử Cứu Độ | Mẫu Tâm" />
+        <meta property="og:description" content="Khám phá dòng lịch sử cứu độ qua bản đồ Kinh Thánh, timeline và các nhân vật tiêu biểu." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       {/* Watermark cross — color shifts with theme */}
       <motion.div
         className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center"
@@ -787,7 +712,9 @@ export default function LichSuCuuDo() {
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(212,175,55,0.2))' }} />
         </div>
 
-        <ProphecyTable />
+        <Suspense fallback={<LazySectionFallback minHeight={320} />}>
+          <ProphecyTable />
+        </Suspense>
       </motion.div>
 
       {/* ── Modal ── */}

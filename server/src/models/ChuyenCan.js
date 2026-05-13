@@ -16,6 +16,7 @@ const chuyenCanSchema = new mongoose.Schema({
 
 // Một bản ghi duy nhất mỗi em mỗi lớp mỗi học kỳ
 chuyenCanSchema.index({ student: 1, lop: 1, namHoc: 1, hocKy: 1 }, { unique: true });
+chuyenCanSchema.index({ student: 1, hocKy: 1, namHoc: 1 }, { unique: true });
 chuyenCanSchema.index({ lop: 1, namHoc: 1, hocKy: 1 });
 
 module.exports = mongoose.model('ChuyenCan', chuyenCanSchema);

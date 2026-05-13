@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Scroll, Music2, BookOpen, Cross, FlameIcon,
   Quote, ChevronRight, ChevronLeft, CalendarDays, Sun,
   Copy, Check, Share2,
 } from 'lucide-react';
+import { DEFAULT_OG_IMAGE, pageUrl } from '../utils/seo';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -342,6 +344,13 @@ const LoiChua = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Lời Chúa Hôm Nay | Mẫu Tâm</title>
+        <link rel="canonical" href={pageUrl('/loi-chua')} />
+        <meta property="og:title" content="Lời Chúa Hôm Nay | Mẫu Tâm" />
+        <meta property="og:description" content="Đọc Lời Chúa hằng ngày, bài đọc phụng vụ và Tin Mừng hôm nay." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       <ReadingProgress accentBar={accent.bar} />
 
       <main className="flex-1 bg-stone-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">

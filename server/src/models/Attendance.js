@@ -18,5 +18,6 @@ const attendanceSchema = new mongoose.Schema(
 attendanceSchema.index({ student: 1, lop: 1, date: 1 }, { unique: true });
 // Truy vấn nhanh toàn bộ lớp theo ngày
 attendanceSchema.index({ lop: 1, namHoc: 1, date: 1 });
+attendanceSchema.index({ lop: 1, date: 1 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

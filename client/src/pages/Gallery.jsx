@@ -75,12 +75,40 @@ const CrossPlaceholder = () => (
   </div>
 );
 
+const useInView = ({ rootMargin = '360px 0px', threshold = 0.01 } = {}) => {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || inView) return undefined;
+
+    if (!('IntersectionObserver' in window)) {
+      setInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    }, { rootMargin, threshold });
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [inView, rootMargin, threshold]);
+
+  return [ref, inView];
+};
+
 // ── ImageCard ─────────────────────────────────────────────────────────────────
 const ImageCard = ({ photo, index, isAdmin, onDelete, onOpen }) => {
   const { i18n } = useTranslation();
   const lang     = i18n.language?.startsWith('en') ? 'en' : 'vi';
   const [deleting,  setDeleting]  = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [cardRef, shouldLoadImage] = useInView();
 
   const handleDownload = (e) => {
     e.stopPropagation();
@@ -98,6 +126,7 @@ const ImageCard = ({ photo, index, isAdmin, onDelete, onOpen }) => {
 
   return (
     <motion.div
+      ref={cardRef}
       layout="position"
       initial={{ opacity: 0, scale: 0.93 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -110,13 +139,16 @@ const ImageCard = ({ photo, index, isAdmin, onDelete, onOpen }) => {
       {/* Placeholder cross khi chưa load */}
       {!imgLoaded && <CrossPlaceholder />}
 
-      <img
-        src={photo.url}
-        alt={photo.title}
-        loading="lazy"
-        onLoad={() => setImgLoaded(true)}
-        className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-      />
+      {shouldLoadImage && (
+        <img
+          src={photo.url}
+          alt={photo.title}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setImgLoaded(true)}
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
 
       {/* Overlay gradient */}
       <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -252,6 +284,8 @@ const Lightbox = ({ photos, index, onClose, onGoto }) => {
           <motion.img
             key={photo.id}
             src={photo.url} alt={photo.title}
+            loading="eager"
+            decoding="async"
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
@@ -279,7 +313,7 @@ const Lightbox = ({ photos, index, onClose, onGoto }) => {
             key={p.id} onClick={() => onGoto(i)}
             className={`shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === index ? 'border-[#D4AF37] opacity-100' : 'border-transparent opacity-40 hover:opacity-70'}`}
           >
-            <img src={p.url} alt={p.title} className="w-full h-full object-cover" />
+            <img src={p.url} alt={p.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           </button>
         ))}
       </div>

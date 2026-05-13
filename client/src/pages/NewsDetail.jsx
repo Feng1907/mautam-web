@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { DEFAULT_OG_IMAGE, toAbsoluteUrl } from '../utils/seo';
 
 const NewsDetail = () => {
   const { id } = useParams();
@@ -19,8 +21,16 @@ const NewsDetail = () => {
   if (loading) return <LoadingSpinner />;
   if (error)   return <p className="text-center text-red-600 py-16">{error}</p>;
 
+  const ogImage = toAbsoluteUrl(post.anhNen || post['anhNền'] || post.anhDaiDien) || DEFAULT_OG_IMAGE;
+
   return (
     <main className="flex-1 page-container max-w-3xl">
+      <Helmet>
+        <title>{post.tieuDe}</title>
+        <meta property="og:title" content={post.tieuDe} />
+        <meta property="og:description" content={post.tomTat || ''} />
+        <meta property="og:image" content={ogImage} />
+      </Helmet>
       <Link to="/tin-tuc" className="text-sm text-red-700 hover:underline mb-4 inline-block">
         ← Quay lại tin tức
       </Link>
