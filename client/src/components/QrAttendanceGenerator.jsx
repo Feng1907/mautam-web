@@ -115,7 +115,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
     } finally {
       setLoading(false);
     }
-  }, [lopId, date, ttl]);
+  }, [lopId, date, ttl, requireLoc, gpsStatus, adminGps, maxDistance]);
 
   const handlePrint = () => {
     const w = window.open('', '_blank');
@@ -142,6 +142,18 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
   };
 
   const reset = () => setSession(null);
+
+  // Auto-refresh QR khi hết hạn — tự tạo token mới không cần nhấn nút
+  const autoRefreshRef = useRef(false);
+  useEffect(() => {
+    if (!expired || !session || autoRefreshRef.current) return;
+    autoRefreshRef.current = true;
+    // Delay 800ms để animation "HẾT HẠN" hiển thị thoáng qua
+    const t = setTimeout(() => {
+      generate().finally(() => { autoRefreshRef.current = false; });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [expired, session, generate]);
 
   return (
     <>
@@ -504,17 +516,19 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                       <button
                         onClick={reset}
                         className="flex-1 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition"
-                        style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.25)', color: '#D4AF37' }}
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}
                       >
-                        <RefreshCw size={13} />
-                        Tạo lại
+                        <X size={13} />
+                        Đóng
                       </button>
                     </div>
 
+                    {/* Auto-refresh indicator */}
                     {expired && (
-                      <p className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 w-full">
-                        Mã QR đã hết hạn. Nhấn "Tạo lại" để tạo mã mới.
-                      </p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-amber-400">
+                        <Loader2 size={11} className="animate-spin" />
+                        Đang tự động tạo mã mới...
+                      </div>
                     )}
                   </div>
                 )}
