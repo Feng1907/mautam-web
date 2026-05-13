@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import StudentList    from '../components/StudentList';
 import AttendanceTable from '../components/AttendanceTable';
 import GradeForm      from '../components/GradeForm';
+import QrAttendanceGenerator from '../components/QrAttendanceGenerator';
 
 const NGANH_CFG = {
   ChienNon: { label: 'Chiên Non', cls: 'bg-pink-100   text-pink-700   border-pink-200'   },
@@ -196,7 +197,17 @@ const ClassDetail = () => {
             />
           )}
           {tab === 'diemdanh' && (
-            <AttendanceTable lopId={id} students={students} canEdit={canEdit} />
+            <div className="space-y-3">
+              {canEdit && (
+                <div className="flex justify-end">
+                  <QrAttendanceGenerator
+                    classes={lop ? [lop] : []}
+                    defaultDate={new Date().toISOString().slice(0, 10)}
+                  />
+                </div>
+              )}
+              <AttendanceTable lopId={id} students={students} canEdit={canEdit} />
+            </div>
           )}
           {tab === 'bangdiem' && (
             <GradeForm lopId={id} students={students} canEdit={canEdit} />
