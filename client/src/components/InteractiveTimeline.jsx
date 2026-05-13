@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, BookOpen, ChevronRight, X, Users, Volume2, VolumeX } from 'lucide-react';
 
 // ─── Mapping milestone → BibleMap location ────────────────────────────────────
@@ -300,7 +300,7 @@ const CardBody = ({ milestone, onOpen, locOpen, setLocOpen, slide, onMapSync }) 
 };
 
 // ─── Single Timeline Row ──────────────────────────────────────────────────────
-const TimelineCard = ({ milestone, index, onOpen, onMapSync }) => {
+const TimelineCard = ({ milestone, index, onOpen, onMapSync, isActive }) => {
   const [locOpen, setLocOpen] = useState(false);
   const isRight = index % 2 === 0;
   const { id, accent, borderColor, emoji } = milestone;
@@ -318,11 +318,14 @@ const TimelineCard = ({ milestone, index, onOpen, onMapSync }) => {
       {/* Center node */}
       <div className="hidden md:flex flex-col items-center">
         <motion.button
-          className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full text-xl border-2"
+          className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full text-xl border-2 overflow-visible"
           style={{
             background: `radial-gradient(circle at 35% 35%, ${accent}ee, ${accent}66)`,
             borderColor: borderColor,
-            boxShadow: `0 0 0 4px ${accent}18, 0 0 20px ${accent}50`,
+            boxShadow: isActive
+              ? `0 0 0 4px ${accent}45, 0 0 0 10px ${accent}22, 0 0 36px ${accent}85`
+              : `0 0 0 4px ${accent}18, 0 0 20px ${accent}50`,
+            transition: 'box-shadow 0.4s ease',
           }}
           onClick={() => onOpen(milestone)}
           whileHover={{ scale: 1.14 }}
@@ -333,6 +336,23 @@ const TimelineCard = ({ milestone, index, onOpen, onMapSync }) => {
           transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
         >
           {emoji}
+          {/* Active pulse rings */}
+          {isActive && (
+            <>
+              <motion.span
+                className="absolute inset-0 rounded-full border-2 pointer-events-none"
+                style={{ borderColor }}
+                animate={{ scale: [1, 2.0], opacity: [0.55, 0] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
+              />
+              <motion.span
+                className="absolute inset-0 rounded-full border pointer-events-none"
+                style={{ borderColor }}
+                animate={{ scale: [1, 2.6], opacity: [0.3, 0] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut', delay: 0.45 }}
+              />
+            </>
+          )}
         </motion.button>
       </div>
       {/* Right */}
@@ -355,23 +375,44 @@ const TimelineCard = ({ milestone, index, onOpen, onMapSync }) => {
 };
 
 // ─── Progress Spine ───────────────────────────────────────────────────────────
-const ProgressSpine = ({ milestones, activeId, spineLine }) => {
+const ProgressSpine = ({ milestones, activeId }) => {
   const idx = milestones.findIndex(m => m.id === activeId);
   const pct = milestones.length <= 1 ? 0 : (idx / (milestones.length - 1)) * 100;
   const activeM = milestones[idx] ?? milestones[0];
+  const color = activeM?.borderColor ?? '#D4AF37';
+  const accentColor = activeM?.accent ?? '#C8860A';
 
   return (
     <>
       {/* Dim background line */}
       <div className="hidden md:block absolute left-1/2 -translate-x-1/2 inset-y-0 w-px pointer-events-none"
         style={{ background: 'rgba(255,255,255,0.06)' }} />
-      {/* Bright progress fill */}
-      <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 w-0.5 pointer-events-none transition-all duration-700 ease-out"
+      {/* Bright progress fill — motion-animated */}
+      <motion.div
+        className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 w-0.5 pointer-events-none"
+        animate={{ height: `${pct}%` }}
+        transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          height: `${pct}%`,
-          background: `linear-gradient(180deg, ${activeM?.borderColor ?? '#D4AF37'} 0%, ${activeM?.accent ?? '#C8860A'}88 100%)`,
-          boxShadow: `0 0 8px ${activeM?.accent ?? '#C8860A'}60`,
-        }} />
+          background: `linear-gradient(180deg, ${color} 0%, ${accentColor}88 100%)`,
+          boxShadow: `0 0 12px ${accentColor}80`,
+        }}
+      />
+      {/* Glowing orb at the progress tip */}
+      <div
+        className="hidden md:block absolute left-1/2 -translate-x-1/2 pointer-events-none z-10"
+        style={{
+          top: `${pct}%`,
+          marginTop: '-6px',
+          transition: 'top 0.75s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        <motion.div
+          className="w-3 h-3 rounded-full"
+          style={{ background: color, boxShadow: `0 0 14px ${color}, 0 0 28px ${accentColor}90` }}
+          animate={{ scale: [1, 1.45, 1], opacity: [1, 0.6, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
     </>
   );
 };
@@ -518,7 +559,7 @@ export default function InteractiveTimeline({ milestones, theme, onOpen, onMapSy
           {/* Cards */}
           <div className="flex flex-col gap-10 md:gap-14">
             {milestones.map((m, i) => (
-              <TimelineCard key={m.id} milestone={m} index={i} onOpen={onOpen} onMapSync={handleMapSync} />
+              <TimelineCard key={m.id} milestone={m} index={i} onOpen={onOpen} onMapSync={handleMapSync} isActive={activeId === m.id} />
             ))}
           </div>
         </div>
