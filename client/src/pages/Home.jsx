@@ -153,8 +153,9 @@ const Home = () => {
             </Link>
             {/* Các nút phụ — Glass mờ hơn */}
             {[
-              { to: '/tin-tuc',  label: t('home.news')     },
-              { to: '/thu-vien', label: t('nav.gallery')   },
+              { to: '/tin-tuc',        label: t('home.news')     },
+              { to: '/thu-vien',       label: t('nav.gallery')   },
+              { to: '/lich-su-cuu-do', label: 'Lịch Sử'          },
               ...(user ? [{ to: '/lop-hoc', label: t('home.classes') }] : []),
             ].map(link => (
               <Link key={link.to} to={link.to}
