@@ -62,7 +62,7 @@ const glassStyle = {
 };
 
 // ── Giờ lễ cố định (giờ:phút, 24h) ─────────────────────────────────────────
-const MASS_TIMES = [5, 17, 18.5]; // 05:00, 17:00, 18:30
+const MASS_TIMES = [5, 18]; // 05:00, 18:00
 function getNextMass() {
   const now = new Date();
   const nowH = now.getHours() + now.getMinutes() / 60;
