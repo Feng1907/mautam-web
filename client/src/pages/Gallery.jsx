@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
+import { DEFAULT_OG_IMAGE, toAbsoluteUrl, pageUrl } from '../utils/seo';
 import {
   Upload, Download, Trash2, X,
   ChevronLeft, ChevronRight, ZoomIn, Loader2,
@@ -578,6 +580,16 @@ const Gallery = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
+    <>
+    <Helmet>
+      <title>Thư Viện Ảnh | Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</title>
+      <meta name="description" content="Thư viện ảnh sinh hoạt, lễ hội và các sự kiện của Xứ Đoàn Mẫu Tâm." />
+      <meta property="og:title" content="Thư Viện Ảnh | Mẫu Tâm" />
+      <meta property="og:description" content="Thư viện ảnh sinh hoạt, lễ hội và các sự kiện của Xứ Đoàn Mẫu Tâm." />
+      <meta property="og:image" content={toAbsoluteUrl(DEFAULT_OG_IMAGE)} />
+      <meta property="og:url" content={pageUrl('/thu-vien')} />
+      <meta property="og:type" content="website" />
+    </Helmet>
     <main
       className="flex-1 min-h-screen bg-page"
       style={{ fontFamily: SANS }}
@@ -750,6 +762,7 @@ const Gallery = () => {
         )}
       </AnimatePresence>
     </main>
+    </>
   );
 };
 
