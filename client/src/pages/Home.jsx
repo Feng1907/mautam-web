@@ -3,8 +3,9 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
+import { useMemo } from 'react';
 import {
-  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight,
+  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight, Bell,
 } from 'lucide-react';
 import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
@@ -60,10 +61,23 @@ const glassStyle = {
   borderColor: '#e5d5b5',
 };
 
+// ── Giờ lễ cố định (giờ:phút, 24h) ─────────────────────────────────────────
+const MASS_TIMES = [5, 17, 18.5]; // 05:00, 17:00, 18:30
+function getNextMass() {
+  const now = new Date();
+  const nowH = now.getHours() + now.getMinutes() / 60;
+  const next = MASS_TIMES.find(h => h > nowH) ?? MASS_TIMES[0];
+  const hh   = String(Math.floor(next)).padStart(2, '0');
+  const mm   = next % 1 === 0 ? '00' : String(Math.round((next % 1) * 60)).padStart(2, '0');
+  const isPast = !MASS_TIMES.find(h => h > nowH);
+  return { time: `${hh}:${mm}`, isNextDay: isPast };
+}
+
 // ── Home page ─────────────────────────────────────────────────────────────────
 const Home = () => {
   const { user } = useAuth();
   const { t }    = useTranslation();
+  const nextMass = useMemo(() => getNextMass(), []);
 
 
   return (
@@ -468,6 +482,18 @@ const Home = () => {
           BENTO GRID — 4 Quick Links
       ══════════════════════════════════════════════════════ */}
       <section className="relative z-10 page-container py-10">
+        {/* CSS animations cho icon */}
+        <style>{`
+          @keyframes bento-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.12);opacity:0.85} }
+          @keyframes bento-ring  { 0%{transform:rotate(-8deg)} 25%{transform:rotate(8deg)} 50%{transform:rotate(-5deg)} 75%{transform:rotate(5deg)} 100%{transform:rotate(0)} }
+          @keyframes bento-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+          @keyframes bento-spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+          .bento-icon-pulse:hover .bento-ico { animation: bento-pulse 1.2s ease-in-out infinite; }
+          .bento-icon-ring:hover  .bento-ico { animation: bento-ring  0.6s ease-in-out; }
+          .bento-icon-float:hover .bento-ico { animation: bento-float 1.5s ease-in-out infinite; }
+          .bento-icon-spin:hover  .bento-ico { animation: bento-spin  1.8s linear infinite; }
+        `}</style>
+
         <div className="flex items-center gap-3 mb-6">
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
           <h2 className="text-xl font-bold text-[#3d1515] shrink-0" style={{ fontFamily: SERIF }}>
@@ -476,82 +502,86 @@ const Home = () => {
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
         </div>
 
-        {/* Bento layout:
-            Desktop: [GioLe lớn 2×1] [TinTuc] [ThuVien]
-                     [         ...  ] [LopHoc/Login       ]
-            Mobile: column                                 */}
+        {/*
+          Bento 4 cột:
+          [  Giờ Lễ — col 1-2, row 1-2  ] [ Tin Tức — col 3 ] [ Thư Viện — col 4 ]
+          [                              ] [   Lớp Học / Login — col 3-4           ]
+        */}
         <motion.div
           variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          style={{ gridAutoRows: 'minmax(160px, auto)' }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          style={{ gridAutoRows: 'minmax(150px, auto)' }}
         >
-          {/* Giờ Lễ — lớn, span 2 hàng trên lg */}
-          <motion.div variants={fadeUp} className="lg:row-span-2">
-            <Link
-              to="/gio-le"
-              className="flex flex-col h-full p-6 rounded-3xl border transition-all duration-300 hover:-translate-y-1 group"
-              style={{ ...glassStyle, boxShadow: '0 2px 12px rgba(139,0,0,0.05)', minHeight: '200px' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(139,0,0,0.12)'; }}
+          {/* ── Giờ Lễ — col 1-2, row 1-2 (lớn nhất) ── */}
+          <motion.div variants={fadeUp} className="sm:col-span-2 lg:col-span-2 lg:row-span-2 bento-icon-pulse">
+            <Link to="/gio-le"
+              className="relative flex flex-col h-full p-6 rounded-3xl border overflow-hidden group transition-all duration-300 hover:-translate-y-1"
+              style={{ ...glassStyle, minHeight: 220, boxShadow: '0 2px 12px rgba(139,0,0,0.05)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(139,0,0,0.14)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(139,0,0,0.05)'; }}
             >
-              {/* Decorative watermark chìm */}
-              <span className="absolute top-4 right-4 text-[80px] select-none pointer-events-none"
-                    style={{ opacity: 0.04, color: '#8B0000', lineHeight: 1 }}
-                    aria-hidden="true">🕯️</span>
+              {/* Watermark */}
+              <span className="absolute -right-4 -bottom-4 text-[120px] select-none pointer-events-none"
+                style={{ opacity: 0.04, color: '#8B0000', lineHeight: 1 }} aria-hidden>🕯️</span>
 
-              <div className="w-13 h-13 rounded-2xl flex items-center justify-center mb-4"
-                   style={{ background: 'rgba(139,0,0,0.1)', border: '1px solid rgba(139,0,0,0.15)' }}>
-                <Clock className="w-6 h-6" style={{ color: '#8B0000' }} />
+              {/* Icon */}
+              <div className="w-13 h-13 rounded-2xl flex items-center justify-center mb-4 shrink-0"
+                style={{ background: 'rgba(139,0,0,0.1)', border: '1px solid rgba(139,0,0,0.18)' }}>
+                <Clock className="bento-ico w-6 h-6" style={{ color: '#8B0000' }} />
               </div>
 
-              <h3
-                className="font-bold text-[#3d1515] mb-2 group-hover:text-[#8B0000] transition-colors"
-                style={{ fontFamily: SERIF, fontSize: '1.2rem' }}
-              >
+              <h3 className="font-bold text-[#3d1515] mb-1 group-hover:text-[#8B0000] transition-colors"
+                style={{ fontFamily: SERIF, fontSize: '1.25rem' }}>
                 {t('home.liturgyLink')}
               </h3>
-              <p className="text-sm text-gray-500 leading-relaxed flex-1">{t('home.liturgyDesc')}</p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1">{t('home.liturgyDesc')}</p>
 
-              {/* Mini liturgy preview */}
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#f0e0c0' }}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Hôm nay</p>
-                <div className="flex gap-2 flex-wrap">
-                  {(['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']).map((d, i) => (
-                    <span
-                      key={d}
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        background: i === new Date().getDay() ? '#8B0000' : 'rgba(139,0,0,0.06)',
-                        color: i === new Date().getDay() ? 'white' : '#8B0000',
-                      }}
-                    >
-                      {d}
-                    </span>
-                  ))}
+              {/* ── Widget Lễ tiếp theo ── */}
+              <div className="rounded-2xl px-4 py-3 flex items-center gap-3 mb-4"
+                style={{ background: 'linear-gradient(135deg,rgba(139,0,0,0.08),rgba(139,0,0,0.04))', border: '1px solid rgba(139,0,0,0.12)' }}>
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0"
+                  style={{ background: '#8B0000' }}>
+                  <Bell className="w-4 h-4 text-white" style={{ animation: 'bento-ring 2.5s ease-in-out infinite' }} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400">Lễ tiếp theo</p>
+                  <p className="font-black text-[#8B0000] text-xl leading-none" style={{ fontFamily: SERIF }}>
+                    {nextMass.time}
+                    {nextMass.isNextDay && <span className="text-xs font-normal text-gray-400 ml-1">(ngày mai)</span>}
+                  </p>
                 </div>
               </div>
 
+              {/* Thứ trong tuần */}
+              <div className="flex gap-1.5 flex-wrap">
+                {['CN','T2','T3','T4','T5','T6','T7'].map((d, i) => (
+                  <span key={d} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: i === new Date().getDay() ? '#8B0000' : 'rgba(139,0,0,0.06)', color: i === new Date().getDay() ? 'white' : '#8B0000' }}>
+                    {d}
+                  </span>
+                ))}
+              </div>
+
               <span className="inline-flex items-center gap-1 mt-4 text-xs font-semibold text-[#8B0000] group-hover:gap-2 transition-all">
-                Xem giờ lễ <ChevronRight className="w-3.5 h-3.5" />
+                Xem đầy đủ <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
           </motion.div>
 
-          {/* Tin Tức */}
-          <motion.div variants={fadeUp}>
-            <Link
-              to="/tin-tuc"
-              className="flex flex-col h-full p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1 group"
+          {/* ── Tin Tức — col 3 ── */}
+          <motion.div variants={fadeUp} className="bento-icon-float">
+            <Link to="/tin-tuc"
+              className="flex flex-col h-full p-5 rounded-3xl border overflow-hidden group transition-all duration-300 hover:-translate-y-1"
               style={{ ...glassStyle, boxShadow: '0 2px 12px rgba(37,99,235,0.04)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(37,99,235,0.1)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(37,99,235,0.12)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(37,99,235,0.04)'; }}
             >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                   style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)' }}>
-                <Newspaper className="w-5 h-5" style={{ color: '#2563eb' }} />
+                style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)' }}>
+                <Newspaper className="bento-ico w-5 h-5" style={{ color: '#2563eb' }} />
               </div>
               <h3 className="font-bold text-[#3d1515] mb-1.5 group-hover:text-blue-700 transition-colors"
-                  style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
+                style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
                 {t('home.newsLink')}
               </h3>
               <p className="text-sm text-gray-500 flex-1">{t('home.newsDesc')}</p>
@@ -561,21 +591,20 @@ const Home = () => {
             </Link>
           </motion.div>
 
-          {/* Thư Viện */}
-          <motion.div variants={fadeUp}>
-            <Link
-              to="/thu-vien"
-              className="flex flex-col h-full p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1 group"
+          {/* ── Thư Viện — col 4 ── */}
+          <motion.div variants={fadeUp} className="bento-icon-spin">
+            <Link to="/thu-vien"
+              className="flex flex-col h-full p-5 rounded-3xl border overflow-hidden group transition-all duration-300 hover:-translate-y-1"
               style={{ ...glassStyle, boxShadow: '0 2px 12px rgba(212,175,55,0.05)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#D4AF37'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(212,175,55,0.12)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#D4AF37'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(212,175,55,0.14)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(212,175,55,0.05)'; }}
             >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                   style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                <Images className="w-5 h-5" style={{ color: '#D4AF37' }} />
+                style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <Images className="bento-ico w-5 h-5" style={{ color: '#D4AF37' }} />
               </div>
               <h3 className="font-bold text-[#3d1515] mb-1.5 group-hover:text-amber-700 transition-colors"
-                  style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
+                style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
                 {t('home.galleryLink')}
               </h3>
               <p className="text-sm text-gray-500 flex-1">{t('home.galleryDesc')}</p>
@@ -585,36 +614,35 @@ const Home = () => {
             </Link>
           </motion.div>
 
-          {/* Lớp học / Login */}
-          <motion.div variants={fadeUp}>
-            <Link
-              to={user ? '/lop-hoc' : '/login'}
-              className="flex flex-col h-full p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1 group"
+          {/* ── Lớp học / Login — col 3-4, row 2 ── */}
+          <motion.div variants={fadeUp} className="sm:col-span-2 bento-icon-ring">
+            <Link to={user ? '/lop-hoc' : '/login'}
+              className="flex flex-col h-full p-5 rounded-3xl border overflow-hidden group transition-all duration-300 hover:-translate-y-1"
               style={{
                 ...glassStyle,
                 borderStyle: user ? 'solid' : 'dashed',
                 borderColor: user ? '#e5d5b5' : 'rgba(229,213,181,0.5)',
                 boxShadow: '0 2px 12px rgba(22,163,74,0.04)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = user ? '#16a34a' : '#6b7280'; e.currentTarget.style.boxShadow = `0 8px 28px ${user ? 'rgba(22,163,74,0.1)' : 'rgba(107,114,128,0.1)'}`; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = user ? '#16a34a' : '#6b7280'; e.currentTarget.style.boxShadow = `0 10px 32px ${user ? 'rgba(22,163,74,0.12)' : 'rgba(107,114,128,0.1)'}`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = user ? '#e5d5b5' : 'rgba(229,213,181,0.5)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(22,163,74,0.04)'; }}
             >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                   style={{ background: `${user ? 'rgba(22,163,74' : 'rgba(107,114,128'},0.08)`, border: `1px solid ${user ? 'rgba(22,163,74' : 'rgba(107,114,128'},0.15)` }}>
+                style={{ background: `${user ? 'rgba(22,163,74' : 'rgba(107,114,128'},0.08)`, border: `1px solid ${user ? 'rgba(22,163,74' : 'rgba(107,114,128'},0.15)` }}>
                 {user
-                  ? <BookOpen className="w-5 h-5" style={{ color: '#16a34a' }} />
-                  : <LogIn    className="w-5 h-5" style={{ color: '#6b7280' }} />
+                  ? <BookOpen className="bento-ico w-5 h-5" style={{ color: '#16a34a' }} />
+                  : <LogIn    className="bento-ico w-5 h-5" style={{ color: '#6b7280' }} />
                 }
               </div>
               <h3 className="font-bold text-[#3d1515] mb-1.5 group-hover:text-green-700 transition-colors"
-                  style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
+                style={{ fontFamily: SERIF, fontSize: '1.05rem' }}>
                 {user ? t('home.classesLink') : t('home.loginCta')}
               </h3>
               <p className="text-sm text-gray-500 flex-1">
                 {user ? t('home.classesDesc') : t('home.loginDesc')}
               </p>
               <span className="inline-flex items-center gap-1 mt-3 text-xs font-semibold group-hover:gap-2 transition-all"
-                    style={{ color: user ? '#16a34a' : '#6b7280' }}>
+                style={{ color: user ? '#16a34a' : '#6b7280' }}>
                 {user ? 'Vào lớp học' : 'Đăng nhập'} <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
