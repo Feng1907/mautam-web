@@ -27,6 +27,7 @@ const ParentDashboard = lazy(() => import('./pages/ParentDashboard'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const LichSuCuuDo = lazy(() => import('./pages/LichSuCuuDo'));
 const NhanVat = lazy(() => import('./pages/NhanVat'));
+const QrScanPage = lazy(() => import('./pages/QrScanPage'));
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -81,6 +82,7 @@ const App = () => (
                   })}
                 />
                 <Route path="/nhan-vat" element={withErrorBoundary(<NhanVat />, 'NhanVat')} />
+                <Route path="/diem-danh-qr" element={withErrorBoundary(<QrScanPage />, 'QrScanPage')} />
 
                 <Route
                   path="/ho-so"

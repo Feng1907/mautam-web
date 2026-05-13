@@ -33,7 +33,7 @@ class ErrorBoundary extends Component {
     const description = this.props.description || 'Phan noi dung nay tam thoi khong hien thi duoc. Vui long thu lai sau it phut.';
 
     return (
-      <section className="min-h-[260px] flex items-center justify-center px-4 py-10">
+      <section className="min-h-65 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-lg rounded-lg border border-red-900/15 bg-white/90 px-6 py-7 text-center shadow-sm dark:border-red-200/10 dark:bg-neutral-950/80">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-800 dark:bg-red-950/45 dark:text-red-200">
             !
