@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode } from 'html5-qrcode';
-import { CheckCircle2, XCircle, Loader2, QrCode, ChevronRight, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, QrCode, ChevronRight, AlertTriangle, MapPin } from 'lucide-react';
 import api from '../services/api';
 
 const SCANNER_ID = 'qr-scanner-region';
@@ -46,11 +46,13 @@ export default function QrScanPage() {
 
   const [step, setStep] = useState(urlToken ? STEP.VERIFY : STEP.SCAN);
   const [token, setToken] = useState(urlToken || '');
-  const [sessionInfo, setSessionInfo] = useState(null); // { lopId, lopName, date, students, expiresAt }
+  const [sessionInfo, setSessionInfo] = useState(null); // { lopId, lopName, date, students, expiresAt, requiresLocation }
   const [selectedId, setSelectedId] = useState('');
   const [result, setResult] = useState(null); // { message, tenThanh, hoTen }
   const [errorMsg, setErrorMsg] = useState('');
   const [search, setSearch] = useState('');
+  const [studentGps, setStudentGps] = useState(null);  // { lat, lng }
+  const [gpsStatus, setGpsStatus] = useState('idle');  // idle | loading | ok | denied | error
 
   const scannerRef = useRef(null);
   const scannerStarted = useRef(false);
@@ -128,21 +130,68 @@ export default function QrScanPage() {
     }
   }, []);
 
+  // ── Lấy GPS của đoàn sinh ─────────────────────────────────────────────────
+  const fetchStudentGps = useCallback(() => new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('no_support'));
+    setGpsStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setStudentGps(coords);
+        setGpsStatus('ok');
+        resolve(coords);
+      },
+      (err) => {
+        const status = err.code === 1 ? 'denied' : 'error';
+        setGpsStatus(status);
+        reject(err);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  }), []);
+
   // ── Gửi điểm danh ────────────────────────────────────────────────────────
   const submitScan = useCallback(async () => {
     if (!selectedId) return;
     setStep(STEP.LOADING);
     try {
-      const { data } = await api.post('/attendance/qr-scan', { token, studentId: selectedId });
+      const body = { token, studentId: selectedId };
+
+      // Nếu session yêu cầu vị trí → lấy GPS trước
+      if (sessionInfo?.requiresLocation) {
+        try {
+          const coords = studentGps || await fetchStudentGps();
+          body.lat = coords.lat;
+          body.lng = coords.lng;
+        } catch {
+          setErrorMsg(
+            gpsStatus === 'denied'
+              ? 'Bạn đã từ chối quyền GPS. Vui lòng cho phép vị trí trong cài đặt trình duyệt.'
+              : 'Không lấy được vị trí GPS. Vui lòng thử lại.'
+          );
+          setStep(STEP.ERROR);
+          return;
+        }
+      }
+
+      const { data } = await api.post('/attendance/qr-scan', body);
       setResult(data);
       setStep(STEP.SUCCESS);
     } catch (e) {
       const d = e.response?.data;
-      setErrorMsg(d?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
-      setStep(d?.alreadyChecked ? STEP.SUCCESS : STEP.ERROR);
-      if (d?.alreadyChecked) setResult({ message: d.message, alreadyChecked: true });
+      if (d?.alreadyChecked) {
+        setResult({ message: d.message, alreadyChecked: true });
+        setStep(STEP.SUCCESS);
+        return;
+      }
+      if (d?.locationFailed) {
+        setErrorMsg(`Vị trí quá xa điểm điểm danh (${d.distance}m, tối đa ${d.maxDistance}m).`);
+      } else {
+        setErrorMsg(d?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      }
+      setStep(STEP.ERROR);
     }
-  }, [token, selectedId]);
+  }, [token, selectedId, sessionInfo, studentGps, gpsStatus, fetchStudentGps]);
 
   // ── Filter search ─────────────────────────────────────────────────────────
   const filtered = (sessionInfo?.students || []).filter(s =>
@@ -226,6 +275,15 @@ export default function QrScanPage() {
                 <p className="text-xs text-white/50 mt-0.5">
                   Ngày {new Date(sessionInfo.date).toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long' })}
                 </p>
+                {sessionInfo.requiresLocation && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs"
+                    style={{ color: gpsStatus === 'ok' ? '#22c55e' : '#f97316' }}>
+                    <MapPin size={11} />
+                    {gpsStatus === 'ok'
+                      ? `Vị trí đã xác nhận`
+                      : `Yêu cầu GPS (trong vòng ${sessionInfo.maxDistance}m)`}
+                  </div>
+                )}
               </div>
 
               <p className="text-sm text-white/60 mb-3 font-medium">Bạn là ai?</p>
@@ -253,7 +311,7 @@ export default function QrScanPage() {
                     }
                   >
                     {s.avatar
-                      ? <img src={s.avatar} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                      ? <img src={s.avatar} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
                       : <AvatarFallback name={s.hoTen} />
                     }
                     <div className="min-w-0 flex-1">

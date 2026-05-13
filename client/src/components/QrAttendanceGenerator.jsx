@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, X, RefreshCw, Clock, Loader2, ChevronDown } from 'lucide-react';
+import { QrCode, X, RefreshCw, Clock, Loader2, ChevronDown, MapPin, MapPinOff, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
 
 const TTL_OPTIONS = [
@@ -41,8 +41,14 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
   const [ttl, setTtl] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [session, setSession] = useState(null); // { qrDataUrl, expiresAt, ... }
+  const [session, setSession] = useState(null); // { qrDataUrl, expiresAt, requiresLocation, ... }
   const printRef = useRef(null);
+
+  // Vị trí của admin (tuỳ chọn)
+  const [requireLoc, setRequireLoc] = useState(false);
+  const [adminGps, setAdminGps] = useState(null);  // { lat, lng }
+  const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | ok | error
+  const [maxDistance, setMaxDistance] = useState(200); // mét
 
   const { remaining, display, expired } = useCountdown(session?.expiresAt);
 
@@ -51,14 +57,42 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
     ? Math.round((remaining / session.ttlSeconds) * 100)
     : 100;
 
+  // Lấy GPS của admin khi bật toggle vị trí
+  const fetchAdminGps = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGpsStatus('error');
+      return;
+    }
+    setGpsStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setAdminGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGpsStatus('ok');
+      },
+      () => setGpsStatus('error'),
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  }, []);
+
+  const handleToggleLoc = (val) => {
+    setRequireLoc(val);
+    if (val && gpsStatus === 'idle') fetchAdminGps();
+  };
+
   const generate = useCallback(async () => {
     if (!lopId || !date) return setError('Vui lòng chọn lớp và ngày.');
+    if (requireLoc && gpsStatus !== 'ok')
+      return setError('Chưa lấy được vị trí. Vui lòng thử lại hoặc tắt yêu cầu vị trí.');
     setError('');
     setLoading(true);
     try {
-      const { data } = await api.post('/attendance/qr-session', {
-        lopId, date, ttlMinutes: ttl,
-      });
+      const body = { lopId, date, ttlMinutes: ttl };
+      if (requireLoc && adminGps) {
+        body.lat = adminGps.lat;
+        body.lng = adminGps.lng;
+        body.maxDistance = maxDistance;
+      }
+      const { data } = await api.post('/attendance/qr-session', body);
       setSession(data.data);
     } catch (e) {
       setError(e.response?.data?.message || 'Không tạo được mã QR.');
@@ -196,6 +230,62 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
                       </p>
                     </div>
 
+                    {/* Toggle yêu cầu vị trí */}
+                    <div className="rounded-xl border overflow-hidden"
+                      style={{ border: requireLoc ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.08)', background: requireLoc ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLoc(!requireLoc)}
+                        className="w-full flex items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          {requireLoc ? <MapPin size={15} style={{ color: '#D4AF37' }} /> : <MapPinOff size={15} className="text-white/30" />}
+                          <span className="text-sm font-medium" style={{ color: requireLoc ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>
+                            Yêu cầu xác nhận vị trí
+                          </span>
+                        </div>
+                        {/* Toggle switch */}
+                        <div className="relative w-10 h-5 rounded-full transition"
+                          style={{ background: requireLoc ? '#D4AF37' : 'rgba(255,255,255,0.12)' }}>
+                          <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                            style={{ left: requireLoc ? '1.375rem' : '0.125rem' }} />
+                        </div>
+                      </button>
+                      {requireLoc && (
+                        <div className="px-4 pb-3 space-y-2">
+                          {/* GPS status */}
+                          <div className="flex items-center gap-2 text-xs">
+                            {gpsStatus === 'loading' && <Loader2 size={12} className="animate-spin text-amber-400" />}
+                            {gpsStatus === 'ok' && <ShieldCheck size={12} style={{ color: '#22c55e' }} />}
+                            {gpsStatus === 'error' && <MapPinOff size={12} className="text-red-400" />}
+                            <span style={{ color: gpsStatus === 'ok' ? '#22c55e' : gpsStatus === 'error' ? '#f87171' : 'rgba(255,255,255,0.4)' }}>
+                              {gpsStatus === 'idle' && 'Đang chờ vị trí...'}
+                              {gpsStatus === 'loading' && 'Đang lấy vị trí...'}
+                              {gpsStatus === 'ok' && `Đã lấy vị trí (${adminGps?.lat?.toFixed(4)}, ${adminGps?.lng?.toFixed(4)})`}
+                              {gpsStatus === 'error' && 'Không lấy được vị trí'}
+                            </span>
+                            {gpsStatus === 'error' && (
+                              <button onClick={fetchAdminGps} className="text-amber-400 underline">Thử lại</button>
+                            )}
+                          </div>
+                          {/* Bán kính */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-white/40 shrink-0">Bán kính:</span>
+                            {[50, 100, 200, 500].map(m => (
+                              <button key={m} onClick={() => setMaxDistance(m)}
+                                className="px-2.5 py-0.5 rounded-lg text-xs font-semibold transition"
+                                style={maxDistance === m
+                                  ? { background: 'rgba(212,175,55,0.25)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.4)' }
+                                  : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }
+                                }>
+                                {m}m
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {error && (
                       <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
                         {error}
@@ -260,6 +350,13 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
                       Lớp: <span className="text-white/70">{classes.find(c => c._id === session.lopId)?.tenLop}</span>
                       {' · '}Ngày: <span className="text-white/70">{session.date}</span>
                     </p>
+                    {session.requiresLocation && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
+                        style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', color: '#D4AF37' }}>
+                        <ShieldCheck size={12} />
+                        Yêu cầu xác nhận vị trí (trong vòng {maxDistance}m)
+                      </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex gap-2 w-full">
