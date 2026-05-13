@@ -200,12 +200,48 @@ const Home = () => {
               <motion.div key={key} variants={fadeUp}>
                 <Link
                   to={`/lop-hoc?nganh=${cfg.slug}`}
-                  className="flex flex-col items-center text-center p-4 rounded-2xl border transition-all duration-300 hover:-translate-y-1 group"
-                  style={{ background: cfg.bg, borderColor: cfg.border, backdropFilter: 'blur(8px)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.accent; e.currentTarget.style.boxShadow = `0 8px 24px ${cfg.accent}22`; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = cfg.border; e.currentTarget.style.boxShadow = 'none'; }}
+                  className="flex flex-col items-center text-center p-4 rounded-2xl border group"
+                  style={{
+                    background: cfg.bg,
+                    borderColor: cfg.border,
+                    backdropFilter: 'blur(8px)',
+                    transition: 'transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease, border-color 0.2s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.borderColor = cfg.accent;
+                    e.currentTarget.style.boxShadow = `0 12px 32px ${cfg.accent}35, 0 4px 12px ${cfg.accent}20`;
+                    const icon = e.currentTarget.querySelector('[data-icon="nganh"]');
+                    if (icon) {
+                      icon.style.boxShadow = `0 0 18px ${cfg.accent}55, 0 0 6px ${cfg.accent}35`;
+                      icon.style.background = `${cfg.accent}22`;
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = cfg.border;
+                    e.currentTarget.style.boxShadow = 'none';
+                    const icon = e.currentTarget.querySelector('[data-icon="nganh"]');
+                    if (icon) {
+                      icon.style.boxShadow = 'none';
+                      icon.style.background = `${cfg.accent}14`;
+                    }
+                  }}
                 >
-                  <span className="text-3xl mb-2 select-none">{cfg.icon}</span>
+                  {/* Icon với glow khi hover — style qua data-icon trong onMouseEnter parent */}
+                  <div
+                    data-icon="nganh"
+                    className="flex items-center justify-center w-14 h-14 rounded-2xl mb-3"
+                    style={{
+                      background: `${cfg.accent}14`,
+                      border: `1.5px solid ${cfg.accent}30`,
+                      fontSize: '1.75rem',
+                      lineHeight: 1,
+                      transition: 'box-shadow 0.28s ease, background 0.2s ease',
+                    }}
+                  >
+                    <span className="select-none">{cfg.icon}</span>
+                  </div>
                   <p className="font-bold text-sm text-[#3d1515]" style={{ fontFamily: SERIF }}>
                     {t(`nganh.${key}`)}
                   </p>
