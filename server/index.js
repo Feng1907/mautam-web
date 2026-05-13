@@ -1,18 +1,23 @@
 require('dotenv').config();
+const http      = require('http');
 const app       = require('./src/app');
 const connectDB = require('./src/config/db');
+const { initSocket } = require('./src/config/socket');
 
 const PORT = process.env.PORT || 5000;
 
-// Render chạy sau reverse proxy — cần trust proxy để req.ip chính xác
 app.set('trust proxy', 1);
 
 connectDB().then(() => {
-  const server = app.listen(PORT, () => {
+  const server = http.createServer(app);
+
+  // Khởi tạo Socket.io — export io instance để dùng trong controllers
+  initSocket(server);
+
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   });
 
-  // Graceful shutdown — Render gửi SIGTERM khi restart/deploy
   const shutdown = () => {
     server.close(() => {
       console.log('Server closed');

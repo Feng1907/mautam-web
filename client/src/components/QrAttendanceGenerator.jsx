@@ -1,11 +1,13 @@
 /**
  * QrAttendanceGenerator — Admin tạo mã QR điểm danh cho buổi học
- * JWT sessionToken TTL 3–5 phút để tránh chia sẻ ảnh QR từ xa
+ * JWT sessionToken TTL ngắn, auto-refresh, Socket.io real-time toast
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, X, RefreshCw, Clock, Loader2, ChevronDown, MapPin, MapPinOff, ShieldCheck } from 'lucide-react';
+import { QrCode, X, RefreshCw, Loader2, ChevronDown, MapPin, MapPinOff, ShieldCheck, Wifi, WifiOff, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
+import { useAttendanceSocket } from '../hooks/useAttendanceSocket';
 
 const TTL_OPTIONS = [
   { label: '30 giây', value: 0.5 },
@@ -57,6 +59,20 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
   const progress = session
     ? Math.round((remaining / session.ttlSeconds) * 100)
     : 100;
+
+  // Socket.io — real-time khi đoàn sinh check-in
+  const activeLopId = session ? lopId : null;
+  const { connected, recentCheckins, latestCheckin } = useAttendanceSocket(activeLopId);
+
+  // Toast hiển thị khi có check-in mới
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => {
+    if (!latestCheckin) return;
+    const id = latestCheckin.id;
+    setToasts(prev => [...prev, latestCheckin].slice(-5));
+    const t = setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    return () => clearTimeout(t);
+  }, [latestCheckin]);
 
   // Lấy GPS + reverse geocode địa chỉ qua Nominatim (OpenStreetMap, miễn phí)
   const fetchAdminGps = useCallback(() => {
@@ -521,36 +537,66 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                       )}
                     </div>
 
-                    {/* 3 ── Lớp + ngày */}
-                    <p className="text-white/40 text-xs text-center">
-                      Lớp: <span className="text-white/70">{classes.find(c => c._id === session.lopId)?.tenLop || defaultLopName}</span>
-                      {' · '}Ngày: <span className="text-white/70">{session.date}</span>
-                    </p>
+                    {/* 3 ── Lớp + ngày + socket status */}
+                    <div className="flex items-center justify-center gap-2 w-full flex-wrap">
+                      <p className="text-white/40 text-xs text-center">
+                        Lớp: <span className="text-white/70">{classes.find(c => c._id === session.lopId)?.tenLop || defaultLopName}</span>
+                        {' · '}{session.date}
+                      </p>
+                      <div className="flex items-center gap-1 text-[10px]"
+                        style={{ color: connected ? '#22c55e' : 'rgba(255,255,255,0.25)' }}>
+                        {connected ? <Wifi size={10} /> : <WifiOff size={10} />}
+                        {connected ? 'Live' : 'Offline'}
+                      </div>
+                    </div>
                     {session.requiresLocation && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
                         style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', color: '#D4AF37' }}>
                         <ShieldCheck size={12} />
-                        Yêu cầu xác nhận vị trí (trong vòng {maxDistance}m)
+                        Geofencing {maxDistance}m
                       </div>
                     )}
 
-                    {/* Actions */}
+                    {/* 4 ── Danh sách check-in gần đây */}
+                    {recentCheckins.length > 0 && (
+                      <div className="w-full rounded-xl overflow-hidden"
+                        style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+                        <p className="text-[10px] uppercase tracking-widest text-white/25 px-3 pt-2.5 pb-1.5">
+                          Đã điểm danh ({recentCheckins.length})
+                        </p>
+                        <div className="max-h-36 overflow-y-auto">
+                          <AnimatePresence initial={false}>
+                            {recentCheckins.map((c, i) => (
+                              <motion.div key={`${c.studentName}-${c.checkedAt}`}
+                                initial={{ opacity: 0, x: -12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center gap-2 px-3 py-1.5 border-t"
+                                style={{ borderColor: 'rgba(255,255,255,0.04)' }}
+                              >
+                                <CheckCircle2 size={11} style={{ color: '#22c55e', flexShrink: 0 }} />
+                                <span className="text-xs text-white/70 truncate">
+                                  {c.tenThanh} {c.studentName}
+                                </span>
+                                <span className="text-[10px] text-white/25 ml-auto shrink-0">
+                                  {new Date(c.checkedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions — bỏ nút In QR */}
                     <div className="flex gap-2 w-full">
-                      <button
-                        onClick={handlePrint}
-                        disabled={expired}
-                        className="flex-1 py-2 rounded-xl text-sm font-semibold border transition flex items-center justify-center gap-1.5"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: expired ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)' }}
-                      >
-                        In QR
-                      </button>
                       <button
                         onClick={reset}
                         className="flex-1 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}
                       >
                         <X size={13} />
-                        Đóng
+                        Kết thúc
                       </button>
                     </div>
 
@@ -568,6 +614,39 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Toast portal — hiện ở góc dưới phải khi đoàn sinh check-in */}
+      {createPortal(
+        <div className="fixed bottom-5 right-5 flex flex-col gap-2 z-9999 pointer-events-none">
+          <AnimatePresence>
+            {toasts.map(t => (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, x: 60, scale: 0.92 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 60, scale: 0.92 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg,#0d1f0d,#0a1a0a)',
+                  border: '1px solid rgba(34,197,94,0.35)',
+                  boxShadow: '0 8px 32px rgba(34,197,94,0.15)',
+                  maxWidth: 280,
+                }}
+              >
+                <CheckCircle2 size={18} style={{ color: '#22c55e', flexShrink: 0 }} />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white leading-tight truncate">
+                    🎉 {t.tenThanh} {t.studentName}
+                  </p>
+                  <p className="text-[11px] text-white/40 mt-0.5">đã điểm danh thành công</p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

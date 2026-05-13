@@ -5,6 +5,7 @@ const Class = require('../models/Class');
 const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const { logger } = require('../utils/logger');
+const { getIO } = require('../config/socket');
 
 // ─── Rate limit per token (in-memory, tự dọn sau khi token hết hạn) ──────────
 const qrScanAttempts = new Map(); // key: token[:16], value: { count, expAt }
@@ -306,6 +307,19 @@ exports.scanQr = async (req, res, next) => {
     );
 
     logger.info(`[QR-SCAN] ✓ ${student.hoTen} — lop:${lopId} date:${date} ip:${ip}${loc ? ` dist:${Math.round(haversineMeters(loc.lat, loc.lng, Number(lat), Number(lng)))}m` : ''}`);
+
+    // Emit real-time event tới màn hình TV của admin đang chiếu QR lớp này
+    try {
+      const lop = await Class.findById(lopId).select('tenLop');
+      const payload = {
+        studentName: student.hoTen,
+        tenThanh: student.tenThanh,
+        lopName: lop?.tenLop || '',
+        lopId, date,
+        checkedAt: new Date().toISOString(),
+      };
+      getIO().to(`lop:${lopId}`).emit('attendance:checked', payload);
+    } catch { /* socket emit không được làm crash response */ }
 
     res.json({
       success: true,
