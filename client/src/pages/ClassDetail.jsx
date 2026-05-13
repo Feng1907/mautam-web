@@ -201,7 +201,8 @@ const ClassDetail = () => {
               {canEdit && (
                 <div className="flex justify-end">
                   <QrAttendanceGenerator
-                    classes={lop ? [lop] : []}
+                    defaultLopId={id}
+                    defaultLopName={lop?.tenLop}
                     defaultDate={new Date().toISOString().slice(0, 10)}
                   />
                 </div>

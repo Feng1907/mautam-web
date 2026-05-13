@@ -34,9 +34,9 @@ function useCountdown(expiresAt) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
-export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
+export default function QrAttendanceGenerator({ classes = [], defaultDate, defaultLopId, defaultLopName }) {
   const [open, setOpen] = useState(false);
-  const [lopId, setLopId] = useState('');
+  const [lopId, setLopId] = useState(defaultLopId || '');
   const [date, setDate] = useState(defaultDate || new Date().toISOString().slice(0, 10));
   const [ttl, setTtl] = useState(5);
   const [loading, setLoading] = useState(false);
@@ -174,24 +174,36 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate }) {
                 {!session ? (
                   /* ── Form chọn lớp / ngày / TTL ── */
                   <>
-                    {/* Chọn lớp */}
-                    <div>
-                      <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wider">Lớp</label>
-                      <div className="relative">
-                        <select
-                          value={lopId}
-                          onChange={e => setLopId(e.target.value)}
-                          className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg
-                            px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/40"
-                        >
-                          <option value="">— Chọn lớp —</option>
-                          {classes.map(c => (
-                            <option key={c._id} value={c._id}>{c.tenLop}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-3 top-3 text-white/30 pointer-events-none" />
+                    {/* Chọn lớp — ẩn khi đã được truyền từ ClassDetail */}
+                    {defaultLopId ? (
+                      <div>
+                        <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wider">Lớp</label>
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-white/10 bg-white/5">
+                          <span className="text-sm font-semibold" style={{ color: '#D4AF37' }}>
+                            {defaultLopName || lopId}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs text-white/50 mb-1.5 uppercase tracking-wider">Lớp</label>
+                        <div className="relative">
+                          <select
+                            value={lopId}
+                            onChange={e => setLopId(e.target.value)}
+                            className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg
+                              px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/40"
+                            style={{ colorScheme: 'dark' }}
+                          >
+                            <option value="" style={{ background: '#1c1410', color: '#e2d5c0' }}>— Chọn lớp —</option>
+                            {classes.map(c => (
+                              <option key={c._id} value={c._id} style={{ background: '#1c1410', color: '#e2d5c0' }}>{c.tenLop}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="absolute right-3 top-3 text-white/30 pointer-events-none" />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Ngày */}
                     <div>
