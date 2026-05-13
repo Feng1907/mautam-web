@@ -89,11 +89,14 @@ const Home = () => {
           minHeight: '480px',
         }}
       >
-        <div className="absolute inset-0 bg-linear-to-b from-black/60 via-[#3d0000]/50 to-black/70 pointer-events-none" />
+        {/* Gradient chính: trong suốt ở trên → đỏ đậm xứ đoàn ở dưới */}
         <div className="absolute inset-0 pointer-events-none"
-             style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%)' }} />
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(20,0,0,0.3) 40%, rgba(80,0,0,0.72) 75%, rgba(100,0,0,0.88) 100%)' }} />
+        {/* Vignette nhẹ hai bên */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.3) 100%)' }} />
         <div className="absolute top-0 left-0 right-0 h-1"
-             style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }} />
+          style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }} />
 
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-24">
           <motion.p
@@ -134,20 +137,35 @@ const Home = () => {
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.4 }}
             className="flex justify-center gap-3 flex-wrap"
           >
+            {/* Nút chính — Glass trắng đặc hơn, nổi bật */}
             <Link to="/gio-le"
-              className="px-6 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-              style={{ background: 'white', color: '#8B0000' }}
+              className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-xl"
+              style={{
+                background: 'rgba(255,255,255,0.22)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                border: '1px solid rgba(255,255,255,0.55)',
+                color: '#fff',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3)',
+              }}
             >
               {t('home.viewLiturgy')}
             </Link>
+            {/* Các nút phụ — Glass mờ hơn */}
             {[
               { to: '/tin-tuc',  label: t('home.news')     },
               { to: '/thu-vien', label: t('nav.gallery')   },
               ...(user ? [{ to: '/lop-hoc', label: t('home.classes') }] : []),
             ].map(link => (
               <Link key={link.to} to={link.to}
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/50 hover:bg-white/15 transition-all hover:-translate-y-0.5"
-                style={{ backdropFilter: 'blur(6px)' }}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                style={{
+                  background: 'rgba(255,255,255,0.10)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255,255,255,0.28)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)',
+                }}
               >
                 {link.label}
               </Link>
