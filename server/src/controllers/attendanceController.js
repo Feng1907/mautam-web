@@ -1,5 +1,51 @@
 const Attendance = require('../models/Attendance');
 const NamHoc = require('../models/NamHoc');
+const jwt = require('jsonwebtoken');
+const QRCode = require('qrcode');
+
+// POST /api/attendance/qr-session
+// Admin/GLV tạo QR chứa sessionToken JWT TTL 3–5 phút
+exports.generateQrSession = async (req, res, next) => {
+  try {
+    const { lopId, date, ttlMinutes = 5 } = req.body;
+    if (!lopId || !date)
+      return res.status(400).json({ success: false, message: 'Thiếu lopId hoặc date' });
+
+    // Giới hạn TTL: tối thiểu 1 phút, tối đa 15 phút
+    const ttl = Math.min(Math.max(Number(ttlMinutes), 1), 15);
+
+    const sessionToken = jwt.sign(
+      { lopId, date, type: 'qr-attendance' },
+      process.env.JWT_SECRET,
+      { expiresIn: `${ttl}m` }
+    );
+
+    // URL học sinh sẽ truy cập sau khi quét
+    const scanUrl = `${process.env.CLIENT_URL}/diem-danh-qr?token=${sessionToken}`;
+
+    // Tạo QR code dạng base64 PNG (512×512, error correction M)
+    const qrDataUrl = await QRCode.toDataURL(scanUrl, {
+      width: 512,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#1a1a2e', light: '#ffffff' },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        qrDataUrl,
+        sessionToken,
+        lopId,
+        date,
+        expiresAt: new Date(Date.now() + ttl * 60 * 1000).toISOString(),
+        ttlSeconds: ttl * 60,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 // GET /api/attendance/:lopId?namHocId=...
 exports.getByClass = async (req, res, next) => {
