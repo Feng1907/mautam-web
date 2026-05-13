@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
 import {
   Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight,
 } from 'lucide-react';
+import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const SERIF = '"EB Garamond", Lora, Georgia, serif';
@@ -66,6 +68,12 @@ const Home = () => {
 
   return (
     <main className="relative flex-1 bg-page" style={{ fontFamily: SANS }}>
+      <Helmet>
+        <title>Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</title>
+        <meta property="og:title" content="Xứ Đoàn Anrê Phú Yên – Mẫu Tâm" />
+        <meta property="og:description" content="Website quản lý và truyền thông của Xứ Đoàn Anrê Phú Yên – Mẫu Tâm." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       <CrossWatermark />
 
       {/* ══════════════════════════════════════════════════════

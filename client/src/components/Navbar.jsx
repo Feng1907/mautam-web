@@ -46,11 +46,14 @@ const Navbar = () => {
     { to: '/thu-vien',label: t('nav.gallery') },
     { to: '/lich-su-cuu-do', label: 'Lịch sử' },
     { to: '/lop-hoc', label: t('nav.classes'), authRequired: true },
+    { to: '/phu-huynh', label: 'Phu huynh', parentOnly: true },
     { to: '/admin',   label: t('nav.admin'),   adminOnly: true    },
   ];
 
   const visibleLinks = NAV_LINKS.filter(l =>
-    (!l.authRequired || user) && (!l.adminOnly || user?.vaiTro === 'admin')
+    (!l.authRequired || user) &&
+    (!l.parentOnly || user?.vaiTro === 'PARENT') &&
+    (!l.adminOnly || user?.vaiTro === 'admin')
   );
 
   return (

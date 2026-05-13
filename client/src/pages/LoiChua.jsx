@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Scroll, Music2, BookOpen, Cross, FlameIcon,
   Quote, ChevronRight, ChevronLeft, CalendarDays, Sun,
-  Copy, Check, Share2,
+  Copy, Check, Share2, Search, Loader2, X,
 } from 'lucide-react';
+import { DEFAULT_OG_IMAGE, pageUrl } from '../utils/seo';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -35,6 +37,103 @@ const THU_VN     = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Nă
 const fmtDateLabel = (iso) => { const d = new Date(iso + 'T00:00:00'); return `${THU_VN[d.getDay()]}, ngày ${d.getDate()} tháng ${d.getMonth()+1} năm ${d.getFullYear()}`; };
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
+const stripHtml = (value = '') => value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const useDebouncedValue = (value, delay = 450) => {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+};
+
+const HighlightText = ({ text = '', query = '' }) => {
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return <>{text}</>;
+
+  const parts = String(text).split(new RegExp(`(${escapeRegExp(cleanQuery)})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.toLowerCase() === cleanQuery.toLowerCase()
+          ? <mark key={index} className="rounded bg-amber-200/80 px-0.5 text-stone-900">{part}</mark>
+          : part
+      )}
+    </>
+  );
+};
+
+const SearchResults = ({ query, results, loading, error, onSelect, onClear }) => {
+  const active = query.trim().length >= 2;
+  if (!active) return null;
+
+  return (
+    <div className="mb-5 rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-700 px-4 py-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">Ket qua tim kiem</p>
+          <p className="text-sm text-stone-600 dark:text-slate-300">
+            Tu khoa: <span className="font-semibold text-stone-900 dark:text-slate-100">{query}</span>
+          </p>
+        </div>
+        <button type="button" onClick={onClear}
+          className="h-8 w-8 rounded-full border border-stone-200 dark:border-slate-600 flex items-center justify-center text-stone-400 hover:text-red-600 hover:border-red-200 transition"
+          aria-label="Xoa tim kiem">
+          <X size={14} />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-stone-400">
+          <Loader2 size={16} className="animate-spin" />
+          Dang tim...
+        </div>
+      ) : error ? (
+        <p className="px-4 py-5 text-sm text-red-600">{error}</p>
+      ) : results.length === 0 ? (
+        <p className="px-4 py-8 text-center text-sm text-stone-400">Khong tim thay noi dung phu hop.</p>
+      ) : (
+        <div className="divide-y divide-stone-100 dark:divide-slate-700">
+          {results.map((item) => {
+            const snippet = stripHtml(
+              item.keyVerse ||
+              item.sections?.find((section) => section.text || section.html)?.text ||
+              item.sections?.find((section) => section.html)?.html ||
+              ''
+            );
+
+            return (
+              <button type="button" key={item._id} onClick={() => onSelect(item.date)}
+                className="w-full text-left px-4 py-3 hover:bg-stone-50 dark:hover:bg-slate-700/60 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-stone-900 dark:text-slate-100 line-clamp-1">
+                      <HighlightText text={item.title || item.tinMungTen || 'Loi Chua'} query={query} />
+                    </p>
+                    {snippet && (
+                      <p className="mt-1 text-sm text-stone-500 dark:text-slate-400 line-clamp-2">
+                        <HighlightText text={snippet} query={query} />
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-400">{item.date}</p>
+                    {item.score != null && (
+                      <p className="mt-1 text-[10px] text-stone-400">score {Number(item.score).toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SkeletonLine = ({ w = 'w-full', h = 'h-4' }) => (
   <div className={`${w} ${h} rounded bg-stone-200 dark:bg-slate-700 animate-pulse`} />
 );
@@ -321,6 +420,11 @@ const LoiChua = () => {
   const [data,    setData]  = useState(null);
   const [loading, setLoad]  = useState(true);
   const [error,   setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm, 450);
 
   const load = useCallback(async (isoDate) => {
     setLoad(true); setData(null); setError(null);
@@ -335,6 +439,38 @@ const LoiChua = () => {
 
   useEffect(() => { load(date); }, [date, load]);
 
+  useEffect(() => {
+    const q = debouncedSearch.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearchError('');
+      setSearchLoading(false);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    const runSearch = async () => {
+      setSearchLoading(true);
+      setSearchError('');
+      try {
+        const res = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}&limit=8`, { signal: ctrl.signal });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Khong tim kiem duoc');
+        setSearchResults(json.data || []);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setSearchResults([]);
+          setSearchError(err.message || 'Loi tim kiem');
+        }
+      } finally {
+        if (!ctrl.signal.aborted) setSearchLoading(false);
+      }
+    };
+
+    runSearch();
+    return () => ctrl.abort();
+  }, [debouncedSearch]);
+
   const isToday  = date === todayIso;
   const mauKey   = data?.mauKey || 'xanh';
   const accent   = ACCENT[mauKey] || ACCENT.xanh;
@@ -342,6 +478,13 @@ const LoiChua = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Lời Chúa Hôm Nay | Mẫu Tâm</title>
+        <link rel="canonical" href={pageUrl('/loi-chua')} />
+        <meta property="og:title" content="Lời Chúa Hôm Nay | Mẫu Tâm" />
+        <meta property="og:description" content="Đọc Lời Chúa hằng ngày, bài đọc phụng vụ và Tin Mừng hôm nay." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       <ReadingProgress accentBar={accent.bar} />
 
       <main className="flex-1 bg-stone-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
@@ -408,6 +551,51 @@ const LoiChua = () => {
               <Sun size={13} /> Chúa Nhật
             </button>
           </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.3 }}
+            className="mb-4">
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
+              />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tim trong kho Loi Chua..."
+                className="w-full h-11 rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-11 pr-11 text-sm text-stone-800 dark:text-slate-100 outline-none focus:border-red-400 dark:focus:border-red-500 transition shadow-sm"
+              />
+              {searchTerm && (
+                <button type="button" onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full flex items-center justify-center text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700 transition"
+                  aria-label="Xoa tim kiem">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <p className="mt-1.5 text-xs text-stone-400 dark:text-slate-500">
+              Goi API sau khi ban ngung go 450ms; nhap toi thieu 2 ky tu.
+            </p>
+          </motion.div>
+
+          <SearchResults
+            query={debouncedSearch}
+            results={searchResults}
+            loading={searchLoading}
+            error={searchError}
+            onSelect={(isoDate) => {
+              setDate(isoDate);
+              setSearchTerm('');
+              setSearchResults([]);
+            }}
+            onClear={() => {
+              setSearchTerm('');
+              setSearchResults([]);
+              setSearchError('');
+            }}
+          />
 
           {/* ── 2-col layout ── */}
           <div className="grid lg:grid-cols-[1fr_280px] gap-5 items-start">

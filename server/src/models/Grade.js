@@ -18,5 +18,6 @@ const gradeSchema = new mongoose.Schema(
 gradeSchema.index({ lop: 1, namHoc: 1, hocKy: 1 });
 // Truy vấn điểm theo từng học sinh
 gradeSchema.index({ student: 1, namHoc: 1 });
+gradeSchema.index({ student: 1, namHoc: 1, hocKy: 1 });
 
 module.exports = mongoose.model('Grade', gradeSchema);

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Clock, Shirt, BookOpen, Calendar, ChevronRight, Quote, RefreshCw, X, Sparkles } from 'lucide-react';
 import api from '../services/api';
+import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
 // ─── Hằng số ──────────────────────────────────────────────────────────────────
 
@@ -858,6 +860,12 @@ const GioLe = () => {
 
   return (
     <main className={`flex-1 min-h-screen bg-linear-to-br ${pageBg} dark:bg-none dark:bg-slate-950 transition-all duration-700`}>
+      <Helmet>
+        <title>Giờ Lễ | Mẫu Tâm</title>
+        <meta property="og:title" content="Giờ Lễ | Mẫu Tâm" />
+        <meta property="og:description" content="Giờ lễ, lịch phụng vụ và màu áo lễ hôm nay tại Mẫu Tâm." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+      </Helmet>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
 
         {/* ── Header ── */}
