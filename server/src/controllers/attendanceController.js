@@ -44,8 +44,9 @@ exports.generateQrSession = async (req, res, next) => {
     if (!lopId || !date)
       return res.status(400).json({ success: false, message: 'Thiếu lopId hoặc date' });
 
-    // Giới hạn TTL: tối thiểu 1 phút, tối đa 15 phút
-    const ttl = Math.min(Math.max(Number(ttlMinutes), 1), 15);
+    // Giới hạn TTL: tối thiểu 0.25 phút (15s), tối đa 15 phút
+    const ttl = Math.min(Math.max(Number(ttlMinutes), 0.25), 15);
+    const ttlSeconds = Math.round(ttl * 60);
 
     // Payload: thêm loc nếu admin bật yêu cầu vị trí
     const hasLocation = lat != null && lng != null;
@@ -54,7 +55,7 @@ exports.generateQrSession = async (req, res, next) => {
       ...(hasLocation && { loc: { lat: Number(lat), lng: Number(lng), maxDistance: Number(maxDistance) } }),
     };
 
-    const sessionToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: `${ttl}m` });
+    const sessionToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: `${ttlSeconds}s` });
 
     // URL học sinh sẽ truy cập sau khi quét
     const scanUrl = `${process.env.CLIENT_URL}/diem-danh-qr?token=${sessionToken}`;
@@ -76,8 +77,8 @@ exports.generateQrSession = async (req, res, next) => {
         sessionToken,
         lopId,
         date,
-        expiresAt: new Date(Date.now() + ttl * 60 * 1000).toISOString(),
-        ttlSeconds: ttl * 60,
+        expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+        ttlSeconds,
         requiresLocation: hasLocation,
       },
     });
