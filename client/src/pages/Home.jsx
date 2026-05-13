@@ -351,6 +351,83 @@ const Home = () => {
       </section>
 
       {/* ══════════════════════════════════════════════════════
+          LỊCH SỬ XỨ ĐOÀN
+      ══════════════════════════════════════════════════════ */}
+      <section className="relative z-10 page-container py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.45 }}
+        >
+          {/* Section header */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
+            <h2 className="text-xl font-bold text-[#3d1515] shrink-0" style={{ fontFamily: SERIF }}>
+              Lịch Sử Xứ Đoàn
+            </h2>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Nội dung lịch sử */}
+            <div className="space-y-5">
+              <p className="text-[#3d1515] leading-relaxed" style={{ fontFamily: SERIF, fontSize: '1.08rem' }}>
+                Xứ Đoàn <strong>Anrê Phú Yên – Mẫu Tâm</strong> được thành lập với tinh thần
+                noi gương Chân Phước Anrê Phú Yên — vị tử đạo trẻ tuổi đã dám sống và chết
+                vì đức tin.
+              </p>
+              <p className="text-gray-600 leading-relaxed text-sm" style={{ fontFamily: SANS }}>
+                Trải qua nhiều giai đoạn phát triển, xứ đoàn không ngừng lớn mạnh với
+                5 ngành: Chiên Non, Ấu Nhi, Thiếu Nhi, Nghĩa Sĩ và Hiệp Sĩ — cùng nhau
+                sống Tin Mừng và phục vụ cộng đoàn.
+              </p>
+
+              <Link
+                to="/lich-su-cuu-do"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                style={{
+                  background: 'linear-gradient(135deg, #8B0000, #6b0000)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(139,0,0,0.25)',
+                }}
+              >
+                Khám phá Lịch Sử Cứu Độ <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Timeline các mốc */}
+            <div className="relative pl-6">
+              {/* Đường dọc */}
+              <div className="absolute left-2 top-2 bottom-2 w-px"
+                style={{ background: 'linear-gradient(to bottom, #D4AF37, rgba(212,175,55,0.1))' }} />
+
+              {[
+                { year: 'Thành lập', desc: 'Xứ đoàn được thành lập, đặt dưới sự bảo trợ của Chân Phước Anrê Phú Yên.' },
+                { year: 'Phát triển', desc: 'Hình thành 5 ngành với hàng trăm đoàn sinh tham gia sinh hoạt đức tin.' },
+                { year: 'Hiện tại',  desc: 'Tiếp tục sứ mạng giáo dục đức tin, đồng hành với giới trẻ trong giáo xứ.' },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: i * 0.1 }}
+                  className="relative mb-6 last:mb-0"
+                >
+                  {/* Dot */}
+                  <div className="absolute -left-4 top-1.5 w-3 h-3 rounded-full border-2 border-[#D4AF37]"
+                    style={{ background: '#fdf8ec' }} />
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#8B0000] mb-1"
+                    style={{ fontFamily: SANS }}>{item.year}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed"
+                    style={{ fontFamily: SANS }}>{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
           BENTO GRID — 4 Quick Links
       ══════════════════════════════════════════════════════ */}
       <section className="relative z-10 page-container py-10">
