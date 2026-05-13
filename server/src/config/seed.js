@@ -6,6 +6,7 @@ const NamHoc   = require('../models/NamHoc');
 const Class    = require('../models/Class');
 const User     = require('../models/User');
 const Student  = require('../models/Student');
+const ParentStudent = require('../models/ParentStudent');
 
 // 12 lớp theo đúng PLAN.md
 const DS_LOP = [
@@ -28,6 +29,7 @@ async function seed() {
   console.log('Đang xóa dữ liệu cũ...');
   // Xóa Student trước Class để tránh orphan references
   await Promise.all([
+    ParentStudent.deleteMany({}),
     Student.deleteMany({}),
     NamHoc.deleteMany({}),
     Class.deleteMany({}),

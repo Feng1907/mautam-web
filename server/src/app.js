@@ -52,7 +52,7 @@ const authValidators = {
   register: validate([
     body('hoTen').trim().notEmpty().withMessage('Ho ten la bat buoc').isLength({ max: 120 }).withMessage('Ho ten qua dai'),
     body('email').isEmail().normalizeEmail().withMessage('Email khong hop le'),
-    body('vaiTro').optional().isIn(['admin', 'giaoly', 'user']).withMessage('Vai tro khong hop le'),
+    body('vaiTro').optional().isIn(['admin', 'giaoly', 'user', 'PARENT']).withMessage('Vai tro khong hop le'),
     optionalText('soDienThoai', 30, 'So dien thoai qua dai'),
   ]),
   profile: validate([
@@ -169,10 +169,14 @@ app.use('/api/export',     require('./routes/export'));
 app.use('/api/promote',    require('./routes/promote'));
 app.use('/api/merit',      require('./routes/merit'));
 app.use('/api/chuyen-can', require('./routes/chuyencan'));
+app.use('/api/parent',     require('./routes/parent'));
 
 app.use('/api/liturgy',   require('./routes/liturgy'));
 app.use('/api/loi-chua',  require('./routes/loiChua'));
+app.use('/api/search',    require('./routes/search'));
 app.use('/api/notify',    notifyLimiter, require('./routes/notify'));
+app.use('/api/subscribe', require('./routes/subscribe'));
+app.use('/subscribe',     require('./routes/subscribe'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

@@ -10,6 +10,7 @@ import RouteGuard from './components/RouteGuard';
 import UrgentBanner from './components/UrgentBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
+import PushNotificationManager from './components/PushNotificationManager';
 
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -22,6 +23,7 @@ const LoiChua = lazy(() => import('./pages/LoiChua'));
 const ClassList = lazy(() => import('./pages/ClassList'));
 const ClassDetail = lazy(() => import('./pages/ClassDetail'));
 const Profile = lazy(() => import('./pages/Profile'));
+const ParentDashboard = lazy(() => import('./pages/ParentDashboard'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const LichSuCuuDo = lazy(() => import('./pages/LichSuCuuDo'));
 const NhanVat = lazy(() => import('./pages/NhanVat'));
@@ -57,6 +59,7 @@ const App = () => (
       <ToastProvider>
         <HelmetProvider>
           <BrowserRouter>
+            <PushNotificationManager />
             <Navbar />
             <UrgentBanner />
             <Suspense fallback={<LoadingSpinner />}>
@@ -82,6 +85,10 @@ const App = () => (
                 <Route
                   path="/ho-so"
                   element={withErrorBoundary(<RouteGuard><Profile /></RouteGuard>, 'Profile')}
+                />
+                <Route
+                  path="/phu-huynh"
+                  element={withErrorBoundary(<RouteGuard roles={['PARENT']}><ParentDashboard /></RouteGuard>, 'ParentDashboard')}
                 />
                 <Route
                   path="/lop-hoc"

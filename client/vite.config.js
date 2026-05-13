@@ -34,6 +34,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['/push-sw.js'],
         // Cache-first: static assets (JS, CSS, fonts, images)
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,woff,woff2}'],
         // Network-first / StaleWhileRevalidate cho các API
