@@ -1,4 +1,4 @@
-/**
+﻿/**
  * QrScanPage — Đoàn sinh quét mã QR điểm danh
  * Flow: Camera quét QR → verify token → chọn tên → ghi có mặt
  */
@@ -51,8 +51,9 @@ export default function QrScanPage() {
   const [result, setResult] = useState(null); // { message, tenThanh, hoTen }
   const [errorMsg, setErrorMsg] = useState('');
   const [search, setSearch] = useState('');
-  const [studentGps, setStudentGps] = useState(null);  // { lat, lng }
-  const [gpsStatus, setGpsStatus] = useState('idle');  // idle | loading | ok | denied | error
+  const [studentGps, setStudentGps] = useState(null);      // { lat, lng }
+  const [studentAccuracy, setStudentAccuracy] = useState(null); // mét
+  const [gpsStatus, setGpsStatus] = useState('idle');       // idle | loading | ok | denied | error
 
   const scannerRef = useRef(null);
   const scannerStarted = useRef(false);
@@ -136,10 +137,13 @@ export default function QrScanPage() {
     setGpsStatus('loading');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const acc = Math.round(pos.coords.accuracy);
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setStudentGps(coords);
-        setGpsStatus('ok');
-        resolve(coords);
+        setStudentAccuracy(acc);
+        // Cảnh báo nếu sai số > 100m nhưng vẫn resolve để user quyết định
+        setGpsStatus(acc > 100 ? 'weak' : 'ok');
+        resolve({ ...coords, accuracy: acc });
       },
       (err) => {
         const status = err.code === 1 ? 'denied' : 'error';
@@ -160,7 +164,17 @@ export default function QrScanPage() {
       // Nếu session yêu cầu vị trí → lấy GPS trước
       if (sessionInfo?.requiresLocation) {
         try {
-          const coords = studentGps || await fetchStudentGps();
+          const coords = studentGps ? { ...studentGps, accuracy: studentAccuracy } : await fetchStudentGps();
+
+          // Cảnh báo GPS yếu nhưng cho phép tiếp tục sau khi user xác nhận
+          if ((coords.accuracy || studentAccuracy || 0) > 100) {
+            setErrorMsg(
+              `GPS yếu (sai số ±${coords.accuracy || studentAccuracy}m). Vui lòng bật Wi-Fi hoặc ra chỗ thoáng để tăng độ chính xác, rồi nhấn "Quét lại".`
+            );
+            setStep(STEP.ERROR);
+            return;
+          }
+
           body.lat = coords.lat;
           body.lng = coords.lng;
         } catch {
@@ -191,7 +205,7 @@ export default function QrScanPage() {
       }
       setStep(STEP.ERROR);
     }
-  }, [token, selectedId, sessionInfo, studentGps, gpsStatus, fetchStudentGps]);
+  }, [token, selectedId, sessionInfo, studentGps, studentAccuracy, gpsStatus, fetchStudentGps]);
 
   // ── Filter search ─────────────────────────────────────────────────────────
   const filtered = (sessionInfo?.students || []).filter(s =>
@@ -208,7 +222,7 @@ export default function QrScanPage() {
       <div className="w-full max-w-md px-4 pt-6 pb-2">
         <div className="flex items-center gap-2 mb-1">
           <QrCode size={20} style={{ color: '#D4AF37' }} />
-          <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"EB Garamond",serif' }}>
+          <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif' }}>
             Điểm Danh QR
           </span>
         </div>
@@ -276,12 +290,21 @@ export default function QrScanPage() {
                   Ngày {new Date(sessionInfo.date).toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long' })}
                 </p>
                 {sessionInfo.requiresLocation && (
-                  <div className="flex items-center gap-1.5 mt-2 text-xs"
-                    style={{ color: gpsStatus === 'ok' ? '#22c55e' : '#f97316' }}>
-                    <MapPin size={11} />
-                    {gpsStatus === 'ok'
-                      ? `Vị trí đã xác nhận`
-                      : `Yêu cầu GPS (trong vòng ${sessionInfo.maxDistance}m)`}
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs"
+                      style={{ color: gpsStatus === 'ok' ? '#22c55e' : gpsStatus === 'weak' ? '#ef4444' : '#f97316' }}>
+                      <MapPin size={11} />
+                      {gpsStatus === 'ok' && `Vị trí đã xác nhận ✓`}
+                      {gpsStatus === 'weak' && `GPS yếu — cần tín hiệu tốt hơn`}
+                      {(gpsStatus === 'idle' || gpsStatus === 'loading') && `Cần GPS (trong vòng ${sessionInfo.maxDistance}m)`}
+                    </div>
+                    {studentAccuracy !== null && (
+                      <div className="text-[10px]"
+                        style={{ color: studentAccuracy > 100 ? '#ef4444' : studentAccuracy > 50 ? '#f97316' : 'rgba(255,255,255,0.3)' }}>
+                        Độ chính xác: ±{studentAccuracy}m
+                        {studentAccuracy > 100 && ' — GPS yếu, vui lòng ra chỗ thoáng'}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -202,13 +202,22 @@ const ShareButton = ({ title, text }) => {
   );
 };
 
+// Thêm <sup> cho số câu/chương mà không phá HTML tags hiện có
+const formatVerseNums = (html = '', color = '#8B0000') =>
+  html.replace(/<[^>]+>|(\d+)/g, (match, num) =>
+    num
+      ? `<sup style="font-size:0.62em;font-style:normal;font-weight:700;color:${color};margin:0 2px;vertical-align:super;line-height:0;">${num}</sup>`
+      : match
+  );
+
 // ── ReadingSection ─────────────────────────────────────────────────────────────
 const ReadingSection = ({ sec, idx }) => {
   const m = SECTION_META[sec.key] || SECTION_META.baidoc1;
   const plainForCopy = [sec.label, sec.trich ? `(${sec.trich})` : '', '', sec.noidung].filter(Boolean).join('\n');
 
-  // Tung hô Tin Mừng → màu vàng đặc biệt
   const isTungHoe = sec.key === 'tunghoe';
+  const numColor  = isTungHoe ? '#92400e' : m.hue;
+  const richHtml  = sec.noidung ? formatVerseNums(sec.noidung, numColor) : '';
 
   return (
     <motion.article
@@ -235,15 +244,15 @@ const ReadingSection = ({ sec, idx }) => {
         {sec.noidung && <CopyButton text={plainForCopy} label="Sao chép" />}
       </div>
 
-      {sec.noidung ? (
+      {richHtml ? (
         <div
           className={`text-[16px] leading-loose text-justify ${
             isTungHoe
               ? 'text-amber-800 dark:text-amber-400'
-              : 'text-stone-750 dark:text-slate-300'
+              : 'text-stone-800 dark:text-slate-200'
           }`}
           style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
-          dangerouslySetInnerHTML={{ __html: sec.noidung }}
+          dangerouslySetInnerHTML={{ __html: richHtml }}
         />
       ) : (
         <p className="text-sm text-stone-400 dark:text-slate-500 italic">Nội dung chưa có.</p>

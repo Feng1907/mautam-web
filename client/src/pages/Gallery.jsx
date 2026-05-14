@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+﻿import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,8 @@ import { fetchPhotos, uploadPhoto, deletePhoto, formatBytes } from '../services/
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // ── Fonts / design tokens ─────────────────────────────────────────────────────
-const SERIF = '"EB Garamond", Lora, Georgia, serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Lora, Georgia, serif';
+const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 // ── Cấu hình sự kiện & năm ────────────────────────────────────────────────────
 // eslint-disable-next-line react-refresh/only-export-components

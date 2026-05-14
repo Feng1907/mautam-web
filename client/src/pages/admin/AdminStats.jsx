@@ -1,9 +1,9 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
-const SERIF = '"EB Garamond", Georgia, serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
+const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 const NGANH_ORDER = ['ChienNon', 'AuNhi', 'ThieuNhi', 'NghiaSi', 'HiepSi'];
 const NGANH_CFG = {

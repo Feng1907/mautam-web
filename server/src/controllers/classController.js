@@ -136,16 +136,30 @@ exports.assign = async (req, res, next) => {
     // Đồng bộ lopPhuTrach trên User: xóa lớp này khỏi tất cả HT/DT cũ rồi gán lại
     await User.updateMany({ lopPhuTrach: lop._id }, { $pull: { lopPhuTrach: lop._id } });
 
-    const nguoiPhuTrach = [
-      ...(huynhTruongId ? [huynhTruongId] : []),
-      ...(duTruongIds || []),
-    ];
-    if (nguoiPhuTrach.length) {
-      await User.updateMany(
-        { _id: { $in: nguoiPhuTrach } },
-        { $addToSet: { lopPhuTrach: lop._id } }
-      );
+    // Gán lại HT
+    if (huynhTruongId) {
+      await User.findByIdAndUpdate(huynhTruongId, {
+        $addToSet: { lopPhuTrach: lop._id },
+        vaiTro: 'giaoly',
+        chucVu: 'huynhtruong',
+      });
     }
+
+    // Gán lại DT — ngang quyền HT trong lớp
+    for (const dtId of (duTruongIds || [])) {
+      await User.findByIdAndUpdate(dtId, {
+        $addToSet: { lopPhuTrach: lop._id },
+        vaiTro: 'giaoly',
+        chucVu: 'dutruong',
+      });
+    }
+
+    // Người bị gỡ khỏi lớp: nếu không còn lớp nào → hạ vaiTro về 'user'
+    const cuuPhuTrach = await User.find({ _id: { $in: [] } }); // placeholder — handled below
+    await User.updateMany(
+      { vaiTro: 'giaoly', lopPhuTrach: { $size: 0 } },
+      { vaiTro: 'user', chucVu: null }
+    );
 
     const updated = await Class.findById(lop._id)
       .populate('huynhTruong', 'hoTen email')

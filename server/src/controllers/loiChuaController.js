@@ -86,7 +86,8 @@ const SECTION_LABELS = {
 const LABEL_PATTERNS = [
   // baidoc2 phải đứng trước baidoc1 để "BÀI ĐỌC II" không bị khớp nhầm bởi regex baidoc1
   { key: 'baidoc2', re: /bài\s*đọc\s*(2|ii|hai)/i },
-  { key: 'baidoc1', re: /bài\s*đọc\s*(1|i|một)/i },
+  // baidoc1: khớp cả "BÀI ĐỌC I", "BÀI ĐỌC 1", "BÀI ĐỌC MỘT", và "BÀI ĐỌC" trơn (ngày thường)
+  { key: 'baidoc1', re: /bài\s*đọc(\s*(1|i(?!i)|một))?(?!\s*(2|ii|hai))/i },
   { key: 'dapca',   re: /đáp\s*ca|thánh\s*vịnh/i },
   { key: 'tunghoe', re: /tung\s*hô|alleluia/i },
   { key: 'phucam',  re: /phúc\s*âm|tin\s*mừng/i },
@@ -247,8 +248,19 @@ const scrapeTGPSG = async (isoDate) => {
     if (!key || seenSec.has(key)) return;
     seenSec.add(key);
 
-    // Trích dẫn sách: phần sau dấu : trong headText
-    let trich = headText.includes(':') ? headText.split(':').slice(1).join(':').trim() : '';
+    // Trích dẫn sách: ưu tiên phần sau dấu : trong headText,
+    // fallback: lấy text nằm ngoài <strong>/<b> trong cùng block (VD: "<strong>BÀI ĐỌC I</strong> (Cv 8, 26-40)")
+    let trich = '';
+    if (headText.includes(':')) {
+      trich = headText.split(':').slice(1).join(':').trim();
+    } else {
+      const $par = $(el).parent();
+      if ($par.length) {
+        const parFull = $par.text().trim();
+        const afterHead = parFull.slice(headText.length).replace(/^[\s:\-–—(]+/, '').replace(/\)+$/, '').trim();
+        if (afterHead.length > 2 && afterHead.length < 80) trich = afterHead;
+      }
+    }
 
     // <strong> có thể nằm sâu trong <span><span><p> → tìm block ancestor gần nhất
     const bodyParts = [];

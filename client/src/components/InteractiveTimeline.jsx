@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, BookOpen, ChevronRight, X, Users, Volume2, VolumeX } from 'lucide-react';
 
@@ -123,7 +123,7 @@ const CharacterPopup = ({ char, color, onClose }) => (
       <div className="flex items-center gap-2">
         <span className="text-xl">{char.emoji}</span>
         <span className="font-bold text-[13px]"
-          style={{ fontFamily: '"EB Garamond", Georgia, serif', color }}>{char.name}</span>
+          style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color }}>{char.name}</span>
       </div>
       <button onClick={onClose}
         className="text-white/30 hover:text-white transition p-0.5">
@@ -131,7 +131,7 @@ const CharacterPopup = ({ char, color, onClose }) => (
       </button>
     </div>
     <p className="px-3.5 py-2.5 text-[11.5px] leading-relaxed text-white/65"
-      style={{ fontFamily: '"EB Garamond", Georgia, serif', fontStyle: 'italic' }}>
+      style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', fontStyle: 'italic' }}>
       {char.role}
     </p>
   </motion.div>
@@ -165,7 +165,7 @@ const LocationPopup = ({ milestone, onClose }) => {
             <span className="text-[9px] uppercase tracking-widest font-bold" style={{ color: `${borderColor}80` }}>Vị trí</span>
           </div>
           <p className="font-bold text-[13px] leading-tight"
-            style={{ fontFamily: '"EB Garamond", Georgia, serif', color: borderColor }}>
+            style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: borderColor }}>
             {meta.loc.name}
           </p>
         </div>
@@ -239,7 +239,7 @@ const CardBody = ({ milestone, onOpen, locOpen, setLocOpen, slide, onMapSync }) 
 
       {/* Title — serif */}
       <h3 className="font-bold text-xl leading-tight mb-2"
-        style={{ fontFamily: '"EB Garamond", Georgia, serif', color: borderColor }}>
+        style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: borderColor }}>
         {emoji} {label}
       </h3>
 
@@ -253,7 +253,7 @@ const CardBody = ({ milestone, onOpen, locOpen, setLocOpen, slide, onMapSync }) 
       <div className="rounded-xl px-4 py-3 mb-4"
         style={{ background: `linear-gradient(135deg, ${accent}10, ${accent}06)`, borderLeft: `3px solid ${borderColor}65` }}>
         <p className="text-[12px] leading-relaxed"
-          style={{ color: `${borderColor}c8`, fontFamily: '"EB Garamond", Georgia, serif', fontStyle: 'italic' }}>
+          style={{ color: `${borderColor}c8`, fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', fontStyle: 'italic' }}>
           {verse}
         </p>
       </div>
@@ -495,7 +495,7 @@ const SalvationFooter = ({ theme }) => (
       <div>
         <div className="flex items-center gap-2.5">
           <Users size={15} style={{ color: theme.tabGlow }} />
-          <h3 className="font-bold" style={{ fontFamily: '"EB Garamond", Georgia, serif', color: theme.tabGlow, fontSize: '1.05rem' }}>
+          <h3 className="font-bold" style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: theme.tabGlow, fontSize: '1.05rem' }}>
             Kế hoạch Cứu độ — Nhân vật tiêu biểu
           </h3>
         </div>
@@ -513,11 +513,11 @@ const SalvationFooter = ({ theme }) => (
         >
           <span className="text-3xl">{f.emoji}</span>
           <div>
-            <p className="font-bold text-[14px]" style={{ fontFamily: '"EB Garamond", Georgia, serif', color: f.color }}>{f.name}</p>
+            <p className="font-bold text-[14px]" style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: f.color }}>{f.name}</p>
             <p className="text-[10px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: `${f.color}68` }}>{f.role}</p>
           </div>
           <p className="text-[11px] italic leading-relaxed pl-2.5"
-            style={{ color: 'rgba(255,255,255,0.42)', borderLeft: `2px solid ${f.color}45`, fontFamily: '"EB Garamond", Georgia, serif' }}>
+            style={{ color: 'rgba(255,255,255,0.42)', borderLeft: `2px solid ${f.color}45`, fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif' }}>
             {f.verse}
           </p>
         </motion.div>

@@ -24,4 +24,7 @@ router.get(
   ctrl.searchLoiChua
 );
 
+// Global search — không cần auth, public
+router.get('/global', ctrl.globalSearch);
+
 module.exports = router;

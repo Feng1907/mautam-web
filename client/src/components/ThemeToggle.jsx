@@ -7,31 +7,20 @@ const ThemeToggle = ({ className = '' }) => {
   return (
     <button
       onClick={toggle}
-      aria-label={isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-      className={`
-        relative w-9 h-9 rounded-full flex items-center justify-center
-        transition-all duration-300
-        hover:bg-white/15 active:scale-90
-        ${className}
-      `}
+      aria-label={isDark ? 'Chế độ sáng' : 'Chế độ tối'}
+      title={isDark ? 'Chế độ sáng' : 'Chế độ tối'}
+      className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200
+        hover:bg-white/12 active:scale-90 ${className}`}
     >
-      <span
-        className="absolute inset-0 flex items-center justify-center transition-all duration-500"
-        style={{
-          opacity:   isDark ? 0 : 1,
-          transform: isDark ? 'rotate(90deg) scale(0.5)' : 'rotate(0deg) scale(1)',
-        }}
-      >
-        <Sun className="w-4.5 h-4.5 text-white/90" />
+      {/* Sun */}
+      <span className="absolute inset-0 flex items-center justify-center transition-all duration-300"
+        style={{ opacity: isDark ? 0 : 1, transform: isDark ? 'rotate(45deg) scale(0.5)' : 'rotate(0deg) scale(1)' }}>
+        <Sun size={15} strokeWidth={2} className="text-white/75" />
       </span>
-      <span
-        className="absolute inset-0 flex items-center justify-center transition-all duration-500"
-        style={{
-          opacity:   isDark ? 1 : 0,
-          transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0.5)',
-        }}
-      >
-        <Moon className="w-4 h-4 text-white/90" />
+      {/* Moon */}
+      <span className="absolute inset-0 flex items-center justify-center transition-all duration-300"
+        style={{ opacity: isDark ? 1 : 0, transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(-45deg) scale(0.5)' }}>
+        <Moon size={14} strokeWidth={2} className="text-white/75" />
       </span>
     </button>
   );

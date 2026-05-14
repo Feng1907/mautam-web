@@ -41,11 +41,22 @@ const AdminStats = lazy(() => import('./pages/admin/AdminStats'));
 const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
 const AdminRBAC = lazy(() => import('./pages/admin/AdminRBAC'));
 const AdminBackup = lazy(() => import('./pages/admin/AdminBackup'));
+const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
 
 const ConditionalFooter = () => {
   const { pathname } = useLocation();
   if (pathname.startsWith('/admin')) return null;
   return <Footer />;
+};
+
+// Bù offset cho Navbar fixed (h-16 = 64px).
+// Home được miễn vì Hero full-bleed đã overlay lên Navbar transparent.
+// Admin tự quản lý layout riêng nên cũng miễn.
+const NavbarOffset = () => {
+  const { pathname } = useLocation();
+  const exempt = pathname === '/' || pathname.startsWith('/admin');
+  if (exempt) return null;
+  return <div style={{ height: 64 }} aria-hidden="true" />;
 };
 
 const withErrorBoundary = (children, boundaryName, props = {}) => (
@@ -62,6 +73,7 @@ const App = () => (
           <BrowserRouter>
             <PushNotificationManager />
             <Navbar />
+            <NavbarOffset />
             <UrgentBanner />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
@@ -116,6 +128,7 @@ const App = () => (
                   <Route path="lich-su" element={withErrorBoundary(<AdminAuditLog />, 'AdminAuditLog')} />
                   <Route path="phan-quyen" element={withErrorBoundary(<AdminRBAC />, 'AdminRBAC')} />
                   <Route path="sao-luu" element={withErrorBoundary(<AdminBackup />, 'AdminBackup')} />
+                  <Route path="su-kien" element={withErrorBoundary(<AdminEvents />, 'AdminEvents')} />
                 </Route>
               </Routes>
             </Suspense>

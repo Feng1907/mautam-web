@@ -177,6 +177,7 @@ app.use('/api/search',    require('./routes/search'));
 app.use('/api/notify',    notifyLimiter, require('./routes/notify'));
 app.use('/api/subscribe', require('./routes/subscribe'));
 app.use('/subscribe',     require('./routes/subscribe'));
+app.use('/api/events',    require('./routes/events'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

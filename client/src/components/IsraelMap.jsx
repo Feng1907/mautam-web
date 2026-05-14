@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Sparkles, ChevronRight } from 'lucide-react';
 
@@ -159,7 +159,7 @@ const InfoPanel = ({ region, selectedCity, onCityClick }) => {
           <h3
             className="text-xl font-bold mb-2"
             style={{
-              fontFamily: '"EB Garamond", Georgia, serif',
+              fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif',
               color: region.accent,
               letterSpacing: '0.08em',
             }}
@@ -288,7 +288,7 @@ export default function IsraelMap() {
         <div>
           <p
             className="text-sm font-semibold leading-tight"
-            style={{ fontFamily: '"EB Garamond", Georgia, serif', color: '#D4AF37' }}
+            style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: '#D4AF37' }}
           >
             Israel thời Tân Ước
           </p>
