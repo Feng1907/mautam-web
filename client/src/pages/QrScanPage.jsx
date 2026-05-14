@@ -1,4 +1,4 @@
-/**
+﻿/**
  * QrScanPage — Đoàn sinh quét mã QR điểm danh
  * Flow: Camera quét QR → verify token → chọn tên → ghi có mặt
  */
@@ -222,7 +222,7 @@ export default function QrScanPage() {
       <div className="w-full max-w-md px-4 pt-6 pb-2">
         <div className="flex items-center gap-2 mb-1">
           <QrCode size={20} style={{ color: '#D4AF37' }} />
-          <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"EB Garamond",serif' }}>
+          <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif' }}>
             Điểm Danh QR
           </span>
         </div>

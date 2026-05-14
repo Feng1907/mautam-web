@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { ArrowRight, History, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
-const SERIF = '"EB Garamond", Georgia, serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
+const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 const NGANH_CFG = {
   ChienNon: { label: 'Chiên Non', badge: 'bg-pink-100   text-pink-700'   },

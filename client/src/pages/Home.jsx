@@ -1,17 +1,18 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import {
-  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight, Bell,
+  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight, Bell, Share2, Flame, ChevronLeft,
 } from 'lucide-react';
+import api from '../services/api';
 import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const SERIF = '"EB Garamond", Lora, Georgia, serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
+const SANS  = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 // ── Ngành config ──────────────────────────────────────────────────────────────
 const NGANH_KEYS = ['ChienNon', 'AuNhi', 'ThieuNhi', 'NghiaSi', 'HiepSi'];
@@ -34,6 +35,11 @@ const fadeUp = {
   hidden: { opacity: 0, y: 22 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.32, ease: 'easeOut' } },
 };
+
+// Reveal dùng cho section header và block độc lập
+const revealUp   = { hidden: { opacity: 0, y: 32 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } } };
+const revealLeft = { hidden: { opacity: 0, x: -28 }, visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } } };
+const VIEWPORT   = { once: true, margin: '-56px' };
 
 // ── Cross watermark ───────────────────────────────────────────────────────────
 const CrossWatermark = () => (
@@ -61,6 +67,209 @@ const glassStyle = {
   borderColor: '#e5d5b5',
 };
 
+// ── Tính countdown từ ISO date string (UTC+7 aware) ───────────────────────────
+function calcCountdown(dateStr) {
+  // dateStr: 'YYYY-MM-DD' hoặc 'YYYY-MM-DDTHH:MM'
+  const target = new Date(dateStr.length === 10 ? dateStr + 'T23:59:59' : dateStr);
+  const diff   = Math.max(0, target.getTime() - Date.now());
+  const s      = Math.floor(diff / 1000);
+  return {
+    days:    Math.floor(s / 86400),
+    hours:   Math.floor((s % 86400) / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+    done:    diff <= 0,
+  };
+}
+
+// ── CountdownStrip — fetch từ API, event queue tự động ───────────────────────
+const AUTO_ROTATE_MS = 15_000; // 15 giây
+
+const CountdownStrip = () => {
+  const [events,  setEvents]  = useState([]);
+  const [idx,     setIdx]     = useState(0);
+  const [tick,    setTick]    = useState(null);
+  const timerRef = useRef(null);
+  const autoRef  = useRef(null);
+
+  // Khởi động / reset auto-rotate, dừng khi chỉ 1 sự kiện
+  const startAutoRotate = (total) => {
+    clearInterval(autoRef.current);
+    if (total <= 1) return;
+    autoRef.current = setInterval(() => {
+      setIdx(i => (i + 1) % total);
+    }, AUTO_ROTATE_MS);
+  };
+
+  // Fetch danh sách sự kiện từ server
+  useEffect(() => {
+    api.get('/events')
+      .then(r => {
+        const now = Date.now();
+        const upcoming = (r.data.data || [])
+          .filter(e => new Date(e.date.length === 10 ? e.date + 'T23:59:59' : e.date).getTime() > now)
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+        setEvents(upcoming);
+        setIdx(0);
+        startAutoRotate(upcoming.length);
+      })
+      .catch(() => {});
+    return () => clearInterval(autoRef.current);
+  }, []);
+
+  // Countdown tick mỗi giây
+  useEffect(() => {
+    if (!events.length) return;
+    const update = () => {
+      const t = calcCountdown(events[idx].date);
+      setTick(t);
+      if (t.done && idx < events.length - 1) {
+        setTimeout(() => setIdx(i => i + 1), 3000);
+      }
+    };
+    update();
+    timerRef.current = setInterval(update, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [idx, events]);
+
+  // Bấm mũi tên thủ công → reset countdown 10 giây
+  const goTo = (newIdx) => {
+    setIdx(newIdx);
+    startAutoRotate(events.length);
+  };
+
+  if (!events.length) return null;
+
+  const ev  = events[idx];
+  const pad = n => String(n).padStart(2, '0');
+  const dateLabel = new Date(
+    ev.date.length === 10 ? ev.date + 'T00:00:00' : ev.date
+  ).toLocaleString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const isDone = tick?.done ?? false;
+  const units  = [
+    { v: tick?.days    ?? 0, l: 'ngày'   },
+    { v: tick?.hours   ?? 0, l: 'giờ'    },
+    { v: tick?.minutes ?? 0, l: 'phút'   },
+    { v: tick?.seconds ?? 0, l: 'giây'   },
+  ];
+
+  // Glassmorphism slim bar — absolute bottom Hero
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.45 }}
+      className="absolute bottom-0 left-0 right-0 z-20"
+      style={{
+        background: 'rgba(0,0,0,0.40)',
+        backdropFilter: 'blur(5px)',
+        WebkitBackdropFilter: 'blur(5px)',
+        borderTop: '1px solid rgba(248,212,68,0.2)',
+      }}
+    >
+      <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-center gap-4 flex-wrap">
+
+        {/* Tên sự kiện — compact */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-base select-none leading-none">{ev.icon}</span>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] hidden sm:block"
+            style={{ color: 'rgba(248,212,68,0.8)', fontFamily: SANS }}>
+            {ev.name}
+          </p>
+          <span className="text-white/20 hidden sm:block">·</span>
+          <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.38)', fontFamily: SANS }}>
+            {dateLabel}
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden sm:block w-px h-6 bg-white/15" />
+
+        {/* Countdown digits / trạng thái đang diễn ra */}
+        {isDone ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 px-3 py-1 rounded-full"
+            style={{ background: 'rgba(248,212,68,0.15)', border: '1px solid rgba(248,212,68,0.35)' }}
+          >
+            <span className="text-sm select-none">🎉</span>
+            <span className="text-sm font-bold" style={{ color: '#F8D444', fontFamily: SANS }}>
+              Sự kiện đang diễn ra!
+            </span>
+          </motion.div>
+        ) : (
+          <div className="flex items-center gap-2 sm:gap-3">
+            {units.map((u, i) => (
+              <div key={u.l} className="flex items-center gap-2 sm:gap-3">
+                {i > 0 && (
+                  <span className="font-bold text-base leading-none" style={{ color: 'rgba(248,212,68,0.35)' }}>:</span>
+                )}
+                <div className="flex flex-col items-center min-w-8">
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={u.v}
+                      initial={{ y: -8, opacity: 0 }}
+                      animate={{ y: 0,  opacity: 1 }}
+                      exit={{    y:  8, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="font-black tabular-nums leading-none"
+                      style={{
+                        fontFamily: '"Be Vietnam Pro", "Inter", monospace',
+                        fontSize: 'clamp(1.35rem, 3vw, 1.65rem)',
+                        color: ev.color || '#F8D444',
+                        textShadow: `0 0 14px ${ev.color || '#F8D444'}66`,
+                      }}
+                    >
+                      {pad(u.v)}
+                    </motion.span>
+                  </AnimatePresence>
+                  <span className="text-[8px] uppercase tracking-widest leading-none mt-0.5"
+                    style={{ color: 'rgba(255,255,255,0.38)', fontFamily: SANS }}>
+                    {u.l}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Dot nav + progress bar */}
+        {events.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => goTo((idx - 1 + events.length) % events.length)}
+              className="text-white/35 hover:text-white/70 transition">
+              <ChevronLeft size={11} />
+            </button>
+
+            {events.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)}
+                className="relative rounded-full overflow-hidden transition-all duration-300"
+                style={{ width: i === idx ? 20 : 4, height: 4, background: 'rgba(255,255,255,0.22)' }}
+              >
+                {i === idx && (
+                  <motion.span
+                    key={idx}
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{ background: '#F8D444' }}
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: AUTO_ROTATE_MS / 1000, ease: 'linear' }}
+                  />
+                )}
+              </button>
+            ))}
+
+            <button onClick={() => goTo((idx + 1) % events.length)}
+              className="text-white/35 hover:text-white/70 transition">
+              <ChevronRight size={11} />
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 // ── Giờ lễ cố định (giờ:phút, 24h) ─────────────────────────────────────────
 const MASS_TIMES = [5, 18]; // 05:00, 18:00
 function getNextMass() {
@@ -79,9 +288,18 @@ const Home = () => {
   const { t }    = useTranslation();
   const nextMass = useMemo(() => getNextMass(), []);
 
+  // Fetch Lời Chúa hôm nay
+  const [loiChua, setLoiChua] = useState(null);
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    api.get(`/loi-chua?date=${today}`)
+      .then(r => setLoiChua(r.data.data))
+      .catch(() => {});
+  }, []);
+
 
   return (
-    <main className="relative flex-1 bg-page" style={{ fontFamily: SANS }}>
+    <main className="relative flex-1 bg-page" style={{ fontFamily: SANS, paddingTop: 0 }}>
       <Helmet>
         <title>Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</title>
         <meta property="og:title" content="Xứ Đoàn Anrê Phú Yên – Mẫu Tâm" />
@@ -98,88 +316,90 @@ const Home = () => {
         style={{
           backgroundImage: 'url(/images/DAP_2149.jpg)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
+          backgroundPosition: '55% 25%',
           backgroundAttachment: 'fixed',
-          minHeight: '480px',
+          minHeight: '94svh',
         }}
       >
-        {/* Gradient chính: trong suốt ở trên → đỏ đậm xứ đoàn ở dưới */}
+        {/* Gradient đỉnh: che Navbar để chữ menu trắng rõ trên nền ảnh */}
+        <div className="absolute top-0 left-0 right-0 pointer-events-none"
+          style={{ height: 90, background: 'linear-gradient(to bottom, rgba(0,0,0,0.68) 0%, transparent 100%)' }} />
+        {/* Gradient đáy: mờ dần xuống để nút bấm nổi trên ảnh */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(20,0,0,0.3) 40%, rgba(80,0,0,0.72) 75%, rgba(100,0,0,0.88) 100%)' }} />
-        {/* Vignette nhẹ hai bên */}
+          style={{ background: 'linear-gradient(to bottom, transparent 15%, rgba(10,0,0,0.18) 45%, rgba(60,0,0,0.55) 72%, rgba(90,0,0,0.80) 88%, rgba(100,0,0,0.90) 100%)' }} />
+        {/* Vignette hai bên nhẹ */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.3) 100%)' }} />
-        <div className="absolute top-0 left-0 right-0 h-1"
+          style={{ background: 'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.22) 100%)' }} />
+        {/* Gold top line */}
+        <div className="absolute top-0 left-0 right-0 h-px"
           style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }} />
 
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-24">
+        {/* Đẩy phần text lên cao, chừa khoảng trống giữa cho gương mặt thở */}
+        <div className="relative z-10 flex flex-col items-center justify-start text-center px-4 pt-24 pb-24">
           <motion.p
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
-            className="text-[11px] uppercase tracking-[0.35em] font-semibold mb-4"
-            style={{ color: 'rgba(212,175,55,0.9)', fontFamily: SANS }}
+            className="text-[10px] uppercase tracking-[0.38em] font-semibold mb-3"
+            style={{ color: 'rgba(212,175,55,0.85)', fontFamily: SANS }}
           >
             {t('home.subtitle')}
           </motion.p>
 
           <motion.h1
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.55 }}
-            style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 600,
-                     color: 'white', textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
-            className="drop-shadow-2xl leading-tight mb-4"
+            style={{ fontFamily: SERIF, fontSize: 'clamp(1.85rem, 4.5vw, 3.2rem)', fontWeight: 600,
+                     color: 'white', textShadow: '0 2px 24px rgba(0,0,0,0.6)' }}
+            className="drop-shadow-2xl leading-tight mb-3"
           >
             {t('home.title')}
           </motion.h1>
 
           <motion.div
-            initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.35, duration: 0.5 }}
-            className="flex items-center gap-3 mb-5"
+            initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.32, duration: 0.45 }}
+            className="flex items-center gap-3 mb-4"
           >
-            <div className="h-px w-16" style={{ background: 'linear-gradient(to right, transparent, #D4AF37)' }} />
-            <span className="text-[#D4AF37] text-lg select-none">✝</span>
-            <div className="h-px w-16" style={{ background: 'linear-gradient(to left, transparent, #D4AF37)' }} />
+            <div className="h-px w-12" style={{ background: 'linear-gradient(to right, transparent, #D4AF37)' }} />
+            <span className="text-[#D4AF37] select-none">✝</span>
+            <div className="h-px w-12" style={{ background: 'linear-gradient(to left, transparent, #D4AF37)' }} />
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.5 }}
-            className="text-white/85 max-w-lg mx-auto leading-relaxed drop-shadow mb-10"
-            style={{ fontFamily: SERIF, fontSize: '1.15rem', fontStyle: 'italic' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42, duration: 0.5 }}
+            className="text-white/80 max-w-md mx-auto leading-relaxed drop-shadow mb-12"
+            style={{ fontFamily: SERIF, fontSize: '1.05rem', fontStyle: 'italic' }}
           >
             {t('home.quote')}
           </motion.p>
 
+          {/* CTA — nhỏ, nhẹ, không đè lên chủ thể ảnh */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.4 }}
-            className="flex justify-center gap-3 flex-wrap"
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52, duration: 0.4 }}
+            className="flex justify-center gap-2 flex-wrap"
           >
-            {/* Nút chính — Glass trắng đặc hơn, nổi bật */}
             <Link to="/gio-le"
-              className="px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-xl"
+              className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg"
               style={{
-                background: 'rgba(255,255,255,0.22)',
-                backdropFilter: 'blur(14px)',
-                WebkitBackdropFilter: 'blur(14px)',
-                border: '1px solid rgba(255,255,255,0.55)',
+                background: 'rgba(255,255,255,0.18)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                border: '1px solid rgba(255,255,255,0.45)',
                 color: '#fff',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3)',
               }}
             >
               {t('home.viewLiturgy')}
             </Link>
-            {/* Các nút phụ — Glass mờ hơn */}
             {[
-              { to: '/tin-tuc',        label: t('home.news')     },
-              { to: '/thu-vien',       label: t('nav.gallery')   },
-              { to: '/lich-su-cuu-do', label: 'Lịch Sử'          },
+              { to: '/tin-tuc',        label: t('home.news')   },
+              { to: '/thu-vien',       label: t('nav.gallery') },
+              { to: '/lich-su-cuu-do', label: 'Lịch Sử'        },
               ...(user ? [{ to: '/lop-hoc', label: t('home.classes') }] : []),
             ].map(link => (
               <Link key={link.to} to={link.to}
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                className="px-4 py-1.5 rounded-full text-xs font-medium text-white/90 transition-all hover:-translate-y-0.5 hover:text-white"
                 style={{
                   background: 'rgba(255,255,255,0.10)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255,255,255,0.28)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(4px)',
+                  WebkitBackdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.22)',
                 }}
               >
                 {link.label}
@@ -188,21 +408,24 @@ const Home = () => {
           </motion.div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 h-1"
-             style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }} />
+        {/* Countdown glassmorphism đè lên đáy Hero */}
+        <CountdownStrip />
       </section>
 
       {/* ══════════════════════════════════════════════════════
           5 NGÀNH
       ══════════════════════════════════════════════════════ */}
       <section className="relative z-10 page-container py-10">
-        <div className="flex items-center gap-3 mb-6">
+        <motion.div
+          variants={revealLeft} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+          className="flex items-center gap-3 mb-6"
+        >
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
           <h2 className="text-xl font-bold text-[#3d1515] shrink-0" style={{ fontFamily: SERIF }}>
             {t('home.nganhTitle')}
           </h2>
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
-        </div>
+        </motion.div>
 
         <motion.div
           variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}
@@ -328,42 +551,107 @@ const Home = () => {
           {/* ── Card Lời Chúa + Widget Phụng Vụ ── */}
           <div className="flex flex-col gap-4">
 
-            {/* Lời Chúa card */}
+            {/* Lời Chúa card — fetch real data */}
             <motion.div
               initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.4, delay: 0.08 }}
-              className="rounded-3xl p-6 relative flex flex-col justify-between flex-1"
+              className="rounded-3xl relative flex flex-col flex-1 overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, #fdf8ec 0%, #f5e8c5 60%, #fdf8ec 100%)',
+                background: 'linear-gradient(160deg, #fdf8ec 0%, #f8edcc 55%, #fdf8ec 100%)',
                 border: '2px solid #D4AF37',
-                boxShadow: '0 4px 24px rgba(212,175,55,0.1)',
+                boxShadow: '0 4px 28px rgba(212,175,55,0.15)',
               }}
             >
-              <span className="absolute top-3 left-4 text-[#D4AF37]/25 text-3xl select-none" aria-hidden="true">✦</span>
-              <span className="absolute bottom-3 right-4 text-[#D4AF37]/25 text-3xl select-none" aria-hidden="true">✦</span>
+              {/* Top accent bar */}
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #D4AF37, #c8960a, #D4AF37)' }} />
 
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-[#8B0000] font-semibold mb-3" style={{ fontFamily: SANS }}>
-                  Lời Chúa
-                </p>
-                <blockquote
-                  className="text-[#3d1515] leading-relaxed mb-3"
-                  style={{ fontFamily: SERIF, fontSize: '1.15rem', fontStyle: 'italic' }}
-                >
-                  {t('home.quote')}
+              <div className="p-6 flex flex-col flex-1">
+                {/* Header row */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#D4AF37] text-lg select-none">✝</span>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-[#8B0000] font-bold" style={{ fontFamily: SANS }}>
+                      Lời Chúa Hôm Nay
+                    </p>
+                  </div>
+                  {loiChua?.season && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(139,0,0,0.08)', color: '#8B0000', fontFamily: SANS }}>
+                      {loiChua.season}
+                    </span>
+                  )}
+                </div>
+
+                {/* Key verse */}
+                <blockquote className="flex-1 mb-4 relative pl-4"
+                  style={{ borderLeft: '3px solid #D4AF37' }}>
+                  <p className="text-[#2a0f0f] leading-loose"
+                    style={{ fontFamily: SERIF, fontSize: '1.05rem', fontStyle: 'italic' }}
+                    dangerouslySetInnerHTML={{
+                      __html: (loiChua?.keyVerse || t('home.quote'))
+                        .replace(
+                          /(\d+)/g,
+                          '<sup style="font-size:0.65em;font-style:normal;font-weight:700;color:#8B0000;margin:0 1px;vertical-align:super;line-height:0;">$1</sup>'
+                        )
+                    }}
+                  />
+                  {loiChua?.tinMungTen && (
+                    <p className="text-[#8B0000] text-[11px] mt-2.5 font-bold uppercase tracking-widest not-italic"
+                      style={{ fontFamily: SANS }}>
+                      — {loiChua.tinMungTen}
+                    </p>
+                  )}
                 </blockquote>
-                <p className="text-[#8B0000]/70 text-xs tracking-widest uppercase" style={{ fontFamily: SANS }}>
-                  Thánh Anrê Phú Yên
-                </p>
-              </div>
 
-              <Link
-                to="/gio-le"
-                className="self-start mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#8B0000] hover:gap-2.5 transition-all"
-                style={{ fontFamily: SANS }}
-              >
-                Đọc Lời Chúa hôm nay <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+                {/* Footer: đọc thêm + share */}
+                <div className="flex items-center justify-between gap-2 pt-3"
+                  style={{ borderTop: '1px solid rgba(212,175,55,0.3)' }}>
+                  <Link to="/loi-chua"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#8B0000] hover:gap-2.5 transition-all"
+                    style={{ fontFamily: SANS }}>
+                    Đọc đầy đủ <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {/* Share buttons */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-gray-400 mr-0.5" style={{ fontFamily: SANS }}>Chia sẻ:</span>
+
+                    {/* Facebook */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + '/loi-chua')}&quote=${encodeURIComponent((loiChua?.keyVerse || t('home.quote')) + (loiChua?.tinMungTen ? ' — ' + loiChua.tinMungTen : ''))}`}
+                      target="_blank" rel="noopener noreferrer"
+                      title="Chia sẻ lên Facebook"
+                      className="flex items-center justify-center w-7 h-7 rounded-full transition hover:scale-110"
+                      style={{ background: '#1877F2' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </a>
+
+                    {/* Zalo */}
+                    <a
+                      href={`https://zalo.me/share/url?url=${encodeURIComponent(window.location.origin + '/loi-chua')}&title=${encodeURIComponent('Lời Chúa Hôm Nay — ' + (loiChua?.tinMungTen || 'Mẫu Tâm'))}`}
+                      target="_blank" rel="noopener noreferrer"
+                      title="Chia sẻ lên Zalo"
+                      className="flex items-center justify-center w-7 h-7 rounded-full transition hover:scale-110"
+                      style={{ background: '#0068FF' }}
+                    >
+                      <span className="text-white font-black text-[10px] leading-none">Z</span>
+                    </a>
+
+                    {/* Copy link */}
+                    <button
+                      title="Sao chép liên kết"
+                      onClick={() => navigator.clipboard?.writeText(window.location.origin + '/loi-chua')}
+                      className="flex items-center justify-center w-7 h-7 rounded-full transition hover:scale-110"
+                      style={{ background: 'rgba(139,0,0,0.1)', border: '1px solid rgba(139,0,0,0.2)' }}
+                    >
+                      <Share2 size={11} style={{ color: '#8B0000' }} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* Widget Lịch Phụng Vụ */}
@@ -494,13 +782,16 @@ const Home = () => {
           .bento-icon-spin:hover  .bento-ico { animation: bento-spin  1.8s linear infinite; }
         `}</style>
 
-        <div className="flex items-center gap-3 mb-6">
+        <motion.div
+          variants={revealLeft} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+          className="flex items-center gap-3 mb-6"
+        >
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
           <h2 className="text-xl font-bold text-[#3d1515] shrink-0" style={{ fontFamily: SERIF }}>
             Khám Phá
           </h2>
           <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
-        </div>
+        </motion.div>
 
         {/*
           Bento 4 cột:
@@ -653,7 +944,10 @@ const Home = () => {
       {/* ══════════════════════════════════════════════════════
           FOOTER ORNAMENT
       ══════════════════════════════════════════════════════ */}
-      <div className="relative z-10 py-6 text-center" style={{ borderTop: '1px solid #e5d5b5' }}>
+      <motion.div
+        variants={revealUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+        className="relative z-10 py-6 text-center" style={{ borderTop: '1px solid #e5d5b5' }}
+      >
         <div className="flex items-center justify-center gap-3">
           <div className="h-px w-16" style={{ background: 'linear-gradient(to right, transparent, #D4AF37)' }} />
           <span className="text-[#D4AF37]/60 text-lg select-none">✝</span>
@@ -662,7 +956,7 @@ const Home = () => {
         <p className="text-[11px] text-gray-400 mt-2 tracking-widest uppercase" style={{ fontFamily: SANS }}>
           Xứ Đoàn Anrê Phú Yên · Mẫu Tâm
         </p>
-      </div>
+      </motion.div>
     </main>
   );
 };

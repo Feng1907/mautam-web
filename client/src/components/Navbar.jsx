@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -15,84 +15,100 @@ const avatarColor = (name = '') =>
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropRef = useRef(null);
+
+  // Chỉ dùng hiệu ứng transparent trên trang Home
+  const isHome = location.pathname === '/';
+
+  // Scroll listener — chuyển sang solid khi cuộn > 10px
+  useEffect(() => {
+    if (!isHome) return;
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isHome]);
+
+  // Đóng dropdown khi click ngoài
+  useEffect(() => {
+    const h = (e) => { if (!dropRef.current?.contains(e.target)) setDropOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/'); setDropOpen(false); };
 
-  useEffect(() => {
-    const handler = (e) => { if (!dropRef.current?.contains(e.target)) setDropOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  // ── Style theo trạng thái scroll ────────────────────────────────────────────
+  const solid  = !isHome || scrolled;
+  const bgStyle = solid
+    ? { background: '#8B0000', boxShadow: '0 2px 20px rgba(0,0,0,0.45), 0 1px 0 rgba(212,175,55,0.1)' }
+    : { background: 'transparent', boxShadow: 'none' };
 
   const linkClass = ({ isActive }) =>
     isActive
-      ? 'px-4 py-2 rounded-lg text-sm font-medium text-[#D4AF37] bg-white/10 transition-all duration-200'
-      : 'px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/8 transition-all duration-200';
+      ? 'px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-[#F8D444] bg-white/10 transition-all duration-200 whitespace-nowrap'
+      : 'px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 whitespace-nowrap';
 
   const mobileLinkClass = ({ isActive }) =>
     isActive
-      ? 'block px-3 py-2 rounded-lg text-sm font-medium text-[#D4AF37] bg-white/10 transition-all duration-200'
-      : 'block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200';
+      ? 'block px-3 py-2 rounded-lg text-sm font-semibold text-[#F8D444] bg-white/10'
+      : 'block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-150';
 
-  // Nav links built from t() — filtered by auth/role
   const NAV_LINKS = [
-    { to: '/',        label: t('nav.home')    },
-    { to: '/gio-le',  label: t('nav.liturgy') },
-    { to: '/tin-tuc', label: t('nav.news')    },
-    { to: '/thu-vien',label: t('nav.gallery') },
-    { to: '/lich-su-cuu-do', label: 'Lịch sử' },
-    { to: '/lop-hoc', label: t('nav.classes'), authRequired: true },
-    { to: '/phu-huynh', label: 'Phu huynh', parentOnly: true },
-    { to: '/admin',   label: t('nav.admin'),   adminOnly: true    },
+    { to: '/',             label: t('nav.home')    },
+    { to: '/gio-le',       label: t('nav.liturgy') },
+    { to: '/tin-tuc',      label: t('nav.news')    },
+    { to: '/thu-vien',     label: t('nav.gallery') },
+    { to: '/lich-su-cuu-do', label: 'Lịch Sử'     },
+    { to: '/lop-hoc',      label: t('nav.classes'), authRequired: true  },
+    { to: '/phu-huynh',    label: 'Phụ Huynh',      parentOnly:   true  },
+    { to: '/admin',        label: t('nav.admin'),    adminOnly:    true  },
   ];
 
   const visibleLinks = NAV_LINKS.filter(l =>
     (!l.authRequired || user) &&
-    (!l.parentOnly || user?.vaiTro === 'PARENT') &&
-    (!l.adminOnly || user?.vaiTro === 'admin')
+    (!l.parentOnly   || user?.vaiTro === 'PARENT') &&
+    (!l.adminOnly    || user?.vaiTro === 'admin')
   );
 
   return (
     <header
-      className="sticky top-0 z-50"
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: '#8B0000',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.40), 0 1px 0 rgba(212,175,55,0.08)',
+        ...bgStyle,
+        borderBottom: solid ? '1px solid rgba(255,255,255,0.07)' : 'none',
       }}
     >
-      <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
+      {/* 3 cột cân đối: logo | nav | actions — mỗi cột chiếm 1/3 */}
+      <div className="max-w-7xl mx-auto px-6 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 text-white leading-tight shrink-0">
+        {/* ── Cột 1: Logo (căn trái) ── */}
+        <Link to="/" className="flex items-center gap-2.5 text-white leading-tight min-w-0">
           <img
             src="/logos/logos doan thieu nhi MT.jpg"
             alt="Logo Xứ Đoàn Mẫu Tâm"
-            className="w-9 h-9 rounded-full object-cover shrink-0"
-            style={{ border: '2px solid rgba(212,175,55,0.6)' }}
+            className="w-8 h-8 rounded-full object-cover shrink-0"
+            style={{ border: '2px solid rgba(212,175,55,0.65)' }}
           />
-          <span className="hidden sm:flex flex-col">
-            <span
-              className="text-sm font-bold leading-tight tracking-wide"
-              style={{ fontFamily: '"EB Garamond", Georgia, serif', color: 'white' }}
-            >
+          <span className="hidden lg:flex flex-col">
+            <span className="text-[13px] font-bold leading-tight tracking-wide text-white"
+              style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif' }}>
               Xứ Đoàn
             </span>
-            <span
-              className="text-[11px] leading-tight"
-              style={{ color: 'rgba(212,175,55,0.85)', fontFamily: '"Inter", system-ui, sans-serif' }}
-            >
+            <span className="text-[10px] leading-tight"
+              style={{ color: 'rgba(212,175,55,0.8)', fontFamily: '"Be Vietnam Pro", "Inter", system-ui, sans-serif' }}>
               Anrê Phú Yên · Mẫu Tâm
             </span>
           </span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-2">
+        {/* ── Cột 2: Nav links (căn giữa tuyệt đối) ── */}
+        <nav className="hidden md:flex items-center gap-0.5">
           {visibleLinks.map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={linkClass}>
               {l.label}
@@ -100,16 +116,19 @@ const Navbar = () => {
           ))}
         </nav>
 
-        {/* Right side: lang switcher + theme toggle + auth */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* ── Cột 3: Actions (căn phải) ── */}
+        <div className="hidden md:flex items-center gap-1.5 justify-end">
           <ThemeToggle />
           <LanguageSwitcher />
+
+          {/* Divider mỏng */}
+          <div className="w-px h-5 bg-white/15 mx-0.5" />
 
           {user ? (
             <div className="relative" ref={dropRef}>
               <button
                 onClick={() => setDropOpen(o => !o)}
-                className="flex items-center gap-2 hover:bg-red-600 rounded-lg px-2 py-1 transition"
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-white/10 transition"
               >
                 {user.avatar ? (
                   <img src={user.avatar} alt=""
@@ -119,10 +138,10 @@ const Navbar = () => {
                     {user.hoTen?.charAt(0)?.toUpperCase()}
                   </div>
                 )}
-                <span className="text-white/90 text-sm font-medium max-w-30 truncate">
+                <span className="text-white/85 text-[13px] font-medium max-w-24 truncate hidden xl:block">
                   {user.hoTen}
                 </span>
-                <svg className={`w-3 h-3 text-white/60 transition ${dropOpen ? 'rotate-180' : ''}`}
+                <svg className={`w-3 h-3 text-white/40 transition-transform duration-200 ${dropOpen ? 'rotate-180' : ''}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -130,7 +149,7 @@ const Navbar = () => {
 
               {dropOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-gray-50 bg-gray-50">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/80">
                     <p className="font-semibold text-gray-800 text-sm truncate">{user.hoTen}</p>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
@@ -141,14 +160,6 @@ const Navbar = () => {
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
                     {t('nav.profile')}
-                  </Link>
-                  <Link to="/ho-so" onClick={() => setDropOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                    </svg>
-                    {t('nav.changePassword')}
                   </Link>
                   <div className="border-t border-gray-100" />
                   <button onClick={handleLogout}
@@ -164,35 +175,40 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/login" className="text-white/90 hover:text-white text-sm font-medium transition">
+              <Link to="/login"
+                className="text-white/80 hover:text-white text-[13px] font-medium transition whitespace-nowrap">
                 {t('nav.login')}
               </Link>
               <Link to="/dang-ky"
-                className="bg-white text-red-700 text-xs font-bold px-3 py-1.5 rounded-full hover:bg-red-50 transition">
+                className="bg-white/90 text-red-700 text-[12px] font-bold px-3 py-1.5 rounded-full hover:bg-white transition whitespace-nowrap">
                 {t('nav.register')}
               </Link>
             </div>
           )}
         </div>
 
-        {/* Mobile: theme toggle */}
-        <ThemeToggle className="md:hidden" />
-
-        {/* Mobile hamburger */}
-        <button className="md:hidden text-white p-1" onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {menuOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-          </svg>
-        </button>
+        {/* ── Mobile right: theme + hamburger (cột 3) ── */}
+        <div className="md:hidden flex items-center gap-1 justify-end">
+          <ThemeToggle />
+          <button className="text-white p-1.5" onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* ── Mobile menu ── */}
       {menuOpen && (
         <div
           className="md:hidden px-4 pt-2 pb-4 flex flex-col gap-1"
-          style={{ background: '#6e0000', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          style={{
+            background: 'rgba(90,0,0,0.97)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
         >
           {visibleLinks.map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'} className={mobileLinkClass}
@@ -200,41 +216,27 @@ const Navbar = () => {
               {l.label}
             </NavLink>
           ))}
-          {/* Language switcher + auth actions */}
           <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1">
-            <div className="px-1 pb-1">
-              <LanguageSwitcher />
-            </div>
+            <div className="px-1 pb-1"><LanguageSwitcher /></div>
             {user ? (
               <>
-                <Link
-                  to="/ho-so"
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link to="/ho-so" onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all">
                   👤 {t('nav.profile')}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-left px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
-                >
+                <button onClick={handleLogout}
+                  className="text-left px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all">
                   {t('nav.logout')}
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link to="/login" onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all">
                   {t('nav.login')}
                 </Link>
-                <Link
-                  to="/dang-ky"
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/8 transition-all duration-200"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link to="/dang-ky" onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all">
                   {t('nav.register')}
                 </Link>
               </>

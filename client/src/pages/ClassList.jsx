@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, BookOpen, ArrowRight, UserCheck } from 'lucide-react';
@@ -8,8 +8,8 @@ import { formatClassName } from '../utils/formatClassName';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
-const SERIF = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
+const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 
 // ── Ngành config ──────────────────────────────────────────────────────────────

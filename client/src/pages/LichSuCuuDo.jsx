@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useRef, useEffect } from 'react';
+﻿import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
@@ -303,7 +303,7 @@ const DetailModal = ({ milestone, onClose }) => {
             style={{ background: `${accent}22`, borderBottom: `1px solid ${borderColor}30` }}>
             <span className="text-3xl">{emoji}</span>
             <h2 className="flex-1 font-bold text-lg leading-tight"
-              style={{ fontFamily: '"EB Garamond", Georgia, serif', color: borderColor }}>
+              style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: borderColor }}>
               {detail.title}
             </h2>
             <button onClick={onClose}
@@ -314,7 +314,7 @@ const DetailModal = ({ milestone, onClose }) => {
           <div className="px-6 py-5 space-y-5">
             {detail.sections.map((s, i) => (
               <div key={i}>
-                <h3 className="font-semibold mb-1.5" style={{ color: borderColor, fontFamily: '"EB Garamond", Georgia, serif', fontSize: '1rem' }}>
+                <h3 className="font-semibold mb-1.5" style={{ color: borderColor, fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', fontSize: '1rem' }}>
                   {s.heading}
                 </h3>
                 <p className="text-white/72 text-sm leading-relaxed">{s.body}</p>
@@ -380,7 +380,7 @@ const TabSelector = ({ activeTab, onSwitch }) => (
             <span
               className="font-bold text-sm tracking-[0.12em] leading-tight"
               style={{
-                fontFamily: '"EB Garamond", Georgia, serif',
+                fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif',
                 color: isActive ? theme.tabActive.color : 'rgba(255,255,255,0.4)',
               }}
             >
@@ -571,7 +571,7 @@ export default function LichSuCuuDo() {
         <h1
           className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight"
           style={{
-            fontFamily: '"EB Garamond", Georgia, serif',
+            fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif',
             background: 'linear-gradient(135deg, #D4AF37 0%, #ffe566 50%, #C8860A 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -678,7 +678,7 @@ export default function LichSuCuuDo() {
               <Users size={22} style={{ color: '#D4AF37' }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base mb-0.5" style={{ fontFamily: '"Lexend", "EB Garamond", Georgia, serif', color: '#D4AF37' }}>
+              <h3 className="font-bold text-base mb-0.5" style={{ fontFamily: '"Lexend", "Playfair Display", "EB Garamond", Georgia, serif', color: '#D4AF37' }}>
                 Danh sách Nhân vật tiêu biểu
               </h3>
               <p className="text-white/45 text-sm leading-snug">

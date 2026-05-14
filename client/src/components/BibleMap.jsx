@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X, BookOpen, Compass } from 'lucide-react';
@@ -219,7 +219,7 @@ const HoverTooltip = ({ loc }) => {
           textAnchor="middle"
           fontSize="7.5"
           fill={loc.color}
-          fontFamily='"EB Garamond", Georgia, serif'
+          fontFamily='"Playfair Display", "EB Garamond", Georgia, serif'
           opacity="0.95"
         >
           {line}
@@ -276,7 +276,7 @@ const LocationPopover = ({ loc, svgRect, onClose }) => {
               </span>
             </div>
             <h3 className="font-bold leading-tight text-base"
-              style={{ fontFamily: '"EB Garamond", Georgia, serif', color: loc.color }}>
+              style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: loc.color }}>
               {loc.name}
             </h3>
             <p className="text-white/40 text-[11px] mt-0.5">{loc.region}</p>
@@ -358,7 +358,7 @@ export default function BibleMap({ highlightedId = null }) {
         <div className="flex items-center gap-3">
           <Compass size={18} style={{ color: '#D4AF37' }} />
           <h2 className="font-bold text-lg"
-            style={{ fontFamily: '"EB Garamond", Georgia, serif', color: '#D4AF37' }}>
+            style={{ fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif', color: '#D4AF37' }}>
             Bản đồ Vùng Đất Kinh Thánh
           </h2>
         </div>
@@ -518,12 +518,12 @@ export default function BibleMap({ highlightedId = null }) {
           <g opacity="0.55" style={{ pointerEvents: 'none' }}>
             {/* Ai Cập ← phía Nam */}
             <text x="210" y="793" textAnchor="middle" fontSize="8" fill="#4A90D9"
-              fontFamily='"EB Garamond", Georgia, serif' fontStyle="italic">
+              fontFamily='"Playfair Display", "EB Garamond", Georgia, serif' fontStyle="italic">
               ↓ Ai Cập · Sinai · Gôsen
             </text>
             {/* Lưỡng Hà → phía Bắc-Đông */}
             <text x="468" y="22" textAnchor="end" fontSize="8" fill="#CD853F"
-              fontFamily='"EB Garamond", Georgia, serif' fontStyle="italic">
+              fontFamily='"Playfair Display", "EB Garamond", Georgia, serif' fontStyle="italic">
               Haran · Ur · Babylon ↗
             </text>
           </g>
@@ -538,7 +538,7 @@ export default function BibleMap({ highlightedId = null }) {
                 x={labelPos.x} y={labelPos.y}
                 textAnchor="middle" fontSize="7"
                 fill={route.color} opacity="0.7"
-                fontFamily='"EB Garamond", Georgia, serif'
+                fontFamily='"Playfair Display", "EB Garamond", Georgia, serif'
                 fontStyle="italic"
                 style={{ pointerEvents: 'none', userSelect: 'none' }}
               >
@@ -637,7 +637,7 @@ export default function BibleMap({ highlightedId = null }) {
                     fill={loc.color}
                     stroke="rgba(0,0,0,0.9)" strokeWidth="2.5"
                     strokeLinejoin="round" paintOrder="stroke fill"
-                    fontFamily='"EB Garamond", Georgia, serif' fontWeight="bold"
+                    fontFamily='"Playfair Display", "EB Garamond", Georgia, serif' fontWeight="bold"
                     style={{ userSelect: 'none', pointerEvents: 'none' }}>
                     {loc.name}
                   </text>

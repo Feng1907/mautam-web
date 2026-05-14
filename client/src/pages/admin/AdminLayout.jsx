@@ -33,6 +33,7 @@ const NAV_GROUPS = [
       { to: '/admin/phan-quyen', label: 'Phân quyền',     icon: '🛡️' },
       { to: '/admin/lich-su',    label: 'Audit Logs',     icon: '🔍' },
       { to: '/admin/sao-luu',    label: 'Sao lưu',        icon: '💾' },
+      { to: '/admin/su-kien',    label: 'Đếm ngược',      icon: '⏱️' },
     ],
   },
 ];
@@ -53,7 +54,7 @@ export default function AdminLayout() {
   const toggle = (label) => setCollapsed(p => ({ ...p, [label]: !p[label] }));
 
   return (
-    <div className="flex-1 flex min-h-0 overflow-hidden bg-gray-50 dark:bg-slate-900">
+    <div className="flex-1 flex min-h-0 overflow-hidden bg-gray-50 dark:bg-slate-900" style={{ paddingTop: 64 }}>
       {/* ── Sidebar dọc ── */}
       <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 pt-6 pb-4 overflow-y-auto no-scrollbar">
         {NAV_GROUPS.map(group => {

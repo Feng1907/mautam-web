@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+﻿import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ImagePlus, Trash2, Pencil, X, Loader2, Upload,
@@ -10,8 +10,8 @@ import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const SERIF = '"EB Garamond", Lora, Georgia, serif';
-const SANS  = '"Inter", system-ui, sans-serif';
+const SERIF = '"Playfair Display", "EB Garamond", Lora, Georgia, serif';
+const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
 
 const LOAI_OPTIONS = [
   { value: 'tintuc',        label: 'Tin tức'          },

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * QrAttendanceGenerator — Admin tạo mã QR điểm danh cho buổi học
  * JWT sessionToken TTL ngắn, auto-refresh, Socket.io real-time toast
  */
@@ -235,7 +235,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                 style={{ background: 'rgba(212,175,55,0.08)', borderBottom: '1px solid rgba(212,175,55,0.12)' }}>
                 <div className="flex items-center gap-2">
                   <QrCode size={18} style={{ color: '#D4AF37' }} />
-                  <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"EB Garamond",serif' }}>
+                  <span className="font-bold text-base" style={{ color: '#D4AF37', fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif' }}>
                     Tạo QR Điểm Danh
                   </span>
                 </div>

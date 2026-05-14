@@ -40,10 +40,10 @@ const ClassDetail = () => {
   const [students, setStudents] = useState([]);
   const [loading,  setLoading]  = useState(true);
 
+  // Admin hoặc bất kỳ ai được phân công lớp này (HT hoặc DT đều ngang quyền)
   const canEdit =
     user?.vaiTro === 'admin' ||
-    (user?.vaiTro === 'giaoly' &&
-      user?.lopPhuTrach?.some(l => (l._id || l).toString() === id));
+    user?.lopPhuTrach?.some(l => (l._id || l).toString() === id);
 
   useEffect(() => {
     Promise.all([
@@ -140,7 +140,7 @@ const ClassDetail = () => {
             {canEdit && (
               <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold px-2.5 py-0.5 rounded-full">
                 <ShieldCheck className="w-3 h-3" />
-                Bạn có quyền quản lý lớp này
+                {user?.chucVu === 'dutruong' ? 'Dự Trưởng — Toàn quyền lớp này' : 'Bạn có quyền quản lý lớp này'}
               </span>
             )}
           </div>

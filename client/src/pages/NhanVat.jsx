@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+﻿import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import CharacterCollection from '../components/CharacterCollection';
@@ -39,7 +39,7 @@ export default function NhanVat() {
         <h1
           className="text-3xl sm:text-4xl font-bold mb-2 leading-tight"
           style={{
-            fontFamily: '"Lexend", "EB Garamond", Georgia, serif',
+            fontFamily: '"Lexend", "Playfair Display", "EB Garamond", Georgia, serif',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFE566 45%, #CD853F 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
