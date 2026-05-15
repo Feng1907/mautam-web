@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* ── Accessibility: tắt animation cho người dùng nhạy cảm với chuyển động ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── NProgress loading bar — màu đỏ đô theo brand ───────────────────────── */
 #nprogress .bar { background: #8B0000 !important; height: 3px; }
 #nprogress .peg { box-shadow: 0 0 10px #8B0000, 0 0 5px #8B0000 !important; }

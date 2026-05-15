@@ -361,20 +361,20 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
                     className="text-xs font-semibold text-amber-100 uppercase tracking-wide"
                     style={{ background: 'linear-gradient(90deg, #8B0000 0%, #6e1a1a 100%)' }}
                   >
-                    <th
+                    <th scope="col"
                       className="sticky left-0 z-10 text-center px-3 py-3 w-10 font-semibold"
                       style={{ background: '#8B0000' }}
                     >
                       STT
                     </th>
-                    <th
+                    <th scope="col"
                       className="sticky left-10 z-10 text-left px-4 py-3 min-w-44 font-semibold"
                       style={{ background: '#8B0000' }}
                     >
                       Họ tên
                     </th>
                     {sundays.map(d => (
-                      <th
+                      <th scope="col"
                         key={d}
                         className={`text-center px-1 py-3 w-12 font-medium ${
                           d === today ? 'text-[#D4AF37]' : 'text-amber-100/80'
@@ -384,9 +384,9 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
                         {shortDate(d)}
                       </th>
                     ))}
-                    <th className="text-center px-3 py-3 text-emerald-300 min-w-15">Có mặt</th>
-                    <th className="text-center px-3 py-3 text-red-300 min-w-12.5">Vắng</th>
-                    <th className="text-center px-4 py-3 text-[#D4AF37] min-w-18">Tổng kết</th>
+                    <th scope="col" className="text-center px-3 py-3 text-emerald-300 min-w-15">Có mặt</th>
+                    <th scope="col" className="text-center px-3 py-3 text-red-300 min-w-12.5">Vắng</th>
+                    <th scope="col" className="text-center px-4 py-3 text-[#D4AF37] min-w-18">Tổng kết</th>
                   </tr>
                 </thead>
 

@@ -603,27 +603,27 @@ const GradeForm = ({ lopId, students, canEdit }) => {
               <thead>
                 <tr className="text-xs uppercase tracking-wide"
                   style={{ background: 'linear-gradient(90deg, #8B0000 0%, #6e1a1a 100%)' }}>
-                  <th className="sticky left-0 z-10 text-center px-2 py-3 w-10 text-amber-100/70 font-semibold"
+                  <th scope="col" className="sticky left-0 z-10 text-center px-2 py-3 w-10 text-amber-100/70 font-semibold"
                     style={{ background: '#8B0000' }}>STT</th>
-                  <th className="sticky left-10 z-10 text-left px-4 py-3 min-w-44 text-amber-100 font-semibold"
+                  <th scope="col" className="sticky left-10 z-10 text-left px-4 py-3 min-w-44 text-amber-100 font-semibold"
                     style={{ background: '#8B0000' }}>Đoàn sinh</th>
                   {LOAI_DIEM.map(l => (
-                    <th key={l.key} className="px-3 py-3 text-center min-w-32 text-amber-100 font-semibold">
+                    <th scope="col" key={l.key} className="px-3 py-3 text-center min-w-32 text-amber-100 font-semibold">
                       {l.label}
                       <span className="text-[#D4AF37]/80 ml-1 normal-case font-normal">(×{l.he_so})</span>
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-center min-w-20 text-[#D4AF37] font-bold">TBM</th>
-                  <th className="px-3 py-3 text-center min-w-28 text-amber-100 font-semibold">
+                  <th scope="col" className="px-3 py-3 text-center min-w-20 text-[#D4AF37] font-bold">TBM</th>
+                  <th scope="col" className="px-3 py-3 text-center min-w-28 text-amber-100 font-semibold">
                     <span className="flex items-center justify-center gap-1">
                       <CalendarCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
                       Chuyên cần
                     </span>
                   </th>
-                  <th className="px-3 py-3 text-center min-w-20 text-[#D4AF37] font-bold">Tổng kết</th>
-                  <th className="px-3 py-3 text-center min-w-28 text-amber-100 font-semibold">Học lực</th>
+                  <th scope="col" className="px-3 py-3 text-center min-w-20 text-[#D4AF37] font-bold">Tổng kết</th>
+                  <th scope="col" className="px-3 py-3 text-center min-w-28 text-amber-100 font-semibold">Học lực</th>
                   {canEdit && (
-                    <th className="px-3 py-3 text-center min-w-20 text-amber-100/70 font-semibold">Thao tác</th>
+                    <th scope="col" className="px-3 py-3 text-center min-w-20 text-amber-100/70 font-semibold">Thao tác</th>
                   )}
                 </tr>
               </thead>
