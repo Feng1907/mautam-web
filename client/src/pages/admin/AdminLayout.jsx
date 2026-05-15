@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+
 import { ChevronRight } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -50,7 +50,6 @@ const linkCls = ({ isActive }) =>
   }`;
 
 export default function AdminLayout() {
-  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState({});
   const toggle = (label) => setCollapsed(p => ({ ...p, [label]: !p[label] }));
 

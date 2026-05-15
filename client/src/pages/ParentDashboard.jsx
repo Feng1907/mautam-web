@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import {
   Bell,
   BellRing,
@@ -18,7 +18,7 @@ import {
   MessageSquareText,
   Search,
   Send,
-  UserRound,
+
   X,
   XCircle,
 } from 'lucide-react';
@@ -560,7 +560,7 @@ const STATUS_CFG = {
   inactive: { label: 'Vô hiệu',         cls: 'bg-gray-100 text-gray-500 border-gray-200',     icon: XCircle },
 };
 
-const LinkRequestSection = ({ onLinked }) => {
+const LinkRequestSection = ({ onLinked: _onLinked }) => {
   const [query, setQuery]       = useState('');
   const [results, setResults]   = useState([]);
   const [open, setOpen]         = useState(false);

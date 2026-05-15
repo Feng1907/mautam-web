@@ -135,7 +135,7 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
     if (!selNamHoc) return;
 
     let cancelled = false;
-    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
+    setLoading(true);
 
     api.get('/attendance/sundays', {
       params: { startDate: selNamHoc.ngayBatDau, endDate: selNamHoc.ngayKetThuc },

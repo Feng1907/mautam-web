@@ -199,7 +199,6 @@ const AdminUsers = () => {
       .finally(() => setLoading(false));
   }, [activeTab]); // eslint-disable-line
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const handleSave = (saved, matKhauTam, emailSent) => {
