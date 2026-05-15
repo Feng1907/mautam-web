@@ -1,9 +1,20 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './store/AuthContext';
 import { ThemeProvider } from './store/ThemeContext';
 import { ToastProvider } from './components/Toast';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      staleTime: 30_000,
+    },
+  },
+});
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RouteGuard from './components/RouteGuard';
@@ -67,6 +78,7 @@ const withErrorBoundary = (children, boundaryName, props = {}) => (
 );
 
 const App = () => (
+  <QueryClientProvider client={queryClient}>
   <ThemeProvider>
     <AuthProvider>
       <ToastProvider>
@@ -140,6 +152,7 @@ const App = () => (
       </ToastProvider>
     </AuthProvider>
   </ThemeProvider>
+  </QueryClientProvider>
 );
 
 export default App;

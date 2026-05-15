@@ -1,11 +1,12 @@
-﻿import { useEffect, useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, BookOpen, ArrowRight, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { SkeletonClassGrid } from '../components/Skeleton';
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
 const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
@@ -262,21 +263,17 @@ const NganhTab = ({ nganh, count, isActive, onClick }) => {
 
 // ── Trang ClassList ───────────────────────────────────────────────────────────
 const ClassList = () => {
-  const { t }         = useTranslation();
+  const { t }          = useTranslation();
   const [searchParams] = useSearchParams();
-  const [classes, setClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState('');
   const [activeNganh, setActiveNganh] = useState(
     () => SLUG_TO_KEY[searchParams.get('nganh')] ?? 'ChienNon'
   );
 
-  useEffect(() => {
-    api.get('/classes')
-      .then(r => setClasses(r.data.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: classes = [], isLoading, isError } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => api.get('/classes').then(r => r.data.data),
+  });
 
   const byNganh = useMemo(() =>
     classes.reduce((acc, lop) => {
@@ -304,7 +301,17 @@ const ClassList = () => {
   const totalStudents = classes.reduce((sum, l) => sum + (l.siSo ?? 0), 0);
   const hasTeacher    = classes.filter(l => l.huynhTruong?.hoTen || (l.duTruong?.length > 0)).length;
 
-  if (loading) return <LoadingSpinner />;
+  if (isLoading) return (
+    <main className="relative flex-1 page-container min-h-screen" style={{ background: '#fdfbf7' }}>
+      <SkeletonClassGrid />
+    </main>
+  );
+
+  if (isError) return (
+    <main className="relative flex-1 page-container min-h-screen flex items-center justify-center" style={{ background: '#fdfbf7' }}>
+      <p className="text-gray-400 italic">Không tải được danh sách lớp. Vui lòng thử lại.</p>
+    </main>
+  );
 
   const availableNganh = NGANH_ORDER.filter(n => byNganh[n]);
 

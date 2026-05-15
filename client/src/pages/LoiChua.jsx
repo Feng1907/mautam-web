@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -425,28 +427,20 @@ const NavBtn = ({ onClick, disabled, title, children }) => (
 const LoiChua = () => {
   const navigate  = useNavigate();
   const todayIso  = toISODate(new Date());
-  const [date,    setDate]  = useState(todayIso);
-  const [data,    setData]  = useState(null);
-  const [loading, setLoad]  = useState(true);
-  const [error,   setError] = useState(null);
+  const [date, setDate] = useState(todayIso);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 450);
 
-  const load = useCallback(async (isoDate) => {
-    setLoad(true); setData(null); setError(null);
-    try {
-      const res  = await fetch(`${API}/api/loi-chua?date=${isoDate}`);
-      const json = await res.json();
-      if (json.success) setData(json.data);
-      else setError(json.message || 'Không tải được dữ liệu.');
-    } catch { setError('Lỗi kết nối. Vui lòng thử lại.'); }
-    finally  { setLoad(false); }
-  }, []);
-
-  useEffect(() => { load(date); }, [date, load]);
+  const { data, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['loiChua', date],
+    queryFn: () => api.get(`/loi-chua?date=${date}`).then(r => r.data.success ? r.data.data : Promise.reject(r.data.message)),
+    staleTime: 4 * 60 * 60 * 1000, // 4 giờ — Lời Chúa thay đổi theo ngày
+    retry: 3,
+  });
+  const error = queryError ? (queryError?.message || 'Không tải được dữ liệu.') : null;
 
   useEffect(() => {
     const q = debouncedSearch.trim();

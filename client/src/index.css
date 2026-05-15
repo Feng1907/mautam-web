@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* ── NProgress loading bar — màu đỏ đô theo brand ───────────────────────── */
+#nprogress .bar { background: #8B0000 !important; height: 3px; }
+#nprogress .peg { box-shadow: 0 0 10px #8B0000, 0 0 5px #8B0000 !important; }
+#nprogress .spinner-icon { display: none; }
+
 /* ── Tailwind v4: class-based dark mode ──────────────────────────────────── */
 @custom-variant dark (&:where(.dark, .dark *));
 
