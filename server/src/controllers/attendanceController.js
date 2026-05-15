@@ -104,14 +104,26 @@ exports.generateQrSession = async (req, res, next) => {
 exports.getByClass = async (req, res, next) => {
   try {
     let namHocId = req.query.namHocId;
-    if (!namHocId) {
-      const namHoc = await NamHoc.findOne({ dangHoatDong: true });
+    let namHoc;
+    if (namHocId) {
+      namHoc = await NamHoc.findById(namHocId);
+    }
+    if (!namHoc) {
+      namHoc = await NamHoc.findOne({ dangHoatDong: true });
       if (!namHoc)
         return res.status(404).json({ success: false, message: 'Chưa có năm học đang hoạt động' });
-      namHocId = namHoc._id;
     }
 
-    const records = await Attendance.find({ lop: req.params.lopId, namHoc: namHocId });
+    // Lọc theo khoảng ngày của năm học thay vì namHoc ID
+    // để đảm bảo hiện đầy đủ cả các bản ghi cũ không có trường namHoc
+    const startStr = new Date(namHoc.ngayBatDau).toISOString().slice(0, 10);
+    const endStr   = new Date(namHoc.ngayKetThuc).toISOString().slice(0, 10);
+
+    const records = await Attendance.find({
+      lop: req.params.lopId,
+      date: { $gte: startStr, $lte: endStr },
+    }).lean();
+
     res.json({ success: true, data: records });
   } catch (err) {
     next(err);
@@ -121,11 +133,12 @@ exports.getByClass = async (req, res, next) => {
 // POST /api/attendance  (upsert)
 exports.upsert = async (req, res, next) => {
   try {
-    const { studentId, lopId, date, present, ghiChu } = req.body;
+    const { studentId, lopId, date, present, ghiChu, namHocId } = req.body;
     if (!studentId || !lopId || !date)
       return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc' });
 
-    const namHoc = await NamHoc.findOne({ dangHoatDong: true });
+    let namHoc = namHocId ? await NamHoc.findById(namHocId) : null;
+    if (!namHoc) namHoc = await NamHoc.findOne({ dangHoatDong: true });
     if (!namHoc)
       return res.status(404).json({ success: false, message: 'Chưa có năm học đang hoạt động' });
 

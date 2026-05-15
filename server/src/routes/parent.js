@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { param, query, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const { checkAuth } = require('../middlewares/checkAuth');
 const ctrl = require('../controllers/parentController');
 
@@ -45,6 +45,16 @@ router.get(
 );
 
 router.get(
+  '/students/:studentId/semester-report',
+  [
+    ...studentQueryValidators.slice(0, -1),
+    query('hocKy').optional({ nullable: true, checkFalsy: true }).isInt({ min: 1, max: 2 }).withMessage('Hoc ky khong hop le'),
+    handleValidationErrors,
+  ],
+  ctrl.getSemesterReport
+);
+
+router.get(
   '/students/:studentId/attendance',
   [
     ...studentQueryValidators.slice(0, -1),
@@ -53,6 +63,17 @@ router.get(
     handleValidationErrors,
   ],
   ctrl.getAttendanceHistory
+);
+
+router.post(
+  '/students/:studentId/absence-request',
+  [
+    param('studentId').isMongoId().withMessage('Student id khong hop le'),
+    body('date').isISO8601().withMessage('Ngay nghi khong hop le'),
+    body('reason').trim().isLength({ min: 3, max: 500 }).withMessage('Ly do phai tu 3 den 500 ky tu'),
+    handleValidationErrors,
+  ],
+  ctrl.createAbsenceRequest
 );
 
 module.exports = router;

@@ -351,10 +351,10 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
 
           {/* Bảng lưới */}
           <div
-            className="rounded-2xl border border-[#e5d5b5] overflow-hidden shadow-md"
+            className="rounded-2xl border border-[#e5d5b5] overflow-x-auto shadow-md scrollbar-light"
             style={{ background: '#FDFAF5' }}
           >
-            <div className="overflow-x-auto">
+            <div>
               <table className="text-sm border-collapse min-w-max w-full">
                 <thead>
                   <tr
