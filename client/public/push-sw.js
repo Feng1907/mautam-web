@@ -14,8 +14,13 @@ self.addEventListener('push', (event) => {
     body: payload.body || 'Ban co thong bao moi',
     icon: payload.icon || '/favicon.svg',
     badge: payload.badge || '/favicon.svg',
+    tag: payload.tag || payload.type || 'mautam-notification',
+    renotify: Boolean(payload.renotify),
+    requireInteraction: Boolean(payload.requireInteraction),
     data: {
       url: payload.url || '/',
+      type: payload.type || 'general',
+      receivedAt: Date.now(),
     },
   };
 
@@ -30,7 +35,13 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const existingClient = clients.find((client) => client.url === targetUrl);
-      if (existingClient) return existingClient.focus();
+      if (existingClient) {
+        existingClient.postMessage({
+          type: 'notification-click',
+          notificationType: event.notification.data?.type,
+        });
+        return existingClient.focus();
+      }
       return self.clients.openWindow(targetUrl);
     })
   );

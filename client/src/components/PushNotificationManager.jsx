@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../store/AuthContext';
-import { registerPushNotifications } from '../utils/pushNotifications';
+import { syncPushNotificationsIfGranted } from '../utils/pushNotifications';
 
 const PushNotificationManager = () => {
   const { user } = useAuth();
@@ -10,7 +10,7 @@ const PushNotificationManager = () => {
     if (!user || requestedRef.current) return;
     requestedRef.current = true;
 
-    registerPushNotifications().catch((err) => {
+    syncPushNotificationsIfGranted().catch((err) => {
       if (import.meta.env.DEV) {
         console.warn('Push notification registration failed:', err);
       }

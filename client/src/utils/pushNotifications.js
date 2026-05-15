@@ -1,6 +1,7 @@
 import api from '../services/api';
 
 const SUBSCRIPTION_STORAGE_KEY = 'pushSubscriptionEndpoint';
+const SERVICE_WORKER_URL = '/sw.js';
 
 const urlBase64ToUint8Array = (base64String) => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -14,6 +15,25 @@ export const isPushNotificationSupported = () =>
   'PushManager' in window &&
   'Notification' in window;
 
+export const getPushPermissionState = () => {
+  if (!isPushNotificationSupported()) return 'unsupported';
+  return window.Notification.permission;
+};
+
+export const getNotificationSettingsHint = () => {
+  const browser = navigator.userAgent.includes('Edg/')
+    ? 'Edge'
+    : navigator.userAgent.includes('Chrome/')
+      ? 'Chrome'
+      : navigator.userAgent.includes('Firefox/')
+        ? 'Firefox'
+        : 'trinh duyet';
+
+  return `Thong bao dang bi chan. Hay bam bieu tuong khoa/cai dat canh thanh dia chi cua ${browser}, mo Site settings va cho phep Notifications cho website nay.`;
+};
+
+const getPushRegistration = async () => navigator.serviceWorker.register(SERVICE_WORKER_URL);
+
 export const registerPushNotifications = async () => {
   if (!isPushNotificationSupported()) {
     return { success: false, reason: 'unsupported' };
@@ -23,7 +43,7 @@ export const registerPushNotifications = async () => {
     return { success: false, reason: 'denied' };
   }
 
-  const registration = await navigator.serviceWorker.register('/sw.js');
+  const registration = await getPushRegistration();
 
   let permission = window.Notification.permission;
   if (permission === 'default') {
@@ -34,7 +54,7 @@ export const registerPushNotifications = async () => {
     return { success: false, reason: permission };
   }
 
-  const keyRes = await api.get('/subscribe/public-key');
+  const keyRes = await api.get('/notifications/public-key');
   const publicKey = keyRes.data?.data?.publicKey;
   if (!publicKey) {
     return { success: false, reason: 'missing-public-key' };
@@ -46,8 +66,16 @@ export const registerPushNotifications = async () => {
     applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
 
-  await api.post('/subscribe', subscription.toJSON());
+  await api.post('/notifications/subscribe', subscription.toJSON());
   localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, subscription.endpoint);
 
   return { success: true, subscription };
+};
+
+export const syncPushNotificationsIfGranted = async () => {
+  if (!isPushNotificationSupported() || window.Notification.permission !== 'granted') {
+    return { success: false, reason: getPushPermissionState() };
+  }
+
+  return registerPushNotifications();
 };
