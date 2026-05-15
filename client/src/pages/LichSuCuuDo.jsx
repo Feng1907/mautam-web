@@ -1,7 +1,7 @@
 ﻿import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { X, BookOpen, ChevronDown, Users, ChevronRight } from 'lucide-react';
 import ErrorBoundary from '../components/ErrorBoundary';
 import IsraelMap from '../components/IsraelMap';
@@ -15,10 +15,19 @@ const InteractiveTimeline = lazy(() => import('../components/InteractiveTimeline
 
 const LazySectionFallback = ({ minHeight = 240 }) => (
   <div
-    className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/45"
+    className="rounded-2xl border border-white/10 bg-white/3 overflow-hidden p-5"
     style={{ minHeight }}
   >
-    <span className="text-xs font-semibold uppercase tracking-[0.22em]">Dang tai...</span>
+    <div className="animate-pulse flex flex-col gap-3 h-full">
+      <div className="h-3 w-1/3 rounded-full bg-white/10" />
+      <div className="h-3 w-2/3 rounded-full bg-white/[0.07]" />
+      <div className="h-3 w-1/2 rounded-full bg-white/[0.07]" />
+      <div className="mt-2 flex gap-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="flex-1 rounded-xl bg-white/5" style={{ minHeight: Math.max(minHeight - 100, 80) }} />
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -280,6 +289,13 @@ const THEMES = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const DetailModal = ({ milestone, onClose }) => {
+  useEffect(() => {
+    if (!milestone) return;
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [milestone, onClose]);
+
   if (!milestone) return null;
   const { detail, emoji, accent, borderColor } = milestone;
   return (
@@ -519,6 +535,9 @@ export default function LichSuCuuDo() {
 
   const theme = THEMES[activeTab];
 
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30, restDelta: 0.001 });
+
   useEffect(() => {
     localStorage.setItem('lichsu-tab', activeTab);
   }, [activeTab]);
@@ -538,6 +557,11 @@ export default function LichSuCuuDo() {
       animate={{ background: theme.pageBg }}
       transition={{ duration: 0.7 }}
     >
+      {/* Scroll progress bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-0.5 origin-left z-50"
+        style={{ scaleX, background: `linear-gradient(to right, ${theme.tabGlow}, ${theme.tabGlow}99)` }}
+      />
       <Helmet>
         <title>Lịch Sử Cứu Độ | Mẫu Tâm</title>
         <meta property="og:title" content="Lịch Sử Cứu Độ | Mẫu Tâm" />

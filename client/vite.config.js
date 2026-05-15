@@ -83,4 +83,10 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@sentry/react'],
   },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    globals: true,
+    exclude: ['node_modules', 'dist'],
+  },
 })
