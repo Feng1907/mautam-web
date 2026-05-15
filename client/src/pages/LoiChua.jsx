@@ -436,7 +436,7 @@ const LoiChua = () => {
 
   const { data, isLoading: loading, error: queryError } = useQuery({
     queryKey: ['loiChua', date],
-    queryFn: () => api.get(`/loichua?date=${date}`).then(r => r.data.success ? r.data.data : Promise.reject(r.data.message)),
+    queryFn: () => api.get(`/loi-chua?date=${date}`).then(r => r.data.success ? r.data.data : Promise.reject(r.data.message)),
     staleTime: 4 * 60 * 60 * 1000, // 4 giờ — Lời Chúa thay đổi theo ngày
     retry: 3,
   });
