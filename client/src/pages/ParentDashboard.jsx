@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Bell,
   BellRing,
@@ -738,69 +739,74 @@ const LinkRequestSection = ({ onLinked }) => {
 };
 
 const ParentDashboard = () => {
-  const [students, setStudents] = useState([]);
   const [selectedId, setSelectedId] = useState('');
-  const [attendance, setAttendance] = useState(null);
-  const [grades, setGrades] = useState([]);
-  const [semesterReport, setSemesterReport] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadInitial = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const [studentRes, postRes, eventRes] = await Promise.all([
-          api.get('/parent/students'),
-          api.get('/posts', { params: { limit: 5 } }),
-          api.get('/events'),
-        ]);
-        if (cancelled) return;
-        const list = studentRes.data.data || [];
-        setStudents(list);
-        setSelectedId(list[0]?._id || '');
-        setPosts(postRes.data.data || []);
-        setEvents(eventRes.data.data || []);
-      } catch (err) {
-        if (!cancelled) setError(err.response?.data?.message || 'Không tải được dashboard phụ huynh');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    loadInitial();
-    return () => { cancelled = true; };
-  }, []);
+  // ── Query 1: dữ liệu khởi tạo — students, posts, events ──────────────────
+  const [studentsQ, postsQ, eventsQ] = useQueries({
+    queries: [
+      {
+        queryKey: ['parentStudents'],
+        queryFn: () => api.get('/parent/students').then(r => r.data.data || []),
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+      },
+      {
+        queryKey: ['posts', 'dashboard'],
+        queryFn: () => api.get('/posts', { params: { limit: 5 } }).then(r => r.data.data || []),
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+      },
+      {
+        queryKey: ['events'],
+        queryFn: () => api.get('/events').then(r => r.data.data || []),
+        staleTime: 10 * 60 * 1000,
+        retry: 3,
+      },
+    ],
+  });
 
+  const students = studentsQ.data || [];
+  const posts    = postsQ.data    || [];
+  const events   = eventsQ.data   || [];
+  const loading  = studentsQ.isLoading || postsQ.isLoading || eventsQ.isLoading;
+  const error    = studentsQ.error?.message || postsQ.error?.message || eventsQ.error?.message || '';
+
+  // Auto-select đoàn sinh đầu tiên khi students load xong
   useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
-    const loadStudentData = async () => {
-      setDetailLoading(true);
-      setError('');
-      try {
-        const [gradeRes, attendanceRes, reportRes] = await Promise.all([
-          api.get(`/parent/students/${selectedId}/grades`),
-          api.get(`/parent/students/${selectedId}/attendance`),
-          api.get(`/parent/students/${selectedId}/semester-report`, { params: { hocKy: 1 } }),
-        ]);
-        if (cancelled) return;
-        setGrades(gradeRes.data.data?.grades || []);
-        setAttendance(attendanceRes.data.data || null);
-        setSemesterReport(reportRes.data.data || null);
-      } catch (err) {
-        if (!cancelled) setError(err.response?.data?.message || 'Không tải được dữ liệu của đoàn sinh');
-      } finally {
-        if (!cancelled) setDetailLoading(false);
-      }
-    };
-    loadStudentData();
-    return () => { cancelled = true; };
-  }, [selectedId]);
+    if (students.length && !selectedId) setSelectedId(students[0]._id);
+  }, [students, selectedId]);
+
+  // ── Query 2: chi tiết đoàn sinh — grades, attendance, semester report ─────
+  const [gradesQ, attendanceQ, reportQ] = useQueries({
+    queries: [
+      {
+        queryKey: ['studentGrades', selectedId],
+        queryFn: () => api.get(`/parent/students/${selectedId}/grades`).then(r => r.data.data?.grades || []),
+        enabled: !!selectedId,
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+      },
+      {
+        queryKey: ['studentAttendance', selectedId],
+        queryFn: () => api.get(`/parent/students/${selectedId}/attendance`).then(r => r.data.data || null),
+        enabled: !!selectedId,
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+      },
+      {
+        queryKey: ['studentSemesterReport', selectedId],
+        queryFn: () => api.get(`/parent/students/${selectedId}/semester-report`, { params: { hocKy: 1 } }).then(r => r.data.data || null),
+        enabled: !!selectedId,
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+      },
+    ],
+  });
+
+  const grades        = gradesQ.data        || [];
+  const attendance    = attendanceQ.data    || null;
+  const semesterReport = reportQ.data       || null;
+  const detailLoading = gradesQ.isLoading   || attendanceQ.isLoading || reportQ.isLoading;
 
   const selectedStudent = students.find((s) => s._id === selectedId);
 

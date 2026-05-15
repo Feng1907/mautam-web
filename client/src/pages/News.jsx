@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { Newspaper, Bell, BellRing, LayoutGrid, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import api from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { SkeletonNewsFeed } from '../components/Skeleton';
 import { DEFAULT_OG_IMAGE } from '../utils/seo';
 
 // ─── Font constants ───────────────────────────────────────────────────────────
@@ -238,19 +239,14 @@ const PostCard = ({ post, index }) => {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function News() {
-  const [posts,   setPosts]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loai,    setLoai]    = useState('');
+  const [loai, setLoai] = useState('');
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    api.get('/posts', { params: { loai: loai || undefined, limit: 20 } })
-      .then(r => setPosts(r.data.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [loai]);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['posts', loai],
+    queryFn: () => api.get('/posts', { params: { loai: loai || undefined, limit: 20 } }).then(r => r.data.data),
+  });
 
+  const posts = data || [];
   const [featured, ...rest] = posts;
 
   return (
@@ -282,8 +278,13 @@ export default function News() {
       </div>
 
       {/* Posts */}
-      {loading ? (
-        <LoadingSpinner />
+      {isLoading ? (
+        <SkeletonNewsFeed />
+      ) : isError ? (
+        <div className="text-center py-24">
+          <span className="text-5xl block mb-4 opacity-20">✝</span>
+          <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>Không tải được bài viết. Vui lòng thử lại.</p>
+        </div>
       ) : posts.length === 0 ? (
         <div className="text-center py-24">
           <span className="text-5xl block mb-4 opacity-20">✝</span>

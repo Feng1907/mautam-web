@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SkeletonGioLe } from '../components/Skeleton';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
@@ -695,26 +697,39 @@ const GioLe = () => {
 
   const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}`;
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  const [loiChua,       setLoiChua]       = useState(null);
-  const [loadingLC,     setLoadingLC]     = useState(true);
-  const [feasts,        setFeasts]        = useState([]);
-  const [loadingFeasts, setLoadingFeasts] = useState(true);
-  // null  = chưa chọn gì (chờ auto-select)
-  // object = lễ đang hiển thị (hôm nay hoặc user click)
-  const [selectedFeast, setSelectedFeast] = useState(null);
-  const [monthMeta,     setMonthMeta]     = useState({});
+  const qc = useQueryClient();
 
-  const fetchedMonthRef = useRef(null);
-  const fetchedDayRef   = useRef(null);
-  const feastsRef       = useRef([]);   // ref để midnight timeout đọc mà không cần deps
+  // ── State chỉ còn UI state ────────────────────────────────────────────────
+  const [selectedFeast, setSelectedFeast] = useState(null);
+  const feastsRef = useRef([]);  // ref để midnight timeout đọc mà không cần deps
+
+  // ── React Query — retry:3 tự động khi server cold start ──────────────────
+  const { data: loiChua, isLoading: loadingLC } = useQuery({
+    queryKey: ['gioLe-loiChua', currentYear, currentMonth],
+    queryFn:  fetchLoiChua,
+    staleTime: 4 * 60 * 60 * 1000,   // 4 giờ
+    retry: 3,
+  });
+
+  const { data: feastsResult, isLoading: loadingFeasts } = useQuery({
+    queryKey: ['liturgyFeasts', currentMonth, currentYear],
+    queryFn:  () => fetchLiturgyFeasts(currentMonth, currentYear),
+    staleTime: 60 * 60 * 1000,        // 1 giờ
+    retry: 3,
+  });
+
+  const feasts   = feastsResult?.feasts   || [];
+  const monthMeta = {
+    theme:    feastsResult?.theme    || null,
+    subColor: feastsResult?.subColor || null,
+    note:     feastsResult?.note     || null,
+  };
 
   // ── Helper: tìm & tự động chọn ngày hôm nay từ mảng feasts ───────────────
-  // Gọi sau mỗi lần feasts thay đổi (fetch mới hoặc reset qua đêm)
   const autoSelectToday = useCallback((feastsData) => {
-    const d   = new Date();
-    const dd  = String(d.getDate()).padStart(2, '0');
-    const mm  = String(d.getMonth() + 1).padStart(2, '0');
+    const d    = new Date();
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
     const ngay = `${dd}/${mm}`;
     const entry = feastsData.find(f => f.ngay === ngay);
 
@@ -725,11 +740,10 @@ const GioLe = () => {
         loai:    CAP_TO_LOAI[entry.cap] || detectLiturgy(entry.ten).loai,
         icon:    entry.icon,
         ngay:    entry.ngay,
-        rank:    entry.rank,    // ← rank gốc từ romcal (SOLEMNITY/FEAST/FERIA…)
+        rank:    entry.rank,
         isToday: true,
       });
     } else {
-      // Ngày không tìm thấy trong feasts (hiếm) — hiện ngày thường
       const seasonEntry = feastsData[0];
       setSelectedFeast({
         ten:     `${dd}/${mm} — Ngày Thường Niên`,
@@ -737,11 +751,18 @@ const GioLe = () => {
         loai:    'Lễ Thường',
         icon:    '📅',
         ngay:    ngay,
-        rank:    'FERIA',       // FERIA → RankBadge trả null → không hiện badge
+        rank:    'FERIA',
         isToday: true,
       });
     }
   }, []);
+
+  // ── Auto-select khi feasts load xong ─────────────────────────────────────
+  useEffect(() => {
+    if (!feasts.length) return;
+    feastsRef.current = feasts;
+    autoSelectToday(feasts);
+  }, [feasts, autoSelectToday]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSelectFeast = useCallback((le) => {
@@ -755,82 +776,40 @@ const GioLe = () => {
       loai:    CAP_TO_LOAI[le.cap] || detectLiturgy(le.ten).loai,
       icon:    le.icon,
       ngay:    le.ngay,
-      rank:    le.rank,      // ← rank gốc từ romcal
-      isToday,               // click đúng ngày hôm nay → giữ header "Phụng vụ hôm nay"
+      rank:    le.rank,
+      isToday,
     });
   }, []);
 
-  // Nút X: quay về dữ liệu hôm nay (không phải null rỗng)
   const handleClearFeast = useCallback(() => {
     autoSelectToday(feastsRef.current);
   }, [autoSelectToday]);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
-  const loadLoiChua = useCallback(async () => {
-    setLoadingLC(true);
-    const d = await fetchLoiChua();
-    setLoiChua(d);
-    setLoadingLC(false);
-    const n = new Date();
-    fetchedDayRef.current = `${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}`;
-  }, []);
-
-  const loadFeasts = useCallback(async (month, year) => {
-    setLoadingFeasts(true);
-    const { feasts: data, theme, subColor, note } = await fetchLiturgyFeasts(month, year);
-    feastsRef.current = data;         // cập nhật ref để các timeout đọc được
-    setFeasts(data);
-    setMonthMeta({ theme, subColor, note });
-    setLoadingFeasts(false);
-    fetchedMonthRef.current = `${year}-${month}`;
-
-    // ── Auto-select ngày hôm nay ngay sau khi fetch xong ──────────────────
-    // Chỉ auto-select khi đang xem tháng hiện tại
-    const today = new Date();
-    if (today.getMonth() + 1 === month && today.getFullYear() === year) {
-      autoSelectToday(data);
-    } else {
-      setSelectedFeast(null);  // Xem tháng khác → bỏ selection
-    }
-  }, [autoSelectToday]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { loadLoiChua(); }, [loadLoiChua]);
-  useEffect(() => { loadFeasts(currentMonth, currentYear); }, []); // eslint-disable-line
-
-  // ── Midnight refresh — tự chuyển dữ liệu đúng lúc 00:00:05 ───────────────
-  // Không dùng setInterval mà dùng setTimeout đệ quy để đánh đúng nửa đêm.
+  // ── Midnight refresh — invalidate queries đúng lúc 00:00:05 ──────────────
   useEffect(() => {
     let tid;
     const scheduleAtMidnight = () => {
       const now  = new Date();
       const next = new Date(now);
-      next.setHours(24, 0, 5, 0);              // 00:00:05 ngày hôm sau
+      next.setHours(24, 0, 5, 0);
       const ms = next.getTime() - now.getTime();
 
       tid = setTimeout(() => {
         const d     = new Date();
         const year  = d.getFullYear();
         const month = d.getMonth() + 1;
-        const monKey = `${year}-${month}`;
 
-        loadLoiChua();   // Lời Chúa ngày mới
+        // Invalidate để React Query tự retry và cập nhật
+        qc.invalidateQueries({ queryKey: ['gioLe-loiChua'] });
+        qc.invalidateQueries({ queryKey: ['liturgyFeasts', month, year] });
 
-        if (fetchedMonthRef.current !== monKey) {
-          // Qua tháng mới → fetch lại toàn bộ lịch
-          loadFeasts(month, year);
-        } else {
-          // Cùng tháng, chỉ đổi ngày → auto-select hôm nay từ feasts đã có
-          autoSelectToday(feastsRef.current);
-        }
-
-        scheduleAtMidnight();  // hẹn nửa đêm tiếp theo
+        scheduleAtMidnight();
       }, ms);
     };
 
     scheduleAtMidnight();
     return () => clearTimeout(tid);
-  }, [loadLoiChua, loadFeasts, autoSelectToday]);
+  }, [qc]);
 
   // ── Tính activeMauKey theo thứ tự ưu tiên ────────────────────────────────
   // 1. Romcal (chính xác nhất — tự tính mùa Phục Sinh, Thăng Thiên, Hiện Xuống…)
@@ -857,6 +836,17 @@ const GioLe = () => {
 
   // Gradient nền trang
   const pageBg = PAGE_BG[activeMauKey] || PAGE_BG.xanh;
+
+  // ── Skeleton khi cả hai query đang load lần đầu ─────────────────────────
+  if (loadingLC && loadingFeasts && !feasts.length) {
+    return (
+      <main className="flex-1 min-h-screen bg-linear-to-br from-green-50 to-emerald-50 dark:bg-slate-950">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <SkeletonGioLe />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={`flex-1 min-h-screen bg-linear-to-br ${pageBg} dark:bg-none dark:bg-slate-950 transition-all duration-700`}>

@@ -200,18 +200,24 @@ const ClassDetail = () => {
             <div className="space-y-3">
               {canEdit && (
                 <div className="flex justify-end">
-                  <QrAttendanceGenerator
-                    defaultLopId={id}
-                    defaultLopName={lop?.tenLop}
-                    defaultDate={new Date().toISOString().slice(0, 10)}
-                  />
+                  <ErrorBoundary module title="QR điểm danh lỗi" description="Không thể tải module QR. Các tính năng khác vẫn hoạt động bình thường.">
+                    <QrAttendanceGenerator
+                      defaultLopId={id}
+                      defaultLopName={lop?.tenLop}
+                      defaultDate={new Date().toISOString().slice(0, 10)}
+                    />
+                  </ErrorBoundary>
                 </div>
               )}
-              <AttendanceTable lopId={id} students={students} canEdit={canEdit} />
+              <ErrorBoundary module title="Bảng điểm danh lỗi" description="Không thể hiển thị bảng điểm danh. Vui lòng tải lại.">
+                <AttendanceTable lopId={id} students={students} canEdit={canEdit} />
+              </ErrorBoundary>
             </div>
           )}
           {tab === 'bangdiem' && (
-            <GradeForm lopId={id} students={students} canEdit={canEdit} />
+            <ErrorBoundary module title="Bảng điểm lỗi" description="Không thể hiển thị bảng điểm. Vui lòng tải lại.">
+              <GradeForm lopId={id} students={students} canEdit={canEdit} />
+            </ErrorBoundary>
           )}
         </motion.div>
       </AnimatePresence>

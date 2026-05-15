@@ -1,4 +1,5 @@
 ﻿import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -47,22 +48,20 @@ const MOCK_PHOTOS = Array.from({ length: 12 }, (_, i) => ({
 
 // ── useGallery hook ───────────────────────────────────────────────────────────
 const useGallery = () => {
-  const [photos,  setPhotos]  = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [useMock, setUseMock] = useState(false);
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    fetchPhotos()
-      .then(data => {
-        if (data.length === 0) { setPhotos(MOCK_PHOTOS); setUseMock(true); }
-        else                   { setPhotos(data); }
-      })
-      .catch(() => { setPhotos(MOCK_PHOTOS); setUseMock(true); })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: fetchedPhotos, isLoading: loading } = useQuery({
+    queryKey: ['gallery'],
+    queryFn: () => fetchPhotos().then(d => d.length === 0 ? MOCK_PHOTOS : d).catch(() => MOCK_PHOTOS),
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
+  });
 
-  const addPhoto    = (p)  => setPhotos(prev => [p, ...prev]);
-  const removePhoto = (id) => setPhotos(prev => prev.filter(p => p.id !== id));
+  const photos  = fetchedPhotos || [];
+  const useMock = photos === MOCK_PHOTOS || (photos.length > 0 && photos[0].storagePath === null);
+
+  const addPhoto    = (p)  => qc.setQueryData(['gallery'], prev => [p, ...(prev || [])]);
+  const removePhoto = (id) => qc.setQueryData(['gallery'], prev => (prev || []).filter(p => p.id !== id));
 
   return { photos, loading, useMock, addPhoto, removePhoto };
 };
