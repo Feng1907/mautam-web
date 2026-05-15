@@ -1,3 +1,6 @@
+# Claude Code internal config
+.claude/
+
 # Dependencies
 node_modules/
 client/node_modules/
