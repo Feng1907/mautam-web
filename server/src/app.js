@@ -40,18 +40,18 @@ const validate = (rules) => [...rules, handleValidationErrors];
 
 const authValidators = {
   login: validate([
-    body('email').isEmail().normalizeEmail().withMessage('Email khong hop le'),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email khong hop le'),
     body('matKhau').isString().notEmpty().withMessage('Mat khau la bat buoc'),
   ]),
   signup: validate([
     body('hoTen').trim().notEmpty().withMessage('Ho ten la bat buoc').isLength({ max: 120 }).withMessage('Ho ten qua dai'),
-    body('email').isEmail().normalizeEmail().withMessage('Email khong hop le'),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email khong hop le'),
     body('matKhau').isLength({ min: 6, max: 128 }).withMessage('Mat khau phai tu 6 den 128 ky tu'),
     optionalText('soDienThoai', 30, 'So dien thoai qua dai'),
   ]),
   register: validate([
     body('hoTen').trim().notEmpty().withMessage('Ho ten la bat buoc').isLength({ max: 120 }).withMessage('Ho ten qua dai'),
-    body('email').isEmail().normalizeEmail().withMessage('Email khong hop le'),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email khong hop le'),
     body('vaiTro').optional().isIn(['admin', 'giaoly', 'user', 'PARENT']).withMessage('Vai tro khong hop le'),
     optionalText('soDienThoai', 30, 'So dien thoai qua dai'),
   ]),
@@ -70,7 +70,7 @@ const authValidators = {
     body('matKhauMoi').isLength({ min: 6, max: 128 }).withMessage('Mat khau moi phai tu 6 den 128 ky tu'),
   ]),
   forgotPassword: validate([
-    body('email').isEmail().normalizeEmail().withMessage('Email khong hop le'),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email khong hop le'),
   ]),
 };
 
@@ -84,7 +84,7 @@ const studentValidators = {
     body('ngaySinh').optional({ nullable: true, checkFalsy: true }).isISO8601().withMessage('Ngay sinh khong hop le'),
     optionalText('phuHuynh.hoTen', 120, 'Ten phu huynh qua dai'),
     optionalText('phuHuynh.soDienThoai', 30, 'So dien thoai phu huynh qua dai'),
-    body('phuHuynh.email').optional({ nullable: true, checkFalsy: true }).isEmail().normalizeEmail().withMessage('Email phu huynh khong hop le'),
+    body('phuHuynh.email').optional({ nullable: true, checkFalsy: true }).isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email phu huynh khong hop le'),
     body('avatar').optional({ nullable: true, checkFalsy: true }).isString().isLength({ max: 2048 }).withMessage('Avatar khong hop le'),
   ]),
   update: validate([
@@ -94,7 +94,7 @@ const studentValidators = {
     body('ngaySinh').optional({ nullable: true, checkFalsy: true }).isISO8601().withMessage('Ngay sinh khong hop le'),
     optionalText('phuHuynh.hoTen', 120, 'Ten phu huynh qua dai'),
     optionalText('phuHuynh.soDienThoai', 30, 'So dien thoai phu huynh qua dai'),
-    body('phuHuynh.email').optional({ nullable: true, checkFalsy: true }).isEmail().normalizeEmail().withMessage('Email phu huynh khong hop le'),
+    body('phuHuynh.email').optional({ nullable: true, checkFalsy: true }).isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email phu huynh khong hop le'),
     body('avatar').optional({ nullable: true, checkFalsy: true }).isString().isLength({ max: 2048 }).withMessage('Avatar khong hop le'),
   ]),
 };
@@ -176,6 +176,7 @@ app.use('/api/loi-chua',  require('./routes/loiChua'));
 app.use('/api/search',    require('./routes/search'));
 app.use('/api/notify',    notifyLimiter, require('./routes/notify'));
 app.use('/api/subscribe', require('./routes/subscribe'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/subscribe',     require('./routes/subscribe'));
 app.use('/api/events',    require('./routes/events'));
 

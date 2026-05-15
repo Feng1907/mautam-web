@@ -27,6 +27,7 @@
 | 17b | Nâng cấp BibleMap & InteractiveTimeline — bản đồ địa hình, UX bảo tàng số | Hoàn thành |
 | 17c | Advanced Admin Suite (Audit Log, RBAC, Backup, Toast), News UI nâng cấp, Font Be Vietnam Pro | Hoàn thành |
 | 17d | BibleMapTimeline "Bảo tàng kỹ thuật số" — Parallax, Map Auto-Zoom, Spine Orb, Active Pulse Rings | Hoàn thành |
+| 17e | NavSearch toàn cục, ThemeFAB, AdminEvents, CountdownEvent API, Bento Home Layout | Hoàn thành |
 | 18 | Tối ưu hiệu năng, PWA offline, kiểm thử toàn diện & chuẩn bị production | Sắp tới |
 
 ---
@@ -119,7 +120,9 @@ mautam-website/
 │       │   ├── CharacterCards.jsx   # 6 nhân vật Cựu Ước — accordion, gold particles, ảnh
 │       │   ├── NTCharacterCards.jsx # 6 nhân vật Tân Ước — HeroCard Giêsu, light particles
 │       │   ├── CharacterCollection.jsx  # Grid 3×3 — filter, progress bar, celebration
-│       │   └── ProphecyTable.jsx    # 9 cặp tiên tri OT↔NT — accordion song song
+│       │   ├── ProphecyTable.jsx    # 9 cặp tiên tri OT↔NT — accordion song song
+│       │   ├── NavSearch.jsx        # Tìm kiếm toàn cục inline trong Navbar (debounce 300ms)
+│       │   └── ThemeFAB.jsx         # Floating Action Button chuyển dark/light theme
 │       ├── pages/
 │       │   ├── Home.jsx             # Landing page 5 ngành + SVG watermark
 │       │   ├── Login.jsx            # Đăng nhập + redirect sau login
@@ -147,7 +150,8 @@ mautam-website/
 │       │       ├── AdminNamHoc.jsx     # Quản lý năm học
 │       │       ├── AdminAuditLog.jsx   # Nhật ký hoạt động — timeline, filter, pagination, avatar
 │       │       ├── AdminRBAC.jsx       # Phân quyền vai trò — matrix 8×4, toggle switch, protected roles
-│       │       └── AdminBackup.jsx     # Sao lưu dữ liệu xlsx/json, chốt niên học
+│       │       ├── AdminBackup.jsx     # Sao lưu dữ liệu xlsx/json, chốt niên học
+│       │       └── AdminEvents.jsx     # Quản lý sự kiện đếm ngược — CRUD CountdownEvent
 │       ├── services/
 │       │   ├── api.js               # Axios + JWT interceptor + 401 auto-redirect
 │       │   ├── firebase.js          # Firebase SDK init (Storage + Firestore)
@@ -167,7 +171,8 @@ mautam-website/
         │   ├── ChuyenCan.js         # Điểm chuyên cần
         │   ├── MeritPoint.js
         │   ├── PromotionHistory.js  # Lịch sử lên lớp
-        │   └── Post.js
+        │   ├── Post.js
+        │   └── CountdownEvent.js    # Sự kiện đếm ngược trên trang chủ
         ├── controllers/
         │   ├── authController.js         # Login, signup, forgot password
         │   ├── exportController.js       # attendance, grades, tổng kết, toàn đoàn
@@ -175,12 +180,16 @@ mautam-website/
         │   ├── loiChuaController.js      # Scraper 3 nguồn + cache + romcal
         │   ├── chuyenCanController.js
         │   ├── promoteController.js
+        │   ├── searchController.js       # Tìm kiếm toàn cục (đoàn sinh + lớp + bài viết)
+        │   ├── countdownController.js    # CRUD sự kiện đếm ngược
         │   └── ...
         ├── routes/
         │   ├── auth.js              # /login, /signup, /forgot-password
         │   ├── export.js            # /attendance, /grades, /tong-ket, /tong-ket-toan-doan
         │   ├── notify.js            # /diem-danh, /lich-le, /bang-diem
         │   ├── liturgy.js           # /feasts (romcal + dời lễ VN)
+        │   ├── search.js            # /api/search?q=
+        │   ├── events.js            # /api/events (countdown events)
         │   ├── chuyencan.js
         │   ├── promote.js
         │   └── ...
@@ -815,6 +824,69 @@ Nâng cấp toàn diện module Lịch sử Cứu độ thành trải nghiệm "
 - `-webkit-font-smoothing: antialiased` + `text-rendering: optimizeLegibility` trên `body`
 - `h1–h6`: `line-height: 1.4` + `font-variant-ligatures: none`
 - Utility class **`.admin-title`**: Be Vietnam Pro 700, `line-height: 1.45` — dùng trong các trang admin
+
+---
+
+### GIAI ĐOẠN 17e — NavSearch, ThemeFAB, AdminEvents, Bento Home — Hoàn thành
+
+#### NavSearch.jsx — Tìm kiếm toàn cục inline trong Navbar
+
+- Thanh tìm kiếm mở ra ngay trong Navbar (không chuyển trang)
+- Debounce 300ms, gọi `GET /api/search?q=` — trả đoàn sinh + lớp + bài viết
+- Dropdown gợi ý phân loại theo icon, click điều hướng đến trang tương ứng
+- Đóng khi click ngoài (`mousedown` listener) hoặc nhấn `Escape`
+- Tích hợp vào Navbar.jsx thay thế GlobalSearch cũ chỉ có trong AdminDashboard
+
+#### ThemeFAB.jsx — Nút chuyển theme Floating Action Button
+
+- FAB cố định góc phải dưới màn hình (không nằm trong Navbar)
+- Icon Sun/Moon với Framer Motion scale animation
+- Hỗ trợ cả `ThemeContext` circular reveal lẫn fallback instant
+- Hiện trên mọi trang (không chỉ admin), z-index cao để không bị che
+
+#### AdminEvents.jsx — Quản lý Sự kiện Đếm ngược
+
+- Trang admin `/admin/su-kien` — CRUD đầy đủ cho `CountdownEvent`
+- Form tạo/sửa: tên sự kiện, ngày giờ, màu hiển thị, icon, trạng thái ẩn/hiện
+- Bảng danh sách với countdown live tới từng sự kiện
+- `ConfirmModal` xác nhận trước khi xóa
+
+#### CountdownEvent Model + API
+
+- `server/src/models/CountdownEvent.js`: schema `{ title, targetDate, color, icon, isActive }`
+- `server/src/controllers/countdownController.js`: CRUD + GET public (chỉ trả `isActive=true`)
+- `server/src/routes/events.js`: mount tại `/api/events`
+- Frontend `Home.jsx` gọi `/api/events` để hiện widget đếm ngược real-time
+
+#### Home.jsx — Bento Grid 4 cột
+
+- Layout bento grid `grid-cols-4` thay thế layout cũ
+- Widget **Lễ tiếp theo real-time**: tính toán giờ lễ gần nhất từ danh sách giờ cố định (05:00, 07:00, 09:00, 18:00), đếm ngược cập nhật mỗi giây
+- Widget đếm ngược sự kiện lấy từ `CountdownEvent` API
+- CSS icon animations: `@keyframes icon-float`, `icon-pulse`, `icon-glow` theo từng ngành
+- Section Lịch Sử Xứ Đoàn với 3 mốc + link → `/lich-su-cuu-do`
+- Nút Hero thêm "Lịch Sử" bên cạnh các CTA chính
+
+#### Cập nhật cấu trúc file
+
+Các file mới thêm vào project:
+
+```text
+client/src/
+├── components/
+│   ├── NavSearch.jsx       # Tìm kiếm inline trong Navbar
+│   └── ThemeFAB.jsx        # Floating Action Button chuyển theme
+└── pages/admin/
+    └── AdminEvents.jsx     # Quản lý sự kiện đếm ngược
+
+server/src/
+├── controllers/
+│   └── countdownController.js
+├── models/
+│   └── CountdownEvent.js
+└── routes/
+    └── events.js
+```
 
 ---
 

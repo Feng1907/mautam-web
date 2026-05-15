@@ -21,7 +21,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-FF0055?style=flat-square&logo=framer&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?style=flat-square&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Phase](https://img.shields.io/badge/Phase-17d_%E2%9C%85-8B0000?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase-17e_%E2%9C%85-8B0000?style=flat-square)
 
 </div>
 
@@ -51,6 +51,10 @@
 - 🏛️ **BibleMapTimeline "Bảo tàng kỹ thuật số"** — Parallax depth effect (bản đồ trôi chậm hơn khi scroll), Map Auto-Zoom vào địa danh khi hover thẻ sự kiện, Spine Progress Orb phát sáng di chuyển, Active Pulse Rings tỏa sóng trên milestone đang xem
 - 🛡️ **Admin Suite nâng cao** — Audit Log nhật ký hoạt động, RBAC permission matrix, Backup & Chốt niên học
 - 📰 **News UI nâng cấp** — Mesh gradient hero, featured card, Playfair Display, reading time estimate, fade-in stagger
+- 🔍 **NavSearch toàn cục** — Tìm kiếm inline trong Navbar, debounce 300ms, gợi ý phân loại (đoàn sinh / lớp / bài viết), đóng khi click ngoài
+- 🎨 **ThemeFAB** — Nút chuyển dark/light theme dạng Floating Action Button, hiển thị trên mọi trang
+- 📅 **AdminEvents & CountdownEvent API** — Quản lý sự kiện đếm ngược, CRUD đầy đủ, widget real-time trên trang chủ
+- 🏠 **Bento Home Layout** — Grid 4 cột, widget "Lễ tiếp theo" đếm ngược giây đến giờ lễ gần nhất, CSS icon animations theo từng ngành
 
 ---
 
@@ -106,7 +110,9 @@ mautam-website/
 │       │   ├── QuickActionWidgets.jsx
 │       │   ├── Toast.jsx             # ToastProvider + useToast (success/error/warning/info)
 │       │   ├── ConfirmModal.jsx      # Safety modal trước destructive actions
-│       │   └── Skeleton.jsx          # SkeletonTable/Row/Card/Line
+│       │   ├── Skeleton.jsx          # SkeletonTable/Row/Card/Line
+│       │   ├── NavSearch.jsx         # Tìm kiếm toàn cục inline trong Navbar
+│       │   └── ThemeFAB.jsx          # Floating Action Button chuyển theme
 │       ├── pages/
 │       │   ├── Home.jsx              # Landing page 5 ngành
 │       │   ├── Login.jsx             # Đăng nhập
@@ -134,7 +140,8 @@ mautam-website/
 │       │       ├── AdminNamHoc.jsx
 │       │       ├── AdminAuditLog.jsx   # Nhật ký hoạt động — timeline, avatar, filter, pagination
 │       │       ├── AdminRBAC.jsx       # Phân quyền vai trò — matrix 8×4, toggle, protected roles
-│       │       └── AdminBackup.jsx     # Sao lưu xlsx/json, chốt niên học
+│       │       ├── AdminBackup.jsx     # Sao lưu xlsx/json, chốt niên học
+│       │       └── AdminEvents.jsx     # Quản lý sự kiện đếm ngược (CRUD CountdownEvent)
 │       ├── services/
 │       │   ├── api.js                # Axios + JWT interceptor + 401 auto-redirect
 │       │   ├── firebase.js           # Firebase SDK init
@@ -153,12 +160,15 @@ mautam-website/
         │   ├── Grade.js, Attendance.js, Post.js
         │   ├── ChuyenCan.js          # Điểm chuyên cần
         │   ├── MeritPoint.js
-        │   └── PromotionHistory.js   # Lịch sử lên lớp
+        │   ├── PromotionHistory.js   # Lịch sử lên lớp
+        │   └── CountdownEvent.js     # Sự kiện đếm ngược trang chủ
         ├── controllers/
         │   ├── authController.js     # Login, signup, forgot password
         │   ├── exportController.js   # attendance, grades, tổng kết, toàn đoàn
         │   ├── notifyController.js   # email: điểm danh, lịch lễ, bảng điểm
         │   ├── loiChuaController.js  # scraper 3 nguồn + cache 6h + romcal
+        │   ├── searchController.js   # tìm kiếm toàn cục (đoàn sinh + lớp + bài viết)
+        │   ├── countdownController.js # CRUD sự kiện đếm ngược
         │   ├── chuyenCanController.js
         │   ├── promoteController.js
         │   └── ...
@@ -166,7 +176,7 @@ mautam-website/
         │   ├── sendEmail.js          # Nodemailer transporter factory
         │   ├── emailTemplates.js     # 3 template HTML có branding
         │   └── gradeCalculator.js    # tinhTBHocTap, tinhTongKet, phanLoai
-        ├── routes/                   # /auth, /export, /notify, /liturgy, /chuyen-can, ...
+        ├── routes/                   # /auth, /export, /notify, /liturgy, /search, /events, ...
         └── middlewares/
             ├── checkAuth.js
             ├── checkClassPermission.js
@@ -272,6 +282,10 @@ Mở trình duyệt: **<http://localhost:5173>**
 | **Admin Backup** | Xuất dữ liệu `.xlsx` + `.json`, chốt niên học với ConfirmModal, cảnh báo nếu > 7 ngày chưa backup. |
 | **News UI nâng cấp** | Mesh gradient hero, FeaturedCard layout ngang, Playfair Display, reading time ước tính, `whileInView` stagger fade-in. |
 | **Font tiếng Việt tối ưu** | Be Vietnam Pro (font thiết kế riêng cho Việt), `font-variant-ligatures: none` toàn cục, `lang="vi"` đúng trên `<html>`. |
+| **NavSearch toàn cục** | Tìm kiếm inline Navbar, debounce 300ms, gợi ý phân loại theo icon, đóng khi click ngoài hoặc `Escape`. |
+| **ThemeFAB** | Floating Action Button góc phải dưới, icon Sun/Moon, Framer Motion scale animation, hoạt động trên mọi trang. |
+| **AdminEvents** | CRUD `CountdownEvent`, bảng danh sách với countdown live, ConfirmModal trước khi xóa. |
+| **Bento Home Layout** | Grid 4 cột, widget "Lễ tiếp theo" cập nhật từng giây, widget đếm ngược sự kiện từ API, CSS icon animations theo ngành. |
 
 ---
 
@@ -279,8 +293,8 @@ Mở trình duyệt: **<http://localhost:5173>**
 
 | Nhánh | Mục đích |
 | --- | --- |
-| `master` | Production — đã merge phase 1–17b |
-| `develop` | Integration — phase 17c (Admin Suite, News UI, Font) đang phát triển |
+| `master` | Production — đã merge phase 1–17e |
+| `develop` | Integration — phase 18 (PWA, kiểm thử, performance) đang phát triển |
 
 ---
 

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
@@ -81,20 +82,61 @@ exports.register = async (req, res, next) => {
       phaiBatDauDoiMatKhau: true,
     });
 
-    await sendEmail({
-      to: email,
-      subject: 'Tài khoản Xứ Đoàn Anrê Phú Yên - Mẫu Tâm',
-      html: `
-        <p>Xin chào <strong>${hoTen}</strong>,</p>
-        <p>Tài khoản của bạn đã được tạo.</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Mật khẩu tạm:</strong> ${matKhauTam}</p>
-        <p>Vui lòng đăng nhập và đổi mật khẩu ngay.</p>
-      `,
-    });
+    // Gửi email không chặn — nếu lỗi vẫn trả về thành công kèm mật khẩu tạm
+    let emailSent = true;
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Tài khoản Xứ Đoàn Anrê Phú Yên - Mẫu Tâm',
+        html: `
+          <p>Xin chào <strong>${hoTen}</strong>,</p>
+          <p>Tài khoản của bạn đã được tạo.</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Mật khẩu tạm:</strong> ${matKhauTam}</p>
+          <p>Vui lòng đăng nhập và đổi mật khẩu ngay.</p>
+        `,
+      });
+    } catch {
+      emailSent = false;
+    }
 
     user.matKhau = undefined;
-    res.status(201).json({ success: true, data: user });
+    // Luôn trả về matKhauTam để admin copy thủ công nếu email thất bại
+    res.status(201).json({ success: true, data: user, matKhauTam, emailSent });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/auth/reset-password  (Admin reset MK của user bất kỳ)
+exports.adminResetPassword = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const user = await User.findById(userId).select('+matKhau');
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
+
+    const matKhauMoi = crypto.randomBytes(4).toString('hex');
+    const hashed = await bcrypt.hash(matKhauMoi, 12);
+    await User.updateOne({ _id: user._id }, { matKhau: hashed, phaiBatDauDoiMatKhau: true });
+
+    let emailSent = true;
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Đặt lại mật khẩu - Xứ Đoàn Mẫu Tâm',
+        html: `
+          <p>Xin chào <strong>${user.hoTen}</strong>,</p>
+          <p>Mật khẩu của bạn đã được Admin đặt lại.</p>
+          <p><strong>Mật khẩu mới:</strong> ${matKhauMoi}</p>
+          <p>Vui lòng đăng nhập và đổi mật khẩu ngay.</p>
+        `,
+      });
+    } catch {
+      emailSent = false;
+    }
+
+    res.json({ success: true, matKhauMoi, emailSent });
   } catch (err) {
     next(err);
   }
@@ -152,7 +194,7 @@ exports.updateProfile = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+matKhau');
     if (!user)
       return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
 

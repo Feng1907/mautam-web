@@ -45,7 +45,7 @@ const NewsDetail = () => {
           <span>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
         </div>
         <div
-          className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+          className="rich-text-content"
           dangerouslySetInnerHTML={{ __html: post.noiDung }}
         />
       </div>

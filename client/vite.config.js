@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  cacheDir: '../.vite-cache',
   plugins: [
     react(),
     tailwindcss(),
@@ -78,5 +79,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5000',
     },
+  },
+  optimizeDeps: {
+    exclude: ['@sentry/react'],
   },
 })

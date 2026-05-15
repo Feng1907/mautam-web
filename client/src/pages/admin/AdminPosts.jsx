@@ -1,8 +1,12 @@
 ﻿import { useEffect, useState, useCallback, useRef } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import UnderlineExtension from '@tiptap/extension-underline';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ImagePlus, Trash2, Pencil, X, Loader2, Upload,
   Eye, EyeOff, Plus, AlertCircle, Newspaper, Bell, BellRing, LayoutGrid,
+  Bold, Italic, Underline, List, ListOrdered, Quote, Heading2, Heading3, Undo2, Redo2,
 } from 'lucide-react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../services/firebase';
@@ -150,9 +154,140 @@ const ImageUploadArea = ({ previewUrl, onFileSelect, onClear, uploading, uploadP
   );
 };
 
+// ── Rich Text Editor ──────────────────────────────────────────────────────────
+const ToolbarButton = ({ active, disabled, onClick, title, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`flex h-8 w-8 items-center justify-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-40 ${
+      active
+        ? 'border-[#8B0000] bg-red-50 text-[#8B0000]'
+        : 'border-[#e5d5b5] bg-white/80 text-gray-600 hover:border-[#D4AF37] hover:text-[#8B0000]'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const RichTextEditor = ({ value, onChange }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+      }),
+      UnderlineExtension,
+    ],
+    content: value || '',
+    editorProps: {
+      attributes: {
+        class: 'min-h-56 px-4 py-3 focus:outline-none',
+        style: 'font-family: var(--font-body); color: #374151; line-height: 1.75;',
+      },
+    },
+    onUpdate: ({ editor: activeEditor }) => {
+      onChange(activeEditor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+    const current = editor.getHTML();
+    if (current !== value) {
+      editor.commands.setContent(value || '', false);
+    }
+  }, [value, editor]);
+
+  if (!editor) {
+    return (
+      <div className="rich-text-editor min-h-56 rounded-xl border border-[#e5d5b5] bg-white/70" />
+    );
+  }
+
+  const tools = [
+    {
+      title: 'Tiêu đề lớn',
+      active: editor.isActive('heading', { level: 2 }),
+      onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      Icon: Heading2,
+    },
+    {
+      title: 'Tiêu đề nhỏ',
+      active: editor.isActive('heading', { level: 3 }),
+      onClick: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      Icon: Heading3,
+    },
+    {
+      title: 'Đậm',
+      active: editor.isActive('bold'),
+      onClick: () => editor.chain().focus().toggleBold().run(),
+      Icon: Bold,
+    },
+    {
+      title: 'Nghiêng',
+      active: editor.isActive('italic'),
+      onClick: () => editor.chain().focus().toggleItalic().run(),
+      Icon: Italic,
+    },
+    {
+      title: 'Gạch chân',
+      active: editor.isActive('underline'),
+      onClick: () => editor.chain().focus().toggleUnderline().run(),
+      Icon: Underline,
+    },
+    {
+      title: 'Danh sách',
+      active: editor.isActive('bulletList'),
+      onClick: () => editor.chain().focus().toggleBulletList().run(),
+      Icon: List,
+    },
+    {
+      title: 'Danh sách số',
+      active: editor.isActive('orderedList'),
+      onClick: () => editor.chain().focus().toggleOrderedList().run(),
+      Icon: ListOrdered,
+    },
+    {
+      title: 'Trích dẫn',
+      active: editor.isActive('blockquote'),
+      onClick: () => editor.chain().focus().toggleBlockquote().run(),
+      Icon: Quote,
+    },
+  ];
+
+  return (
+    <div className="rich-text-editor overflow-hidden rounded-xl border border-[#e5d5b5] bg-white/85">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-[#e5d5b5] bg-[#fffcf9] px-3 py-2">
+        {tools.map(({ title, active, onClick, Icon }) => (
+          <ToolbarButton key={title} title={title} active={active} onClick={onClick}>
+            <Icon className="h-4 w-4" />
+          </ToolbarButton>
+        ))}
+        <span className="mx-1 h-6 w-px bg-[#e5d5b5]" />
+        <ToolbarButton
+          title="Hoàn tác"
+          disabled={!editor.can().undo()}
+          onClick={() => editor.chain().focus().undo().run()}
+        >
+          <Undo2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Làm lại"
+          disabled={!editor.can().redo()}
+          onClick={() => editor.chain().focus().redo().run()}
+        >
+          <Redo2 className="h-4 w-4" />
+        </ToolbarButton>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  );
+};
+
 // ── PostForm Modal ────────────────────────────────────────────────────────────
 const PostForm = ({ initial, onSave, onCancel }) => {
-  const [form,      setForm]      = useState(initial || emptyForm);
+  const [form,      setForm]      = useState({ ...emptyForm, ...(initial || {}) });
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -190,6 +325,11 @@ const PostForm = ({ initial, onSave, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setSaving(true);
     try {
+      const plainContent = form.noiDung.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+      if (!plainContent) {
+        setError('Vui lòng nhập nội dung bài viết.');
+        return;
+      }
       const anhDaiDien = imageFile ? await uploadToFirebase(imageFile) : form.anhDaiDien;
       const payload = { ...form, anhDaiDien, hanHienThi: form.loai === 'thongbaokhan' && form.hanHienThi ? form.hanHienThi : null };
       const res = isEdit ? await api.put(`/posts/${initial._id}`, payload) : await api.post('/posts', payload);
@@ -289,9 +429,7 @@ const PostForm = ({ initial, onSave, onCancel }) => {
             {/* Nội dung */}
             <div>
               <label className="block text-sm font-medium text-[#5a1a1a] mb-1">Nội dung *</label>
-              <textarea className="input rounded-xl resize-y" rows={8}
-                placeholder="Nội dung chi tiết... (hỗ trợ HTML cơ bản)"
-                value={form.noiDung} onChange={e => set('noiDung', e.target.value)} required />
+              <RichTextEditor value={form.noiDung} onChange={html => set('noiDung', html)} />
             </div>
 
             {/* Ảnh đại diện */}

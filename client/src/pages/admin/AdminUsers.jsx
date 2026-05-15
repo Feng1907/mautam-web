@@ -3,6 +3,38 @@ import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
+// ── Modal hiển thị mật khẩu tạm ──────────────────────────────────────────────
+const PasswordModal = ({ hoTen, email, matKhau, emailSent, onClose }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(matKhau);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
+        <div className="text-3xl mb-2">🔑</div>
+        <h3 className="font-bold text-gray-800 mb-1">Mật khẩu tạm thời</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          {emailSent
+            ? `Đã gửi qua email <strong>${email}</strong>`
+            : <span className="text-orange-600 font-medium">⚠ Gửi email thất bại — hãy copy và gửi thủ công</span>
+          }
+        </p>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3">
+          <p className="text-xs text-gray-400 mb-1">{hoTen} · {email}</p>
+          <p className="text-2xl font-mono font-bold text-red-700 tracking-widest select-all">{matKhau}</p>
+        </div>
+        <button onClick={copy} className="btn-primary w-full mb-2">
+          {copied ? '✓ Đã copy!' : 'Copy mật khẩu'}
+        </button>
+        <button onClick={onClose} className="btn-ghost w-full text-sm">Đóng</button>
+      </div>
+    </div>
+  );
+};
+
 // ── Cấu hình nhãn & màu ─────────────────────────────────────────────────────
 const VAI_TRO_LABEL = {
   admin:  { label: 'Admin',        cls: 'badge-red'  },
@@ -53,7 +85,7 @@ const UserForm = ({ initial, onSave, onCancel }) => {
       const res = isEdit
         ? await api.put(`/users/${initial._id}`, payload)
         : await api.post('/auth/register', payload);
-      onSave(res.data.data || res.data.user);
+      onSave(res.data.data || res.data.user, res.data.matKhauTam, res.data.emailSent);
     } catch (err) {
       setError(err.response?.data?.message || 'Lưu thất bại');
     } finally {
@@ -134,11 +166,13 @@ const UserForm = ({ initial, onSave, onCancel }) => {
 
 // ── Trang chính ───────────────────────────────────────────────────────────────
 const AdminUsers = () => {
-  const [users,    setUsers]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [form,     setForm]     = useState(null);
+  const [users,     setUsers]     = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [form,      setForm]      = useState(null);
   const [activeTab, setActiveTab] = useState('');
-  const [deleting, setDeleting] = useState(null);
+  const [deleting,  setDeleting]  = useState(null);
+  const [pwModal,   setPwModal]   = useState(null); // { hoTen, email, matKhau, emailSent }
+  const [resetting, setResetting] = useState(null);
 
   // Xây params từ tab
   const tabParams = () => {
@@ -168,13 +202,25 @@ const AdminUsers = () => {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
-  const handleSave = (saved) => {
+  const handleSave = (saved, matKhauTam, emailSent) => {
     setUsers(prev => {
       const idx = prev.findIndex(u => u._id === saved._id);
       if (idx >= 0) { const n = [...prev]; n[idx] = saved; return n; }
       return [saved, ...prev];
     });
     setForm(null);
+    if (matKhauTam) setPwModal({ hoTen: saved.hoTen, email: saved.email, matKhau: matKhauTam, emailSent });
+  };
+
+  const handleResetPassword = async (user) => {
+    if (!window.confirm(`Reset mật khẩu của ${user.hoTen}?`)) return;
+    setResetting(user._id);
+    try {
+      const res = await api.post('/auth/admin-reset-password', { userId: user._id });
+      setPwModal({ hoTen: user.hoTen, email: user.email, matKhau: res.data.matKhauMoi, emailSent: res.data.emailSent });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Reset thất bại.');
+    } finally { setResetting(null); }
   };
 
   const handleDelete = async (id) => {
@@ -300,8 +346,16 @@ const AdminUsers = () => {
                 </div>
 
                 {/* Thao tác */}
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 flex-wrap">
                   <button onClick={() => setForm(u)} className="btn-ghost py-1! px-3! text-xs!">Sửa</button>
+                  <button
+                    onClick={() => handleResetPassword(u)}
+                    disabled={resetting === u._id}
+                    title="Reset mật khẩu về mật khẩu tạm mới"
+                    className="py-1 px-3 text-xs rounded border border-orange-300 text-orange-600 hover:bg-orange-50 transition disabled:opacity-50"
+                  >
+                    {resetting === u._id ? '...' : '🔑 Reset MK'}
+                  </button>
                   <button
                     onClick={() => handleDelete(u._id)}
                     disabled={deleting === u._id}
@@ -321,6 +375,16 @@ const AdminUsers = () => {
           initial={form._id ? form : null}
           onSave={handleSave}
           onCancel={() => setForm(null)}
+        />
+      )}
+
+      {pwModal && (
+        <PasswordModal
+          hoTen={pwModal.hoTen}
+          email={pwModal.email}
+          matKhau={pwModal.matKhau}
+          emailSent={pwModal.emailSent}
+          onClose={() => setPwModal(null)}
         />
       )}
     </div>
