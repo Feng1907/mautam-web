@@ -245,13 +245,13 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
             onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
           >
             <motion.div
-              className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-              style={{ background: 'linear-gradient(135deg,#12100c,#0d0b08)', border: '1px solid rgba(212,175,55,0.2)' }}
+              className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col"
+              style={{ background: 'linear-gradient(135deg,#12100c,#0d0b08)', border: '1px solid rgba(212,175,55,0.2)', maxHeight: '90vh' }}
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4"
+              {/* Header — cố định trên cùng */}
+              <div className="flex items-center justify-between px-5 py-4 shrink-0 rounded-t-2xl"
                 style={{ background: 'rgba(212,175,55,0.08)', borderBottom: '1px solid rgba(212,175,55,0.12)' }}>
                 <div className="flex items-center gap-2">
                   <QrCode size={18} style={{ color: '#D4AF37' }} />
@@ -265,7 +265,8 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                 </button>
               </div>
 
-              <div className="px-5 py-4 space-y-4">
+              {/* Body — cuộn được */}
+              <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1 scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
                 {!session ? (
                   /* ── Form chọn lớp / ngày / TTL ── */
                   <>
@@ -519,16 +520,8 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                         {error}
                       </p>
                     )}
-
-                    <button
-                      onClick={generate}
-                      disabled={loading || !lopId || !date}
-                      className="w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition"
-                      style={{ background: (!lopId || !date) ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.85)', color: '#12100c' }}
-                    >
-                      {loading ? <Loader2 size={15} className="animate-spin" /> : <QrCode size={15} />}
-                      {loading ? 'Đang tạo...' : 'Tạo mã QR'}
-                    </button>
+                    {/* Padding dưới bản đồ để không bị dính footer */}
+                    <div className="pb-2" />
                   </>
                 ) : (
                   /* ── Hiển thị QR + countdown ── */
@@ -703,6 +696,22 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                   </div>
                 )}
               </div>
+
+              {/* Sticky footer — nút Tạo mã QR luôn hiển thị ở đáy modal */}
+              {!session && (
+                <div className="shrink-0 px-5 pb-5 pt-3 rounded-b-2xl"
+                  style={{ borderTop: '1px solid rgba(212,175,55,0.1)', background: 'linear-gradient(to bottom, transparent, rgba(13,11,8,0.98))' }}>
+                  <button
+                    onClick={generate}
+                    disabled={loading || !lopId || !date}
+                    className="w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition"
+                    style={{ background: (!lopId || !date) ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.85)', color: '#12100c' }}
+                  >
+                    {loading ? <Loader2 size={15} className="animate-spin" /> : <QrCode size={15} />}
+                    {loading ? 'Đang tạo...' : 'Tạo mã QR'}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
