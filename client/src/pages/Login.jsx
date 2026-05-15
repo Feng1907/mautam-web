@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', matKhau: '' });
@@ -57,9 +58,7 @@ const Login = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-              <input
-                type="password"
-                className="input"
+              <PasswordInput
                 placeholder="••••••••"
                 value={form.matKhau}
                 onChange={e => setForm({ ...form, matKhau: e.target.value })}

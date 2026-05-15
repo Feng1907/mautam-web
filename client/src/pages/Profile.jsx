@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useAuth } from '../store/AuthContext';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
+import PasswordInput from '../components/PasswordInput';
 
 const CHUC_VU = { huynhtruong: 'Huynh trưởng', dutruong: 'Dự trưởng' };
 const VAI_TRO = { admin: 'Admin', giaoly: 'Giáo lý viên', user: 'Phụ huynh' };
@@ -275,19 +276,19 @@ const Profile = () => {
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại *</label>
-                <input type="password" className="input" placeholder="••••••••"
+                <PasswordInput placeholder="••••••••"
                   value={pwForm.matKhauCu}
                   onChange={e => setPwForm(f => ({ ...f, matKhauCu: e.target.value }))} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới *</label>
-                <input type="password" className="input" placeholder="Ít nhất 6 ký tự"
+                <PasswordInput placeholder="Ít nhất 6 ký tự"
                   value={pwForm.matKhauMoi}
                   onChange={e => setPwForm(f => ({ ...f, matKhauMoi: e.target.value }))} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới *</label>
-                <input type="password" className="input" placeholder="Nhập lại mật khẩu mới"
+                <PasswordInput placeholder="Nhập lại mật khẩu mới"
                   value={pwForm.xacNhan}
                   onChange={e => setPwForm(f => ({ ...f, xacNhan: e.target.value }))} required />
               </div>

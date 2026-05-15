@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -86,8 +87,8 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu *</label>
-              <input
-                type="password" className="input" placeholder="Ít nhất 6 ký tự"
+              <PasswordInput
+                placeholder="Ít nhất 6 ký tự"
                 value={form.matKhau} onChange={e => set('matKhau', e.target.value)}
                 required
               />
@@ -95,8 +96,8 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu *</label>
-              <input
-                type="password" className="input" placeholder="Nhập lại mật khẩu"
+              <PasswordInput
+                placeholder="Nhập lại mật khẩu"
                 value={form.xacNhanMatKhau} onChange={e => set('xacNhanMatKhau', e.target.value)}
                 required
               />
