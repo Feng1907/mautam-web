@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint:fix": "cd client && npm run lint:fix"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,7 @@
   },
   "lint-staged": {
     "client/src/**/*.{js,jsx}": [
-      "bash -c 'cd client && npx eslint --max-warnings=0 \"$@\"' --"
+      "bash -c 'cd client && npx eslint --fix --max-warnings=0 \"$@\"' --"
     ],
     "server/src/**/*.js": [
       "node --check"
