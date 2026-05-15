@@ -170,6 +170,7 @@ app.use('/api/promote',    require('./routes/promote'));
 app.use('/api/merit',      require('./routes/merit'));
 app.use('/api/chuyen-can', require('./routes/chuyencan'));
 app.use('/api/parent',     require('./routes/parent'));
+app.use('/api/admin/stats', require('./routes/adminStats'));
 
 app.use('/api/liturgy',   require('./routes/liturgy'));
 app.use('/api/loi-chua',  require('./routes/loiChua'));
@@ -178,7 +179,8 @@ app.use('/api/notify',    notifyLimiter, require('./routes/notify'));
 app.use('/api/subscribe', require('./routes/subscribe'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/subscribe',     require('./routes/subscribe'));
-app.use('/api/events',    require('./routes/events'));
+app.use('/api/events',       require('./routes/events'));
+app.use('/api/admin/stats', require('./routes/adminStats'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

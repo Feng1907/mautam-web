@@ -1,8 +1,12 @@
 const Attendance = require('../models/Attendance');
+const AbsenceRequest = require('../models/AbsenceRequest');
 const ChuyenCan = require('../models/ChuyenCan');
 const Grade = require('../models/Grade');
 const NamHoc = require('../models/NamHoc');
 const ParentStudent = require('../models/ParentStudent');
+const Student = require('../models/Student');
+const sendEmail = require('../utils/sendEmail');
+const { sendPushToUsers } = require('../utils/pushNotifier');
 
 const resolveNamHocId = async (namHocId) => {
   if (namHocId) return namHocId;
@@ -100,6 +104,57 @@ exports.getStudentGrades = async (req, res, next) => {
   }
 };
 
+// GET /api/parent/students/:studentId/semester-report?namHocId=...&hocKy=1
+exports.getSemesterReport = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    const hocKy = Number(req.query.hocKy || 1);
+    const namHocId = await resolveNamHocId(req.query.namHocId);
+    const student = await assertParentCanAccessStudent(req.user._id, studentId);
+
+    const [grades, chuyenCan] = await Promise.all([
+      Grade.find({ student: studentId, namHoc: namHocId, hocKy })
+        .populate('lop', 'tenLop nhanh')
+        .sort({ loaiDiem: 1, createdAt: 1 }),
+      ChuyenCan.findOne({ student: studentId, namHoc: namHocId, hocKy })
+        .populate('lop', 'tenLop nhanh'),
+    ]);
+
+    const gradeRows = grades.map((grade) => ({
+      _id: grade._id,
+      loaiDiem: grade.loaiDiem,
+      diem: grade.diem,
+      ghiChu: grade.ghiChu || '',
+      createdAt: grade.createdAt,
+    }));
+
+    const gradeAverage = grades.length
+      ? Number((grades.reduce((sum, grade) => sum + Number(grade.diem || 0), 0) / grades.length).toFixed(1))
+      : null;
+
+    const teacherComments = [
+      chuyenCan?.ghiChu,
+      ...grades.map((grade) => grade.ghiChu),
+    ].filter(Boolean);
+
+    res.json({
+      success: true,
+      data: {
+        student,
+        namHoc: namHocId,
+        hocKy,
+        gradeAverage,
+        chuyenCan,
+        grades: gradeRows,
+        teacherComment: teacherComments[0] || 'Chưa có nhận xét từ Giáo lý viên.',
+        comments: teacherComments,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // GET /api/parent/students/:studentId/attendance?namHocId=...&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 exports.getAttendanceHistory = async (req, res, next) => {
   try {
@@ -138,6 +193,72 @@ exports.getAttendanceHistory = async (req, res, next) => {
         summary,
         records,
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/parent/students/:studentId/absence-request
+exports.createAbsenceRequest = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    const { date, reason } = req.body;
+    await assertParentCanAccessStudent(req.user._id, studentId);
+
+    const student = await Student.findById(studentId)
+      .select('hoTen tenThanh lop')
+      .populate({
+        path: 'lop',
+        select: 'tenLop nhanh huynhTruong',
+        populate: { path: 'huynhTruong', select: 'hoTen email pushSubscriptions' },
+      });
+
+    if (!student?.lop) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lớp của đoàn sinh' });
+    }
+
+    const request = await AbsenceRequest.create({
+      parent: req.user._id,
+      student: student._id,
+      lop: student.lop._id,
+      date,
+      reason,
+      notifiedTo: student.lop.huynhTruong?._id || null,
+    });
+
+    const huynhTruong = student.lop.huynhTruong;
+    if (huynhTruong?.email) {
+      sendEmail({
+        to: huynhTruong.email,
+        subject: `[Xin phép nghỉ] ${student.tenThanh || ''} ${student.hoTen}`.trim(),
+        html: `
+          <div style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+            <h3 style="margin-top:0;color:#8B0000">Phụ huynh xin phép nghỉ</h3>
+            <p><strong>Đoàn sinh:</strong> ${student.tenThanh || ''} ${student.hoTen}</p>
+            <p><strong>Lớp:</strong> ${student.lop.tenLop}</p>
+            <p><strong>Ngày nghỉ:</strong> ${date}</p>
+            <p><strong>Lý do:</strong> ${reason}</p>
+          </div>
+        `,
+      }).catch(() => {});
+    }
+
+    if (huynhTruong?._id) {
+      sendPushToUsers([huynhTruong._id], {
+        title: 'Phụ huynh xin phép nghỉ',
+        body: `${student.tenThanh ? `${student.tenThanh} ` : ''}${student.hoTen} xin nghỉ ngày ${date}.`,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        url: '/admin/lop-hoc',
+        type: 'absence-request',
+      }).catch(() => {});
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Đã gửi xin phép nghỉ đến Huynh trưởng lớp',
+      data: request,
     });
   } catch (err) {
     next(err);
