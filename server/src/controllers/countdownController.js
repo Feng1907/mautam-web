@@ -23,7 +23,7 @@ exports.create = async (req, res, next) => {
     if (!name?.trim() || !date) {
       return res.status(400).json({ success: false, message: 'Tên và ngày là bắt buộc.' });
     }
-    const ev = await CountdownEvent.create({ name: name.trim(), date, icon, color, active, order });
+    const ev = await CountdownEvent.create({ name: name.trim(), date, icon, color, active, order, reminderPushSentAt: null });
     res.status(201).json({ success: true, data: ev });
   } catch (err) { next(err); }
 };

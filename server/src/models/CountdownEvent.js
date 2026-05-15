@@ -8,6 +8,7 @@ const countdownEventSchema = new mongoose.Schema(
     color:   { type: String, default: '#F8D444', match: /^#[0-9a-fA-F]{3,6}$/ },
     active:  { type: Boolean, default: true },
     order:   { type: Number, default: 0 },
+    reminderPushSentAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

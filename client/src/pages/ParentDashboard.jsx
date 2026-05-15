@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, CalendarCheck, CheckCircle2, GraduationCap, Loader2, UserRound, XCircle } from 'lucide-react';
+import { Bell, BellRing, CalendarCheck, CheckCircle2, GraduationCap, Loader2, UserRound, XCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import api from '../services/api';
+import {
+  getNotificationSettingsHint,
+  getPushPermissionState,
+  isPushNotificationSupported,
+  registerPushNotifications,
+} from '../utils/pushNotifications';
 
 const scoreTypeLabel = {
   mieng: 'Mieng',
@@ -130,6 +136,70 @@ const RecentPosts = ({ posts }) => {
   );
 };
 
+const PushNotificationCard = () => {
+  const [permission, setPermission] = useState(() => getPushPermissionState());
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const supported = isPushNotificationSupported();
+  const enabled = permission === 'granted';
+  const denied = permission === 'denied';
+
+  const handleEnable = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const result = await registerPushNotifications();
+      setPermission(getPushPermissionState());
+
+      if (result.success) {
+        setMessage('Da bat thong bao cho tai khoan nay.');
+      } else if (result.reason === 'denied') {
+        setMessage(getNotificationSettingsHint());
+      } else if (result.reason === 'unsupported') {
+        setMessage('Trinh duyet nay chua ho tro push notification.');
+      } else {
+        setMessage('Chua the bat thong bao. Vui long thu lai sau.');
+      }
+    } catch (err) {
+      setPermission(getPushPermissionState());
+      setMessage(err.response?.data?.message || 'Chua the luu dang ky thong bao. Vui long thu lai.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-700">
+            <BellRing className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-bold text-gray-900">Thong bao cho phu huynh</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Nhan tin khan, diem danh muon va nhac su kien ngay ca khi khong mo trang.
+            </p>
+            {enabled && <p className="mt-2 text-sm font-semibold text-emerald-700">Thong bao dang bat.</p>}
+            {denied && <p className="mt-2 text-sm text-red-700">{getNotificationSettingsHint()}</p>}
+            {message && !denied && <p className="mt-2 text-sm text-gray-700">{message}</p>}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleEnable}
+          disabled={!supported || enabled || denied || saving}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+          {enabled ? 'Da bat thong bao' : 'Bat thong bao'}
+        </button>
+      </div>
+    </section>
+  );
+};
+
 const ParentDashboard = () => {
   const [students, setStudents] = useState([]);
   const [selectedId, setSelectedId] = useState('');
@@ -229,6 +299,8 @@ const ParentDashboard = () => {
       </div>
 
       {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      <PushNotificationCard />
 
       {!students.length ? (
         <section className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">

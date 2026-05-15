@@ -3,6 +3,7 @@ const http      = require('http');
 const app       = require('./src/app');
 const connectDB = require('./src/config/db');
 const { initSocket } = require('./src/config/socket');
+const { startEventReminderScheduler } = require('./src/utils/eventReminderScheduler');
 
 const PORT = process.env.PORT || 5000;
 
@@ -18,7 +19,10 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   });
 
+  const eventReminderTimer = startEventReminderScheduler();
+
   const shutdown = () => {
+    clearInterval(eventReminderTimer);
     server.close(() => {
       console.log('Server closed');
       process.exit(0);

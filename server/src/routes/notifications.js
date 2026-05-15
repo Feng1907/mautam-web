@@ -26,8 +26,8 @@ const subscriptionValidators = [
 ];
 
 router.get('/public-key', ctrl.getPublicKey);
-router.post('/', checkAuth, subscriptionValidators, ctrl.subscribe);
-router.delete('/', checkAuth, [
+router.post('/subscribe', checkAuth, subscriptionValidators, ctrl.subscribe);
+router.delete('/subscribe', checkAuth, [
   body('endpoint').isURL({ require_protocol: true }).withMessage('Endpoint khong hop le'),
   handleValidationErrors,
 ], ctrl.unsubscribe);

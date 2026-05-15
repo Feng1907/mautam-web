@@ -6,9 +6,11 @@ const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const { logger } = require('../utils/logger');
 const { getIO } = require('../config/socket');
+const { notifyLateAttendance } = require('../utils/pushNotifier');
 
 // ─── Rate limit per token (in-memory, tự dọn sau khi token hết hạn) ──────────
 const qrScanAttempts = new Map(); // key: token[:16], value: { count, expAt }
+const LATE_AFTER_TIME = process.env.ATTENDANCE_LATE_AFTER_TIME || '08:30';
 const MAX_SCAN_ATTEMPTS = 60;     // tối đa 60 lần/token (1 lớp không quá 60 em)
 
 function getRateKey(token) { return token.slice(-16); }
@@ -27,6 +29,16 @@ function checkRateLimit(token, expAt) {
 }
 
 // ─── Haversine distance (meters) giữa 2 tọa độ GPS ───────────────────────────
+function isLateAttendance(date) {
+  const [hour, minute] = LATE_AFTER_TIME.split(':').map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
+
+  const cutoff = new Date(`${date}T00:00:00`);
+  cutoff.setHours(hour, minute, 0, 0);
+
+  return Date.now() > cutoff.getTime();
+}
+
 function haversineMeters(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const toRad = d => (d * Math.PI) / 180;
@@ -117,11 +129,29 @@ exports.upsert = async (req, res, next) => {
     if (!namHoc)
       return res.status(404).json({ success: false, message: 'Chưa có năm học đang hoạt động' });
 
+    const previous = await Attendance.findOne({ student: studentId, lop: lopId, date }).select('present');
     const record = await Attendance.findOneAndUpdate(
       { student: studentId, lop: lopId, date },
       { present, ghiChu, diemDanhBoi: req.user._id, namHoc: namHoc._id },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
+
+    if (present && !previous?.present && isLateAttendance(date)) {
+      Promise.all([
+        Student.findById(studentId).select('hoTen tenThanh avatar'),
+        Class.findById(lopId).select('tenLop'),
+      ])
+        .then(([student, lop]) => {
+          if (!student) return null;
+          return notifyLateAttendance({
+            student,
+            lopName: lop?.tenLop || '',
+            checkedAt: record.updatedAt?.toISOString?.() || new Date().toISOString(),
+          });
+        })
+        .catch((err) => logger.warn('Gui push diem danh muon that bai', { error: err.message }));
+    }
+
     res.json({ success: true, data: record });
   } catch (err) {
     next(err);
@@ -254,7 +284,7 @@ exports.scanQr = async (req, res, next) => {
 
     // [V5] Student phải active và thuộc lớp này
     const student = await Student.findOne({ _id: studentId, lop: lopId, trangThai: 'active' })
-      .select('hoTen tenThanh');
+      .select('hoTen tenThanh avatar');
     if (!student) {
       logger.warn(`[QR-SCAN] Student ${studentId} not in class ${lopId} — ip:${ip}`);
       return res.status(404).json({ success: false, message: 'Đoàn sinh không thuộc lớp này' });
@@ -300,7 +330,7 @@ exports.scanQr = async (req, res, next) => {
     }
 
     // [V8] Ghi có mặt vào DB
-    await Attendance.findOneAndUpdate(
+    const record = await Attendance.findOneAndUpdate(
       { student: studentId, lop: lopId, date },
       { present: true, namHoc: namHoc._id },
       { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -319,6 +349,14 @@ exports.scanQr = async (req, res, next) => {
         checkedAt: new Date().toISOString(),
       };
       getIO().to(`lop:${lopId}`).emit('attendance:checked', payload);
+
+      if (isLateAttendance(date)) {
+        notifyLateAttendance({
+          student,
+          lopName: lop?.tenLop || '',
+          checkedAt: record.updatedAt?.toISOString?.() || new Date().toISOString(),
+        }).catch((err) => logger.warn('Gui push diem danh muon that bai', { error: err.message }));
+      }
     } catch { /* socket emit không được làm crash response */ }
 
     res.json({
