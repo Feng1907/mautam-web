@@ -30,6 +30,21 @@ const studentQueryValidators = [
   handleValidationErrors,
 ];
 
+// Routes dành cho mọi user đã đăng nhập (chưa cần PARENT role)
+router.get('/search-students', checkAuth, ctrl.searchStudentsPublic);
+router.post(
+  '/link-request',
+  checkAuth,
+  [
+    body('studentId').isMongoId().withMessage('Student id không hợp lệ'),
+    body('quanHe').optional().trim().isLength({ max: 50 }),
+    handleValidationErrors,
+  ],
+  ctrl.createLinkRequest
+);
+router.get('/link-requests', checkAuth, ctrl.getMyLinkRequests);
+
+// Routes chỉ dành cho PARENT
 router.use(checkAuth, requireParent);
 
 router.get('/students', ctrl.getMyStudents);

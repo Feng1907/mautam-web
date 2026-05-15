@@ -15,8 +15,9 @@ const NAV_GROUPS = [
     label: 'Quản lý nội dung',
     items: [
       { to: '/admin/bai-viet',   label: 'Bài viết',       icon: '✦' },
-      { to: '/admin/nguoi-dung', label: 'Người dùng',     icon: '◉' },
-      { to: '/admin/lop-hoc',    label: 'Lớp học',        icon: '▣' },
+      { to: '/admin/nguoi-dung',    label: 'Người dùng',     icon: '◉' },
+      { to: '/admin/lop-hoc',       label: 'Lớp học',        icon: '▣' },
+      { to: '/admin/phu-huynh',     label: 'Phụ huynh',      icon: '🔗' },
     ],
   },
   {
