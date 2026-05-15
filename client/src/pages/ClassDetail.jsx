@@ -10,6 +10,7 @@ import StudentList    from '../components/StudentList';
 import AttendanceTable from '../components/AttendanceTable';
 import GradeForm      from '../components/GradeForm';
 import QrAttendanceGenerator from '../components/QrAttendanceGenerator';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const NGANH_CFG = {
   ChienNon: { label: 'Chiên Non', cls: 'bg-pink-100   text-pink-700   border-pink-200'   },
