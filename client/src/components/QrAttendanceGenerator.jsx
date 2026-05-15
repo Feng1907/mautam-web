@@ -52,6 +52,9 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
   const [adminAddress, setAdminAddress] = useState(''); // địa chỉ từ reverse geocode
   const [gpsStatus, setGpsStatus] = useState('idle');   // idle | loading | ok | error
   const [maxDistance, setMaxDistance] = useState(200);  // mét
+  const [manualInput, setManualInput] = useState(false); // nhập tọa độ thủ công
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
 
   const { remaining, display, expired } = useCountdown(session?.expiresAt);
 
@@ -108,7 +111,24 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
 
   const handleToggleLoc = (val) => {
     setRequireLoc(val);
-    if (val && gpsStatus === 'idle') fetchAdminGps();
+    if (val && gpsStatus === 'idle' && !manualInput) fetchAdminGps();
+  };
+
+  const handleManualApply = () => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    setAdminGps({ lat, lng, accuracy: 0 });
+    setGpsStatus('ok');
+    setAdminAddress('');
+    // Reverse geocode tọa độ vừa nhập
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`)
+      .then(r => r.json())
+      .then(data => {
+        const a = data.address || {};
+        const parts = [a.road || a.pedestrian, a.suburb || a.neighbourhood, a.city || a.town || a.village].filter(Boolean);
+        setAdminAddress(parts.join(', ') || data.display_name?.split(',').slice(0, 3).join(',') || '');
+      }).catch(() => {});
   };
 
   const generate = useCallback(async () => {
@@ -341,67 +361,140 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                       {requireLoc && (
                         <div className="px-4 pb-4 space-y-3">
 
-                          {/* GPS status row */}
-                          {gpsStatus === 'loading' && (
-                            <div className="flex items-center gap-2 text-xs text-amber-400">
-                              <Loader2 size={12} className="animate-spin" />
-                              Đang lấy vị trí GPS...
-                            </div>
-                          )}
-                          {gpsStatus === 'error' && (
-                            <div className="flex items-center gap-2 text-xs text-red-400">
-                              <MapPinOff size={12} />
-                              Không lấy được vị trí
-                              <button onClick={fetchAdminGps}
-                                className="ml-1 flex items-center gap-1 text-amber-400 underline">
-                                <RefreshCw size={10} /> Thử lại
-                              </button>
-                            </div>
-                          )}
-                          {gpsStatus === 'ok' && adminGps && (
+                          {/* Toggle nhập thủ công */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-white/40">
+                              {manualInput ? 'Nhập tọa độ thủ công' : 'Tự động lấy GPS'}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const next = !manualInput;
+                                setManualInput(next);
+                                if (!next && gpsStatus === 'idle') fetchAdminGps();
+                                if (!next) { setAdminGps(null); setGpsStatus('idle'); setAdminAddress(''); }
+                              }}
+                              className="text-[10px] underline"
+                              style={{ color: '#D4AF37' }}
+                            >
+                              {manualInput ? '← Dùng GPS tự động' : 'Vị trí sai? Nhập thủ công →'}
+                            </button>
+                          </div>
+
+                          {/* Nhập thủ công */}
+                          {manualInput ? (
                             <div className="space-y-2">
-                              {/* Địa chỉ + tọa độ + nút refresh */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-1.5 min-w-0">
-                                  <MapPin size={12} className="shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
-                                  <div className="min-w-0">
-                                    {adminAddress ? (
-                                      <p className="text-xs font-medium text-white/80 leading-tight">{adminAddress}</p>
-                                    ) : (
-                                      <p className="text-xs text-white/40 italic">Đang tra địa chỉ...</p>
-                                    )}
-                                    <p className="text-[10px] text-white/30 mt-0.5 font-mono">
-                                      {adminGps.lat.toFixed(5)}, {adminGps.lng.toFixed(5)}
-                                    </p>
+                              <p className="text-[10px] text-white/40">
+                                Tìm tọa độ tại <span className="text-amber-400">maps.google.com</span> → chuột phải → "What's here?"
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-[10px] text-white/40 mb-1">Vĩ độ (Latitude)</p>
+                                  <input
+                                    type="number" step="any" placeholder="10.7769"
+                                    value={manualLat}
+                                    onChange={e => setManualLat(e.target.value)}
+                                    className="w-full rounded-lg px-2 py-1.5 text-xs font-mono bg-white/10 border border-white/15 text-white placeholder-white/25 focus:outline-none focus:border-amber-400/60"
+                                  />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-white/40 mb-1">Kinh độ (Longitude)</p>
+                                  <input
+                                    type="number" step="any" placeholder="106.6951"
+                                    value={manualLng}
+                                    onChange={e => setManualLng(e.target.value)}
+                                    className="w-full rounded-lg px-2 py-1.5 text-xs font-mono bg-white/10 border border-white/15 text-white placeholder-white/25 focus:outline-none focus:border-amber-400/60"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                onClick={handleManualApply}
+                                disabled={!manualLat || !manualLng}
+                                className="w-full py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40"
+                                style={{ background: 'rgba(212,175,55,0.2)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.35)' }}
+                              >
+                                Xác nhận tọa độ
+                              </button>
+                              {gpsStatus === 'ok' && adminGps && (
+                                <div className="flex items-center gap-1.5 text-[11px]" style={{ color: '#22c55e' }}>
+                                  <MapPin size={11} />
+                                  {adminAddress || `${adminGps.lat.toFixed(5)}, ${adminGps.lng.toFixed(5)}`}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {/* GPS status row — tự động */}
+                              {gpsStatus === 'loading' && (
+                                <div className="flex items-center gap-2 text-xs text-amber-400">
+                                  <Loader2 size={12} className="animate-spin" />
+                                  Đang lấy vị trí GPS...
+                                </div>
+                              )}
+                              {gpsStatus === 'error' && (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-2 text-xs text-red-400">
+                                    <MapPinOff size={12} />
+                                    Không lấy được vị trí
+                                    <button onClick={fetchAdminGps}
+                                      className="ml-1 flex items-center gap-1 text-amber-400 underline">
+                                      <RefreshCw size={10} /> Thử lại
+                                    </button>
                                   </div>
                                 </div>
-                                <button onClick={fetchAdminGps} title="Cập nhật lại vị trí"
-                                  className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition"
-                                  style={{ color: '#D4AF37' }}>
-                                  <RefreshCw size={12} />
-                                </button>
-                              </div>
+                              )}
+                              {gpsStatus === 'ok' && adminGps && (
+                                <div className="space-y-2">
+                                  {/* Cảnh báo nếu vị trí có thể sai do VPN/IP */}
+                                  {adminGps.accuracy === 0 || adminGps.accuracy > 500 ? null : (
+                                    <div className="rounded-lg px-2.5 py-1.5 text-[10px] leading-relaxed"
+                                      style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: 'rgba(251,191,36,0.7)' }}>
+                                      ⚠ Nếu vị trí hiện sai (do VPN hoặc máy tính bàn không có GPS), bấm "Nhập thủ công" ở trên.
+                                    </div>
+                                  )}
+                                  {/* Địa chỉ + tọa độ + nút refresh */}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-start gap-1.5 min-w-0">
+                                      <MapPin size={12} className="shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
+                                      <div className="min-w-0">
+                                        {adminAddress ? (
+                                          <p className="text-xs font-medium text-white/80 leading-tight">{adminAddress}</p>
+                                        ) : (
+                                          <p className="text-xs text-white/40 italic">Đang tra địa chỉ...</p>
+                                        )}
+                                        <p className="text-[10px] text-white/30 mt-0.5 font-mono">
+                                          {adminGps.lat.toFixed(5)}, {adminGps.lng.toFixed(5)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <button onClick={fetchAdminGps} title="Cập nhật lại vị trí"
+                                      className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition"
+                                      style={{ color: '#D4AF37' }}>
+                                      <RefreshCw size={12} />
+                                    </button>
+                                  </div>
 
-                              {/* Độ chính xác GPS */}
-                              <div className="flex items-center gap-1.5 text-[11px]">
-                                <ShieldCheck size={11} style={{ color: adminGps.accuracy > 50 ? '#ef4444' : '#22c55e' }} />
-                                <span style={{ color: adminGps.accuracy > 50 ? '#ef4444' : 'rgba(255,255,255,0.45)' }}>
-                                  Độ chính xác: ±{adminGps.accuracy}m
-                                  {adminGps.accuracy > 50 && ' — Sai số quá lớn, hãy cập nhật lại!'}
-                                </span>
-                              </div>
+                                  {/* Độ chính xác GPS */}
+                                  <div className="flex items-center gap-1.5 text-[11px]">
+                                    <ShieldCheck size={11} style={{ color: adminGps.accuracy > 100 ? '#ef4444' : '#22c55e' }} />
+                                    <span style={{ color: adminGps.accuracy > 100 ? '#ef4444' : 'rgba(255,255,255,0.45)' }}>
+                                      {adminGps.accuracy === 0 ? 'Tọa độ thủ công' : `Độ chính xác: ±${adminGps.accuracy}m`}
+                                      {adminGps.accuracy > 100 && adminGps.accuracy !== 0 && ' — Sai số lớn, thử nhập thủ công!'}
+                                    </span>
+                                  </div>
 
-                              {/* Mini map OpenStreetMap */}
-                              <div className="rounded-xl overflow-hidden border border-white/10" style={{ height: 130 }}>
-                                <iframe
-                                  title="mini-map"
-                                  width="100%" height="130"
-                                  style={{ border: 'none', display: 'block' }}
-                                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${adminGps.lng - 0.003},${adminGps.lat - 0.002},${adminGps.lng + 0.003},${adminGps.lat + 0.002}&layer=mapnik&marker=${adminGps.lat},${adminGps.lng}`}
-                                  loading="lazy"
-                                />
-                              </div>
-                            </div>
+                                  {/* Mini map OpenStreetMap */}
+                                  <div className="rounded-xl overflow-hidden border border-white/10" style={{ height: 130 }}>
+                                    <iframe
+                                      title="mini-map"
+                                      width="100%" height="130"
+                                      style={{ border: 'none', display: 'block' }}
+                                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${adminGps.lng - 0.003},${adminGps.lat - 0.002},${adminGps.lng + 0.003},${adminGps.lat + 0.002}&layer=mapnik&marker=${adminGps.lat},${adminGps.lng}`}
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {/* Bán kính */}
