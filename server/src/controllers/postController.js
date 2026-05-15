@@ -2,8 +2,34 @@ const Post = require('../models/Post');
 const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const { notifyUrgentPostPublished } = require('../utils/pushNotifier');
+const sanitizeHtml = require('sanitize-html');
 
 const notFoundMessage = 'Khong tim thay bai viet';
+
+// Cho phép các tag HTML an toàn từ TipTap editor
+const ALLOWED_TAGS = [
+  'h1','h2','h3','h4','h5','h6','p','br','hr',
+  'strong','b','em','i','u','s','del','mark','code','pre','blockquote',
+  'ul','ol','li','a','img','table','thead','tbody','tr','th','td',
+  'div','span','figure','figcaption',
+];
+
+const ALLOWED_ATTRS = {
+  a:   ['href','target','rel'],
+  img: ['src','alt','width','height','style'],
+  '*': ['class','style'],
+};
+
+const sanitizePost = (body) => {
+  if (body.noiDung) {
+    body.noiDung = sanitizeHtml(body.noiDung, {
+      allowedTags:       ALLOWED_TAGS,
+      allowedAttributes: ALLOWED_ATTRS,
+      allowedSchemes:    ['http','https','data'],
+    });
+  }
+  return body;
+};
 
 const sendUrgentPostEmail = async (post) => {
   const users = await User.find({}).select('email hoTen vaiTro');
@@ -84,7 +110,7 @@ exports.getOne = async (req, res, next) => {
 // POST /api/posts  (Admin only)
 exports.create = async (req, res, next) => {
   try {
-    const post = await Post.create({ ...req.body, tacGia: req.user._id });
+    const post = await Post.create({ ...sanitizePost({ ...req.body }), tacGia: req.user._id });
     const pushResult = await notifyUrgentPostIfPublished(post);
 
     res.status(201).json({ success: true, data: post, push: pushResult });
@@ -100,7 +126,7 @@ exports.update = async (req, res, next) => {
     if (!previous)
       return res.status(404).json({ success: false, message: notFoundMessage });
 
-    const post = await Post.findByIdAndUpdate(req.params.id, req.body, {
+    const post = await Post.findByIdAndUpdate(req.params.id, sanitizePost({ ...req.body }), {
       new: true,
       runValidators: true,
     });

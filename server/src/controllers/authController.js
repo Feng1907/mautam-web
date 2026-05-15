@@ -7,6 +7,9 @@ const sendEmail = require('../utils/sendEmail');
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_DURATION_MS   = 15 * 60 * 1000; // 15 phút
+
 // POST /api/auth/login
 exports.login = async (req, res, next) => {
   try {
@@ -14,9 +17,39 @@ exports.login = async (req, res, next) => {
     if (!email || !matKhau)
       return res.status(400).json({ success: false, message: 'Vui lòng nhập email và mật khẩu' });
 
-    const user = await User.findOne({ email }).select('+matKhau');
-    if (!user || !(await user.kiemTraMatKhau(matKhau)))
+    const user = await User.findOne({ email }).select('+matKhau +loginAttempts +lockUntil');
+    if (!user)
       return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
+
+    // Kiểm tra tài khoản bị khóa
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        success: false,
+        message: `Tài khoản tạm khóa do đăng nhập sai nhiều lần. Thử lại sau ${minutesLeft} phút.`,
+      });
+    }
+
+    const isMatch = await user.kiemTraMatKhau(matKhau);
+    if (!isMatch) {
+      const attempts = (user.loginAttempts || 0) + 1;
+      const update = { loginAttempts: attempts };
+      if (attempts >= MAX_LOGIN_ATTEMPTS) {
+        update.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        update.loginAttempts = 0;
+      }
+      await User.updateOne({ _id: user._id }, update);
+      const remaining = MAX_LOGIN_ATTEMPTS - attempts;
+      return res.status(401).json({
+        success: false,
+        message: remaining > 0
+          ? `Email hoặc mật khẩu không đúng. Còn ${remaining} lần thử trước khi tài khoản bị khóa.`
+          : 'Tài khoản đã bị khóa 15 phút do đăng nhập sai quá nhiều lần.',
+      });
+    }
+
+    // Đăng nhập thành công — reset counter
+    await User.updateOne({ _id: user._id }, { loginAttempts: 0, lockUntil: null });
 
     const token = signToken(user._id);
     user.matKhau = undefined;

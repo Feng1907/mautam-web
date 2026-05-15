@@ -15,6 +15,9 @@ const userSchema = new mongoose.Schema(
     // Buộc đổi mật khẩu sau lần đăng nhập đầu tiên (Admin tạo hộ)
     phaiBatDauDoiMatKhau: { type: Boolean, default: false },
     avatar: String,
+    // Bảo mật: đếm lần đăng nhập sai và khóa tài khoản tạm thời
+    loginAttempts: { type: Number, default: 0, select: false },
+    lockUntil:     { type: Date,   default: null, select: false },
     pushSubscriptions: [
       {
         endpoint: { type: String, required: true },
