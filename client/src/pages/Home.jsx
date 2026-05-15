@@ -1,14 +1,18 @@
 ﻿import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/AuthContext';
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight, Bell, Share2, Flame, ChevronLeft,
+  Clock, Newspaper, Images, BookOpen, LogIn, ChevronRight, Bell, Share2, ChevronLeft, Users, GraduationCap, CalendarDays,
 } from 'lucide-react';
 import api from '../services/api';
 import { DEFAULT_OG_IMAGE } from '../utils/seo';
+
+// Detect iOS Safari — backgroundAttachment:fixed không hoạt động trên iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
@@ -270,6 +274,205 @@ const CountdownStrip = () => {
   );
 };
 
+// ── AnimatedNumber — đếm lên khi scroll vào viewport ────────────────────────
+const AnimatedNumber = ({ target, duration = 1800 }) => {
+  const [value, setValue] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const start = performance.now();
+        const tick = (now) => {
+          const pct = Math.min((now - start) / duration, 1);
+          // ease-out cubic
+          const eased = 1 - (1 - pct) ** 3;
+          setValue(Math.round(eased * target));
+          if (pct < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.3 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return <span ref={ref}>{value.toLocaleString('vi-VN')}</span>;
+};
+
+// ── StatsBar — 3 chỉ số nổi bật ─────────────────────────────────────────────
+const StatsBar = ({ stats }) => {
+  const yearFounded = 1960; // thay bằng năm thành lập thực tế
+  const yearsActive = new Date().getFullYear() - yearFounded;
+
+  const items = [
+    {
+      icon: Users,
+      value: stats?.students ?? 0,
+      label: 'Đoàn sinh',
+      suffix: '+',
+      color: '#8B0000',
+    },
+    {
+      icon: GraduationCap,
+      value: stats?.classes ?? 0,
+      label: 'Lớp học',
+      suffix: '',
+      color: '#D4AF37',
+    },
+    {
+      icon: CalendarDays,
+      value: yearsActive,
+      label: 'Năm hoạt động',
+      suffix: '+',
+      color: '#16a34a',
+    },
+  ];
+
+  return (
+    <motion.section
+      variants={revealUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+      className="relative z-10 py-8"
+      style={{ borderTop: '1px solid #e5d5b5', borderBottom: '1px solid #e5d5b5', background: 'rgba(253,250,245,0.95)' }}
+    >
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="grid grid-cols-3 gap-4 sm:gap-8">
+          {items.map(({ icon: Icon, value, label, suffix, color }) => (
+            <div key={label} className="flex flex-col items-center text-center gap-1">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl mb-1"
+                style={{ background: `${color}14`, border: `1.5px solid ${color}30` }}>
+                <Icon className="w-5 h-5" style={{ color }} />
+              </div>
+              <p className="font-black leading-none tabular-nums"
+                style={{ fontFamily: SERIF, fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', color }}>
+                {stats != null ? <><AnimatedNumber target={value} />{suffix}</> : '—'}
+              </p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: SANS }}>
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.section>
+  );
+};
+
+// ── LatestNews — 3 bài viết mới nhất ────────────────────────────────────────
+const LatestNews = ({ posts }) => {
+  if (!posts.length) return null;
+  const [featured, ...rest] = posts;
+
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  return (
+    <section className="relative z-10 page-container py-12">
+      <motion.div
+        variants={revealLeft} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+        className="flex items-center gap-3 mb-6"
+      >
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
+        <h2 className="text-xl font-bold text-[#3d1515] shrink-0 flex items-center gap-2" style={{ fontFamily: SERIF }}>
+          <Newspaper className="w-5 h-5 text-[#8B0000]" />
+          Tin Tức Mới Nhất
+        </h2>
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
+      </motion.div>
+
+      <motion.div
+        variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}
+        className="grid md:grid-cols-[1.6fr_1fr] gap-5"
+      >
+        {/* Featured — bài đầu tiên lớn hơn */}
+        <motion.div variants={fadeUp}>
+          <Link to={`/tin-tuc/${featured._id}`}
+            className="group flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full"
+            style={{ ...glassStyle, boxShadow: '0 2px 12px rgba(139,0,0,0.05)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(139,0,0,0.12)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(139,0,0,0.05)'; }}
+          >
+            {featured.anhDaiDien && (
+              <div className="relative overflow-hidden" style={{ aspectRatio: '16/7' }}>
+                <img src={featured.anhDaiDien} alt={featured.tieuDe}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy" />
+                {featured.loai === 'thongbaokhan' && (
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
+                    style={{ background: '#dc2626' }}>Khẩn</span>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col flex-1 p-5">
+              <p className="text-[11px] text-gray-400 mb-2" style={{ fontFamily: SANS }}>
+                {formatDate(featured.createdAt)}
+              </p>
+              <h3 className="font-bold text-[#3d1515] mb-2 group-hover:text-[#8B0000] transition-colors line-clamp-2"
+                style={{ fontFamily: SERIF, fontSize: '1.1rem' }}>
+                {featured.tieuDe}
+              </h3>
+              {featured.tomTat && (
+                <p className="text-sm text-gray-500 line-clamp-2 flex-1" style={{ fontFamily: SANS }}>
+                  {featured.tomTat}
+                </p>
+              )}
+              <span className="inline-flex items-center gap-1 mt-4 text-xs font-semibold text-[#8B0000] group-hover:gap-2 transition-all">
+                Đọc thêm <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* 2 bài còn lại — nhỏ hơn, xếp dọc */}
+        <motion.div variants={fadeUp} className="flex flex-col gap-4">
+          {rest.map(post => (
+            <Link key={post._id} to={`/tin-tuc/${post._id}`}
+              className="group flex gap-3 rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 p-4"
+              style={{ ...glassStyle, boxShadow: '0 2px 8px rgba(139,0,0,0.04)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#8B0000'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(139,0,0,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5d5b5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(139,0,0,0.04)'; }}
+            >
+              {post.anhDaiDien && (
+                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+                  <img src={post.anhDaiDien} alt={post.tieuDe}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy" />
+                </div>
+              )}
+              <div className="flex flex-col flex-1 min-w-0">
+                <p className="text-[10px] text-gray-400 mb-1" style={{ fontFamily: SANS }}>
+                  {formatDate(post.createdAt)}
+                </p>
+                <h3 className="font-semibold text-[#3d1515] text-sm line-clamp-2 group-hover:text-[#8B0000] transition-colors"
+                  style={{ fontFamily: SERIF }}>
+                  {post.tieuDe}
+                </h3>
+                <span className="inline-flex items-center gap-0.5 mt-auto pt-2 text-[11px] font-semibold text-[#8B0000] group-hover:gap-1.5 transition-all">
+                  Đọc <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </Link>
+          ))}
+
+          {/* Nút xem tất cả */}
+          <Link to="/tin-tuc"
+            className="flex items-center justify-center gap-2 py-2.5 rounded-2xl border text-sm font-semibold transition-all hover:-translate-y-0.5"
+            style={{ borderColor: 'rgba(139,0,0,0.25)', color: '#8B0000', background: 'rgba(139,0,0,0.04)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,0,0,0.08)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,0,0,0.04)'; }}
+          >
+            Xem tất cả tin tức <ChevronRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+};
+
 // ── Giờ lễ cố định (giờ:phút, 24h) ─────────────────────────────────────────
 const MASS_TIMES = [5, 18]; // 05:00, 18:00
 function getNextMass() {
@@ -288,23 +491,63 @@ const Home = () => {
   const { t }    = useTranslation();
   const nextMass = useMemo(() => getNextMass(), []);
 
-  // Fetch Lời Chúa hôm nay
-  const [loiChua, setLoiChua] = useState(null);
-  useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    api.get(`/loi-chua?date=${today}`)
-      .then(r => setLoiChua(r.data.data))
-      .catch(() => {});
-  }, []);
+  // Fetch Lời Chúa hôm nay — useQuery để retry khi server cold start
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const { data: loiChua } = useQuery({
+    queryKey: ['loiChua', today],
+    queryFn: () => api.get(`/loi-chua?date=${today}`).then(r => r.data.success ? r.data.data : null),
+    staleTime: 4 * 60 * 60 * 1000,
+    retry: 3,
+  });
+
+  // Fetch 3 bài viết mới nhất cho section Tin Tức
+  const { data: latestPosts = [] } = useQuery({
+    queryKey: ['posts', 'home-preview'],
+    queryFn: () => api.get('/posts', { params: { limit: 3, daDang: true } }).then(r => r.data.data || []),
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+  });
+
+  // Fetch stats (số lớp, số học sinh)
+  const { data: stats } = useQuery({
+    queryKey: ['home-stats'],
+    queryFn: async () => {
+      const [classRes, countRes] = await Promise.allSettled([
+        api.get('/classes'),
+        api.get('/students/count'),
+      ]);
+      return {
+        classes:  classRes.status  === 'fulfilled' ? (classRes.value.data.data  || []).length       : 0,
+        students: countRes.status === 'fulfilled' ? (countRes.value.data.total ?? 0)               : 0,
+      };
+    },
+    staleTime: 30 * 60 * 1000,
+    retry: 2,
+  });
 
 
   return (
     <main className="relative flex-1 bg-page" style={{ fontFamily: SANS, paddingTop: 0 }}>
       <Helmet>
         <title>Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</title>
+        <meta name="description" content="Website chính thức của Xứ Đoàn Thiếu Nhi Thánh Thể Anrê Phú Yên – Mẫu Tâm. Giờ lễ, tin tức, lịch phụng vụ và quản lý đoàn sinh." />
         <meta property="og:title" content="Xứ Đoàn Anrê Phú Yên – Mẫu Tâm" />
-        <meta property="og:description" content="Website quản lý và truyền thông của Xứ Đoàn Anrê Phú Yên – Mẫu Tâm." />
+        <meta property="og:description" content="Website chính thức của Xứ Đoàn Thiếu Nhi Thánh Thể Anrê Phú Yên – Mẫu Tâm." />
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ReligiousOrganization',
+          name: 'Xứ Đoàn Anrê Phú Yên – Mẫu Tâm',
+          alternateName: 'Mẫu Tâm',
+          description: 'Xứ Đoàn Thiếu Nhi Thánh Thể Anrê Phú Yên – Mẫu Tâm',
+          url: typeof window !== 'undefined' ? window.location.origin : '',
+          logo: DEFAULT_OG_IMAGE,
+          image: DEFAULT_OG_IMAGE,
+          sameAs: [],
+          address: { '@type': 'PostalAddress', addressCountry: 'VN' },
+          knowsAbout: ['Thiếu Nhi Thánh Thể', 'Giáo lý', 'Giáo dục đức tin'],
+        })}</script>
       </Helmet>
       <CrossWatermark />
 
@@ -317,7 +560,7 @@ const Home = () => {
           backgroundImage: 'url(/images/DAP_2149.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: '55% 25%',
-          backgroundAttachment: 'fixed',
+          backgroundAttachment: isIOS ? 'scroll' : 'fixed',
           minHeight: '94svh',
         }}
       >
@@ -489,6 +732,8 @@ const Home = () => {
           })}
         </motion.div>
       </section>
+
+      <StatsBar stats={stats} />
 
       {/* ══════════════════════════════════════════════════════
           PATRON + LỜI CHÚA — 2 cột
@@ -688,6 +933,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <LatestNews posts={latestPosts} />
 
       {/* ══════════════════════════════════════════════════════
           LỊCH SỬ XỨ ĐOÀN

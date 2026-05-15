@@ -3,6 +3,9 @@ const ctrl = require('../controllers/studentController');
 const { checkAuth } = require('../middlewares/checkAuth');
 const checkClassPermission = require('../middlewares/checkClassPermission');
 
+// Public — stats cho trang chủ
+router.get('/count', ctrl.count);
+
 // Xem — tất cả đã đăng nhập
 router.get('/:lopId',              checkAuth, ctrl.getByClass);
 router.get('/:lopId/:id/lich-su',  checkAuth, ctrl.lichSu);
