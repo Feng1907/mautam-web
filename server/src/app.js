@@ -170,7 +170,8 @@ app.use('/api/promote',    require('./routes/promote'));
 app.use('/api/merit',      require('./routes/merit'));
 app.use('/api/chuyen-can', require('./routes/chuyencan'));
 app.use('/api/parent',     require('./routes/parent'));
-app.use('/api/admin/stats', require('./routes/adminStats'));
+app.use('/api/admin/stats',        require('./routes/adminStats'));
+app.use('/api/admin/parent-links', require('./routes/adminParentLink'));
 
 app.use('/api/liturgy',   require('./routes/liturgy'));
 app.use('/api/loi-chua',  require('./routes/loiChua'));

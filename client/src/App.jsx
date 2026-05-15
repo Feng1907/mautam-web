@@ -42,6 +42,7 @@ const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
 const AdminRBAC = lazy(() => import('./pages/admin/AdminRBAC'));
 const AdminBackup = lazy(() => import('./pages/admin/AdminBackup'));
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
+const AdminParentLink = lazy(() => import('./pages/admin/AdminParentLink'));
 
 const ConditionalFooter = () => {
   const { pathname } = useLocation();
@@ -129,6 +130,7 @@ const App = () => (
                   <Route path="phan-quyen" element={withErrorBoundary(<AdminRBAC />, 'AdminRBAC')} />
                   <Route path="sao-luu" element={withErrorBoundary(<AdminBackup />, 'AdminBackup')} />
                   <Route path="su-kien" element={withErrorBoundary(<AdminEvents />, 'AdminEvents')} />
+                  <Route path="phu-huynh" element={withErrorBoundary(<AdminParentLink />, 'AdminParentLink')} />
                 </Route>
               </Routes>
             </Suspense>

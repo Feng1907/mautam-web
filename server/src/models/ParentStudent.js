@@ -19,14 +19,24 @@ const parentStudentSchema = new mongoose.Schema(
     },
     trangThai: {
       type: String,
-      enum: ['active', 'inactive'],
+      enum: ['active', 'inactive', 'pending', 'rejected'],
       default: 'active',
     },
     ghiChu: {
       type: String,
       trim: true,
     },
+    rejectedReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     linkedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,

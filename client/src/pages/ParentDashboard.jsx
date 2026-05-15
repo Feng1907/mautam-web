@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell,
   BellRing,
@@ -8,13 +8,17 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Clock,
   Download,
   FileText,
   GraduationCap,
+  Link2,
   Loader2,
   MessageSquareText,
+  Search,
   Send,
   UserRound,
+  X,
   XCircle,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -426,45 +430,64 @@ const AbsenceRequestCard = ({ selectedStudent, onSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ngày nghỉ</label>
-          <input
-            type="date"
-            className="input"
-            value={form.date}
-            onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-            required
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lý do</label>
-          <input
-            className="input"
-            value={form.reason}
-            onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
-            placeholder="Nhập lý do xin nghỉ..."
-            maxLength={500}
-            required
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      {/* Ngày nghỉ */}
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+          <CalendarCheck className="h-3.5 w-3.5 text-red-400" />
+          Ngày nghỉ
+        </label>
+        <input
+          type="date"
+          className="input"
+          value={form.date}
+          onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+          required
+        />
       </div>
 
+      {/* Lý do */}
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+          <ClipboardList className="h-3.5 w-3.5 text-red-400" />
+          Lý do xin nghỉ
+        </label>
+        <textarea
+          className="input resize-none leading-relaxed"
+          rows={4}
+          value={form.reason}
+          onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
+          placeholder="Mô tả lý do xin nghỉ học buổi này..."
+          maxLength={500}
+          required
+        />
+        <p className="text-right text-[11px] text-gray-400">{form.reason.length}/500</p>
+      </div>
+
+      {/* Thông báo kết quả */}
       {message && (
-        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${message.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-          {message.ok ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+        <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium ${
+          message.ok
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {message.ok
+            ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+            : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
           {message.text}
         </div>
       )}
 
+      {/* Nút gửi */}
       <button
         type="submit"
         disabled={saving || !selectedStudent}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+        className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition
+          bg-linear-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700
+          disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        Gửi xin phép nghỉ đến Huynh trưởng
+        {saving ? 'Đang gửi...' : 'Gửi xin phép nghỉ đến Huynh trưởng'}
       </button>
     </form>
   );
@@ -524,6 +547,193 @@ const PushNotificationCard = () => {
         </button>
       </div>
     </section>
+  );
+};
+
+const QUAN_HE_OPTIONS = ['Cha/Mẹ', 'Cha', 'Mẹ', 'Ông/Bà', 'Anh/Chị', 'Người giám hộ'];
+
+const STATUS_CFG = {
+  pending:  { label: 'Chờ duyệt',      cls: 'bg-amber-50 text-amber-700 border-amber-200',   icon: Clock },
+  active:   { label: 'Đã liên kết',     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2 },
+  rejected: { label: 'Bị từ chối',      cls: 'bg-red-50 text-red-700 border-red-200',         icon: XCircle },
+  inactive: { label: 'Vô hiệu',         cls: 'bg-gray-100 text-gray-500 border-gray-200',     icon: XCircle },
+};
+
+const LinkRequestSection = ({ onLinked }) => {
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState([]);
+  const [open, setOpen]         = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [quanHe, setQuanHe]     = useState('Cha/Mẹ');
+  const [sending, setSending]   = useState(false);
+  const [message, setMessage]   = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
+  const debounce = useRef(null);
+  const wrapRef  = useRef(null);
+
+  useEffect(() => {
+    api.get('/parent/link-requests').then(r => setMyRequests(r.data.data || [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const fn = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+
+  const handleSearch = (e) => {
+    const q = e.target.value;
+    setQuery(q);
+    if (selected) setSelected(null);
+    clearTimeout(debounce.current);
+    if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
+    debounce.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.get('/parent/search-students', { params: { q } });
+        setResults(res.data.data || []);
+        setOpen(true);
+      } catch { setResults([]); }
+      finally { setSearching(false); }
+    }, 300);
+  };
+
+  const handleSelect = (s) => {
+    setSelected(s);
+    setQuery(`${s.tenThanh} ${s.hoTen}`);
+    setOpen(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selected) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await api.post('/parent/link-request', { studentId: selected._id, quanHe });
+      setMessage({ ok: true, text: 'Đã gửi yêu cầu liên kết. Admin sẽ duyệt trong thời gian sớm nhất.' });
+      setSelected(null);
+      setQuery('');
+      const res = await api.get('/parent/link-requests');
+      setMyRequests(res.data.data || []);
+    } catch (err) {
+      setMessage({ ok: false, text: err.response?.data?.message || 'Gửi yêu cầu thất bại. Vui lòng thử lại.' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      {/* Form gửi yêu cầu */}
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-700">
+            <Link2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-bold text-gray-900">Liên kết đoàn sinh</h2>
+            <p className="text-xs text-gray-500">Tìm con em và gửi yêu cầu cho Admin duyệt</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Tên đoàn sinh</label>
+            <div ref={wrapRef} className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                className="input pl-9! pr-8!"
+                placeholder="Nhập tên thánh hoặc họ tên (ít nhất 2 ký tự)..."
+                value={query}
+                onChange={handleSearch}
+                readOnly={!!selected}
+              />
+              {(query || selected) && (
+                <button type="button" onClick={() => { setSelected(null); setQuery(''); setResults([]); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {open && (
+                <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                  {searching && <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-400"><Loader2 className="h-3.5 w-3.5 animate-spin" />Đang tìm...</div>}
+                  {!searching && results.length === 0 && <p className="px-4 py-3 text-sm text-gray-400">Không tìm thấy kết quả.</p>}
+                  {results.map((s) => (
+                    <button key={s._id} type="button" onMouseDown={() => handleSelect(s)}
+                      className="w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm hover:bg-gray-50 last:border-0">
+                      <span className="font-medium text-gray-900">{s.tenThanh} {s.hoTen}</span>
+                      {s.tenLop && <span className="ml-2 text-xs text-gray-400">— {s.tenLop}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {selected?.tenLop && <p className="text-xs text-gray-400 pl-1">Lớp: {selected.tenLop}</p>}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Quan hệ</label>
+            <select className="input" value={quanHe} onChange={(e) => setQuanHe(e.target.value)}>
+              {QUAN_HE_OPTIONS.map(o => <option key={o}>{o}</option>)}
+            </select>
+          </div>
+
+          {message && (
+            <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${message.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+              {message.ok ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" /> : <XCircle className="h-4 w-4 mt-0.5 shrink-0" />}
+              {message.text}
+            </div>
+          )}
+
+          <button type="submit" disabled={!selected || sending}
+            className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-red-700 to-red-600 py-3 text-sm font-bold text-white shadow-sm transition hover:from-red-800 hover:to-red-700 disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none">
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sending ? 'Đang gửi...' : 'Gửi yêu cầu liên kết'}
+          </button>
+        </form>
+      </section>
+
+      {/* Danh sách yêu cầu đã gửi */}
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+            <Clock className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-bold text-gray-900">Yêu cầu đã gửi</h2>
+            <p className="text-xs text-gray-500">Trạng thái các yêu cầu liên kết của bạn</p>
+          </div>
+        </div>
+
+        {myRequests.length === 0 ? (
+          <p className="py-8 text-center text-sm text-gray-400">Chưa có yêu cầu nào được gửi.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {myRequests.map((req) => {
+              const cfg = STATUS_CFG[req.trangThai] || STATUS_CFG.pending;
+              const Icon = cfg.icon;
+              return (
+                <div key={req._id} className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs text-amber-600 font-medium">{req.student?.tenThanh}</p>
+                    <p className="font-semibold text-gray-900">{req.student?.hoTen}</p>
+                    {req.student?.lop?.tenLop && <p className="text-xs text-gray-400">Lớp: {req.student.lop.tenLop}</p>}
+                    {req.trangThai === 'rejected' && req.rejectedReason && (
+                      <p className="mt-1 text-xs text-red-600">Lý do: {req.rejectedReason}</p>
+                    )}
+                  </div>
+                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${cfg.cls}`}>
+                    <Icon className="h-3 w-3" />{cfg.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
   );
 };
 
@@ -667,11 +877,7 @@ const ParentDashboard = () => {
       <PushNotificationCard />
 
       {!students.length ? (
-        <section className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center">
-          <UserRound className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-          <h2 className="text-lg font-bold text-gray-800">Chưa có đoàn sinh liên kết</h2>
-          <p className="mt-1 text-sm text-gray-500">Vui lòng liên hệ Ban quản trị để liên kết tài khoản phụ huynh với hồ sơ con em.</p>
-        </section>
+        <LinkRequestSection />
       ) : (
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Hàng 1: Chuyên cần + Xin phép nghỉ */}

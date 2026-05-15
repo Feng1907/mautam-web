@@ -592,11 +592,11 @@ const GradeForm = ({ lopId, students, canEdit }) => {
       {/* ── Bảng điểm ── */}
       {students.length > 0 && (
         <div
-          className="relative rounded-2xl border border-amber-100 shadow-md overflow-hidden"
+          className="relative rounded-2xl border border-amber-100 shadow-md overflow-x-auto scrollbar-light"
           style={{ background: 'linear-gradient(180deg, #FDFAF5 0%, #faf5eb 100%)' }}
         >
           <CrossWatermark />
-          <div className="overflow-x-auto relative">
+          <div className="relative">
             <table className="text-sm border-collapse min-w-max w-full">
 
               {/* ── Header ── */}

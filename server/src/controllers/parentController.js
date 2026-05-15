@@ -5,6 +5,7 @@ const Grade = require('../models/Grade');
 const NamHoc = require('../models/NamHoc');
 const ParentStudent = require('../models/ParentStudent');
 const Student = require('../models/Student');
+const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const { sendPushToUsers } = require('../utils/pushNotifier');
 
@@ -260,6 +261,114 @@ exports.createAbsenceRequest = async (req, res, next) => {
       message: 'Đã gửi xin phép nghỉ đến Huynh trưởng lớp',
       data: request,
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/parent/link-request  — phụ huynh tự gửi yêu cầu liên kết
+exports.createLinkRequest = async (req, res, next) => {
+  try {
+    const { studentId, quanHe = 'Cha/Mẹ', ghiChu } = req.body;
+    if (!studentId)
+      return res.status(400).json({ success: false, message: 'Thiếu studentId' });
+
+    const student = await Student.findById(studentId)
+      .select('hoTen tenThanh lop trangThai')
+      .populate('lop', 'tenLop');
+
+    if (!student || student.trangThai !== 'active')
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đoàn sinh' });
+
+    const existing = await ParentStudent.findOne({ parent: req.user._id, student: studentId });
+    if (existing) {
+      const msgMap = {
+        active: 'Bạn đã được liên kết với đoàn sinh này rồi.',
+        pending: 'Yêu cầu liên kết đang chờ admin duyệt.',
+        rejected: null,
+      };
+      if (existing.trangThai !== 'rejected')
+        return res.status(409).json({ success: false, message: msgMap[existing.trangThai] });
+
+      // Cho phép gửi lại nếu bị từ chối
+      existing.trangThai = 'pending';
+      existing.quanHe = quanHe;
+      existing.ghiChu = ghiChu;
+      existing.rejectedReason = null;
+      existing.linkedBy = req.user._id;
+      await existing.save();
+      return res.json({ success: true, message: 'Đã gửi lại yêu cầu liên kết, chờ admin duyệt.', data: existing });
+    }
+
+    const link = await ParentStudent.create({
+      parent: req.user._id,
+      student: studentId,
+      quanHe,
+      ghiChu,
+      trangThai: 'pending',
+      linkedBy: req.user._id,
+    });
+
+    // Thông báo push cho admin
+    const admins = await User.find({ vaiTro: 'admin' }).select('_id').lean();
+    if (admins.length) {
+      sendPushToUsers(admins.map(a => a._id), {
+        title: 'Yêu cầu liên kết phụ huynh mới',
+        body: `${req.user.hoTen} muốn liên kết với ${student.tenThanh} ${student.hoTen}`,
+        icon: '/favicon.svg',
+        url: '/admin/phu-huynh',
+        type: 'link-request',
+      }).catch(() => {});
+    }
+
+    res.status(201).json({ success: true, message: 'Đã gửi yêu cầu liên kết, chờ admin duyệt.', data: link });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/parent/link-requests  — xem danh sách yêu cầu của chính mình
+exports.getMyLinkRequests = async (req, res, next) => {
+  try {
+    const requests = await ParentStudent.find({ parent: req.user._id })
+      .populate({ path: 'student', select: 'hoTen tenThanh lop', populate: { path: 'lop', select: 'tenLop' } })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ success: true, data: requests });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/parent/search-students?q=  — tìm đoàn sinh để gửi yêu cầu liên kết
+exports.searchStudentsPublic = async (req, res, next) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2)
+      return res.json({ success: true, data: [] });
+
+    const students = await Student.find({
+      trangThai: 'active',
+      $or: [
+        { hoTen: { $regex: q, $options: 'i' } },
+        { tenThanh: { $regex: q, $options: 'i' } },
+      ],
+    })
+      .select('hoTen tenThanh lop')
+      .populate('lop', 'tenLop')
+      .limit(10)
+      .lean();
+
+    // Ẩn bớt thông tin nhạy cảm — chỉ trả về đủ để nhận dạng
+    const safe = students.map(s => ({
+      _id: s._id,
+      tenThanh: s.tenThanh,
+      hoTen: s.hoTen,
+      tenLop: s.lop?.tenLop || null,
+    }));
+
+    res.json({ success: true, data: safe });
   } catch (err) {
     next(err);
   }
