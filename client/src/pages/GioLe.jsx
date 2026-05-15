@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SkeletonGioLe } from '../components/Skeleton';
 import { useNavigate } from 'react-router-dom';
@@ -779,7 +779,7 @@ const GioLe = () => {
     retry: 3,
   });
 
-  const feasts   = feastsResult?.feasts   || [];
+  const feasts   = useMemo(() => feastsResult?.feasts ?? [], [feastsResult]);
   const monthMeta = {
     theme:    feastsResult?.theme    || null,
     subColor: feastsResult?.subColor || null,
@@ -822,8 +822,8 @@ const GioLe = () => {
   useEffect(() => {
     if (!feasts.length) return;
     feastsRef.current = feasts;
-    autoSelectToday(feasts);
-  }, [feasts, autoSelectToday]); // eslint-disable-line react-hooks/exhaustive-deps
+    autoSelectToday(feasts); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [feasts, autoSelectToday]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSelectFeast = useCallback((le) => {
