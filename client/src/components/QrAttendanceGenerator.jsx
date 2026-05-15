@@ -44,7 +44,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [session, setSession] = useState(null); // { qrDataUrl, expiresAt, requiresLocation, ... }
-  const printRef = useRef(null);
+  const _printRef = useRef(null);
 
   // Vị trí của admin (tuỳ chọn)
   const [requireLoc, setRequireLoc] = useState(false);
@@ -155,7 +155,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
     }
   }, [lopId, date, ttl, requireLoc, gpsStatus, adminGps, maxDistance]);
 
-  const handlePrint = () => {
+  const _handlePrint = () => {
     const w = window.open('', '_blank');
     const lopName = classes.find(c => c._id === lopId)?.tenLop || lopId;
     w.document.write(`
@@ -652,7 +652,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
                         </p>
                         <div className="max-h-36 overflow-y-auto">
                           <AnimatePresence initial={false}>
-                            {recentCheckins.map((c, i) => (
+                            {recentCheckins.map((c) => (
                               <motion.div key={`${c.studentName}-${c.checkedAt}`}
                                 initial={{ opacity: 0, x: -12 }}
                                 animate={{ opacity: 1, x: 0 }}

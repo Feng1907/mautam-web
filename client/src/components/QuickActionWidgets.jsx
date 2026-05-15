@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  UserPlus, FileSpreadsheet, Bell, StickyNote as NoteIcon,
+  UserPlus, FileSpreadsheet, Bell,
   X, Loader2, ChevronDown, Printer, CheckCircle2, AlertCircle,
   Search, CalendarCheck, Check, Minus,
 } from 'lucide-react';
@@ -167,7 +167,7 @@ export const AddStudentModal = ({ open, onClose, classes, onSuccess }) => {
 };
 
 // ── 2. EXPORT DROPDOWN ────────────────────────────────────────────────────────
-export const ExportDropdown = ({ classes, users }) => {
+export const ExportDropdown = ({ classes, users: _users }) => {
   const [open, setOpen]       = useState(false);
   const [loading, setLoading] = useState(null); // 'excel' | 'pdf' | null
   const ref                   = useRef(null);

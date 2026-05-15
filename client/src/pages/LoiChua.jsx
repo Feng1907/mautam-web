@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -434,7 +434,7 @@ const LoiChua = () => {
   const [searchError, setSearchError] = useState('');
   const debouncedSearch = useDebouncedValue(searchTerm, 450);
 
-  const { data, isLoading: loading, error: queryError } = useQuery({
+  const { data, isLoading: loading, error: queryError, refetch } = useQuery({
     queryKey: ['loiChua', date],
     queryFn: () => api.get(`/loi-chua?date=${date}`).then(r => r.data.success ? r.data.data : Promise.reject(r.data.message)),
     staleTime: 4 * 60 * 60 * 1000, // 4 giờ — Lời Chúa thay đổi theo ngày
@@ -617,7 +617,7 @@ const LoiChua = () => {
                     <BookOpen size={40} className="text-stone-300 dark:text-slate-600 mx-auto mb-3" strokeWidth={1} />
                     <p className="text-sm text-stone-500 dark:text-slate-400 font-semibold mb-1">Không tải được Lời Chúa</p>
                     <p className="text-xs text-stone-400 dark:text-slate-500 mb-4">{error}</p>
-                    <button onClick={() => load(date)}
+                    <button onClick={() => refetch()}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition">
                       Thử lại
                     </button>

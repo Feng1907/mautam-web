@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Link2, Link2Off, Loader2, Plus, Search, Trash2, UserRound, X, XCircle } from 'lucide-react';
 import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
@@ -28,10 +28,12 @@ const AutocompleteInput = ({ placeholder, apiPath, extraParams = {}, displayFn, 
   }, []);
 
   // Khi extraParams thay đổi (ví dụ chọn lớp), reset kết quả cũ
+  const extraParamsKey = useMemo(() => JSON.stringify(extraParams), [extraParams]);
+
   useEffect(() => {
     setResults([]);
     setOpen(false);
-  }, [JSON.stringify(extraParams)]);
+  }, [extraParamsKey]);
 
   const doSearch = useCallback((q) => {
     clearTimeout(debounce.current);
@@ -44,7 +46,7 @@ const AutocompleteInput = ({ placeholder, apiPath, extraParams = {}, displayFn, 
       } catch { setResults([]); }
       finally { setSearching(false); }
     }, 300);
-  }, [apiPath, JSON.stringify(extraParams)]);
+  }, [apiPath, extraParamsKey]);
 
   const handleChange = (e) => {
     const q = e.target.value;

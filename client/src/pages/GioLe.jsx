@@ -822,7 +822,7 @@ const GioLe = () => {
   useEffect(() => {
     if (!feasts.length) return;
     feastsRef.current = feasts;
-    autoSelectToday(feasts); // eslint-disable-line react-hooks/set-state-in-effect
+    autoSelectToday(feasts);
   }, [feasts, autoSelectToday]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
