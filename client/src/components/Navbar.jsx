@@ -41,6 +41,15 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
+  // Đóng menu/dropdown khi bấm Escape
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key === 'Escape') { setMenuOpen(false); setDropOpen(false); }
+    };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, []);
+
   const handleLogout = () => { logout(); navigate('/'); setDropOpen(false); };
 
   // ── Style theo trạng thái scroll ────────────────────────────────────────────
@@ -190,7 +199,7 @@ const Navbar = () => {
         {/* ── Mobile right: theme + hamburger (cột 3) ── */}
         <div className="md:hidden flex items-center gap-1 justify-end">
           <ThemeToggle />
-          <button className="text-white p-1.5" onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
+          <button className="text-white p-1.5" onClick={() => setMenuOpen(o => !o)} aria-label="Menu" aria-expanded={menuOpen} aria-controls="mobile-menu">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen
                 ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -203,6 +212,7 @@ const Navbar = () => {
       {/* ── Mobile menu ── */}
       {menuOpen && (
         <div
+          id="mobile-menu"
           className="md:hidden px-4 pt-2 pb-4 flex flex-col gap-1"
           style={{
             background: 'rgba(90,0,0,0.97)',

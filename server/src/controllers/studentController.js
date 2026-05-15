@@ -82,6 +82,16 @@ exports.lichSu = async (req, res, next) => {
 };
 
 // DELETE /api/students/:id  (soft delete)
+// GET /api/students/count  — tổng số đoàn sinh active (public, dùng cho home stats)
+exports.count = async (req, res, next) => {
+  try {
+    const total = await Student.countDocuments({ trangThai: 'active' });
+    res.json({ success: true, total });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.remove = async (req, res, next) => {
   try {
     const student = await Student.findByIdAndUpdate(

@@ -448,11 +448,36 @@ const SCHEDULE_TINT = {
   thangHoa: 'border-sky-100 bg-sky-50/30',
 };
 
+// Tính giờ lễ kế tiếp và thời gian đếm ngược
+const computeNextMass = (isChaNhat, nowMins) => {
+  const times = isChaNhat ? ['05:30', '09:00', '17:00', '18:30'] : ['05:30', '18:00'];
+  for (const t of times) {
+    const [h, m] = t.split(':').map(Number);
+    const massMins = h * 60 + m;
+    if (nowMins >= massMins && nowMins < massMins + 45) {
+      return { time: t, ongoing: true };
+    }
+    if (massMins > nowMins) {
+      const diff = massMins - nowMins;
+      const hours = Math.floor(diff / 60);
+      const mins  = diff % 60;
+      return { time: t, ongoing: false, countdown: hours > 0 ? `${hours} giờ ${mins} phút` : `${mins} phút` };
+    }
+  }
+  // Tất cả lễ hôm nay đã qua → lễ đầu tiên ngày mai
+  const tomorrow = isChaNhat ? '05:30' : '05:30';
+  const diff = (24 * 60 - nowMins) + 5 * 60 + 30;
+  const hours = Math.floor(diff / 60);
+  const mins  = diff % 60;
+  return { time: tomorrow, ongoing: false, countdown: `${hours} giờ ${mins} phút`, tomorrow: true };
+};
+
 const MassSchedule = ({ now, activeMauKey }) => {
   const { t }     = useTranslation();
   const isChaNhat = now.getDay() === 0;
   const nowMins   = now.getHours() * 60 + now.getMinutes();
   const tint      = SCHEDULE_TINT[activeMauKey] || SCHEDULE_TINT.xanh;
+  const nextMass  = computeNextMass(isChaNhat, nowMins);
 
   const LICH = [
     { key: 'weekdays', label: t('liturgy.weekdays'), gio: ['05:30', '18:00'] },
@@ -464,6 +489,35 @@ const MassSchedule = ({ now, activeMauKey }) => {
       <h3 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
         <Clock size={13} /> {t('liturgy.scheduleTitle')}
       </h3>
+
+      {/* Lễ kế tiếp */}
+      <div className={`mb-4 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 ${
+        nextMass.ongoing
+          ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700'
+          : 'bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40'
+      }`}>
+        <span className={`text-base leading-none ${nextMass.ongoing ? 'animate-pulse' : ''}`}>
+          {nextMass.ongoing ? '🔔' : '⏱️'}
+        </span>
+        <div className="min-w-0">
+          <p className={`text-[10px] font-semibold uppercase tracking-wider ${
+            nextMass.ongoing ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+          }`}>
+            {nextMass.ongoing ? 'Đang diễn ra' : nextMass.tomorrow ? 'Lễ đầu tiên ngày mai' : 'Lễ kế tiếp'}
+          </p>
+          <p className={`font-black text-sm tabular-nums ${
+            nextMass.ongoing ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+          }`}>
+            {nextMass.time}
+            {!nextMass.ongoing && (
+              <span className="ml-2 text-[11px] font-semibold text-gray-400 dark:text-slate-500">
+                — còn {nextMass.countdown}
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2.5">
         {LICH.map(l => {
           const isCurrent = isChaNhat ? l.key === 'sunday' : l.key === 'weekdays';
@@ -483,14 +537,17 @@ const MassSchedule = ({ now, activeMauKey }) => {
                 {l.gio.map(g => {
                   const [h, m] = g.split(':').map(Number);
                   const isPast = isCurrent && (h * 60 + m) < nowMins;
+                  const isNext = !nextMass.ongoing && nextMass.time === g && isCurrent && !nextMass.tomorrow;
                   return (
                     <span key={g} className={[
                       'font-mono text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors',
                       isPast
                         ? 'bg-gray-50 dark:bg-slate-700/50 text-gray-300 dark:text-slate-600 border-gray-100 dark:border-slate-700 line-through'
-                        : isCurrent
-                          ? 'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-100 dark:border-red-800/50'
-                          : 'bg-gray-50 dark:bg-slate-700/40 text-gray-400 dark:text-slate-400 border-gray-100 dark:border-slate-700',
+                        : isNext
+                          ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                          : isCurrent
+                            ? 'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-100 dark:border-red-800/50'
+                            : 'bg-gray-50 dark:bg-slate-700/40 text-gray-400 dark:text-slate-400 border-gray-100 dark:border-slate-700',
                     ].join(' ')}>{g}</span>
                   );
                 })}
@@ -522,7 +579,11 @@ const GospelCard = ({ tinMung, loading, onClick }) => {
         </span>
       </div>
       {loading ? (
-        <p className="text-sm text-amber-300 italic">{t('liturgy.loading')}</p>
+        <div className="flex flex-col gap-2 animate-pulse">
+          <div className="h-3.5 bg-amber-200/60 rounded w-full" />
+          <div className="h-3.5 bg-amber-200/60 rounded w-4/5" />
+          <div className="h-3.5 bg-amber-200/60 rounded w-2/3" />
+        </div>
       ) : tinMung ? (
         <p className="text-sm font-semibold text-amber-800 leading-snug" style={{ fontFamily: '"EB Garamond", serif', fontSize: '1.1rem' }}>{tinMung}</p>
       ) : (
@@ -867,6 +928,17 @@ const GioLe = () => {
             </p>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-slate-100 leading-tight">{thu}</h1>
             <p className="text-base text-gray-500 dark:text-slate-400 font-medium mt-0.5">{ngay}</p>
+            {/* Mùa phụng vụ pill */}
+            {activeMauKey && MAU_AO[activeMauKey] && (
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${MAU_AO[activeMauKey].card} ${MAU_AO[activeMauKey].text}`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${MAU_AO[activeMauKey].swatch}`} />
+                  {isThangHoa && activeMauKey === 'trang'
+                    ? 'Mùa Phục Sinh • Tháng Hoa'
+                    : MAU_AO[activeMauKey].season}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/60 dark:border-slate-700 shadow-sm">
             <Clock size={15} className="text-red-600 shrink-0" />
@@ -902,7 +974,7 @@ const GioLe = () => {
             selectedFeast={selectedFeast}
             monthMeta={monthMeta}
             onSelect={handleSelectFeast}
-            onRefresh={() => loadFeasts(currentMonth, currentYear)}
+            onRefresh={() => qc.invalidateQueries({ queryKey: ['liturgyFeasts', currentMonth, currentYear] })}
           />
         </div>
       </div>

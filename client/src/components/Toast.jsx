@@ -33,7 +33,11 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        className="fixed bottom-5 right-5 z-9999 flex flex-col gap-2 pointer-events-none"
         style={{ maxWidth: 360 }}>
         <AnimatePresence>
           {toasts.map(t => (
