@@ -1,6 +1,7 @@
 const express = require('express');
 const cors    = require('cors');
 const helmet  = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const errorHandler = require('./middleware/errorHandler');
@@ -116,13 +117,30 @@ const notifyLimiter = rateLimit({
   limit: 10,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Qua nhieu request gui thong bao, vui long thu lai sau 15 phut',
-  },
+  message: { success: false, message: 'Quá nhiều request gửi thông báo, vui lòng thử lại sau 15 phút' },
+});
+
+// Rate limiter toàn cục — bảo vệ tất cả endpoints khỏi DDoS
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  limit: 300,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/signup'),
+  message: { success: false, message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau.' },
+});
+
+// Rate limiter riêng cho login — chống brute-force
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { success: false, message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.' },
 });
 
 app.use(helmet());
+app.use(compression());
 
 // CORS: cho phép CLIENT_URL (có thể nhiều origin cách nhau dấu phẩy)
 const allowedOrigins = (process.env.CLIENT_URL || '')
@@ -142,6 +160,11 @@ app.use(cors({
 
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting
+app.use('/api', globalLimiter);
+app.post('/api/auth/login',  loginLimiter);
+app.post('/api/auth/signup', loginLimiter);
 
 app.post('/api/auth/login', authValidators.login);
 app.post('/api/auth/signup', authValidators.signup);
