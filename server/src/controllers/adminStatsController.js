@@ -168,9 +168,14 @@ exports.getTrends = async (req, res, next) => {
         success: true,
         data: {
           namHoc: null,
-          previousNamHoc: null,
-          weeklyAttendanceByBranch: [],
-          monthlyAttendanceByBranch: [],
+        previousNamHoc: null,
+        namHocList: years.map((year) => ({
+          _id: year._id,
+          ten: year.ten,
+          dangHoatDong: year.dangHoatDong,
+        })),
+        weeklyAttendanceByBranch: [],
+        monthlyAttendanceByBranch: [],
           enrollmentComparison: [],
           attentionStudents: [],
         },
@@ -221,6 +226,11 @@ exports.getTrends = async (req, res, next) => {
           ngayBatDau: previousYear.ngayBatDau,
           ngayKetThuc: previousYear.ngayKetThuc,
         } : null,
+        namHocList: years.map((year) => ({
+          _id: year._id,
+          ten: year.ten,
+          dangHoatDong: year.dangHoatDong,
+        })),
         branches: NGANH_ORDER.map((nhanh) => ({ key: nhanh, label: NGANH_LABEL[nhanh] })),
         weeklyAttendanceByBranch: buildAttendanceTrend({
           periods: weeklyPeriods,
