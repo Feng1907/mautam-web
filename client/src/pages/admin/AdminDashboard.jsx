@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   CalendarCheck, Users, BookOpen, CheckSquare, GraduationCap,
   FileText, LayoutGrid, Search, X, UserPlus, Bell, StickyNote as NoteIcon,
 } from 'lucide-react';
 import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import {
   AddStudentModal, ExportDropdown, SendNotifyModal, StickyNote,
   QuickAttendanceModal,
@@ -217,51 +217,45 @@ const ClassCard = ({ lop }) => {
 };
 
 // ── Liturgy Card ──────────────────────────────────────────────────────────────
+const fetchLiturgyToday = async () => {
+  const dateStr = new Date().toISOString().split('T')[0];
+  const month   = new Date().getMonth() + 1;
+  const year    = new Date().getFullYear();
+  const dd      = String(new Date().getDate()).padStart(2, '0');
+  const mm      = String(month).padStart(2, '0');
+
+  const [lcRes, feastsRes] = await Promise.allSettled([
+    api.get(`/loi-chua?date=${dateStr}`),
+    api.get('/liturgy/feasts', { params: { month, year } }),
+  ]);
+
+  const lc      = lcRes.value?.data?.data || null;
+  const feasts  = feastsRes.value?.data?.feasts || [];
+  const today   = feasts.find(f => f.ngay === `${dd}/${mm}`);
+  const mauKey  = getLiturgicalColor(lc?.color || lc?.mau || lc?.liturgicalColor || '')
+                  || today?.mauKey || 'xanh';
+
+  return {
+    mauKey,
+    tenLe:  lc?.name || lc?.title || lc?.liturgicalDay || today?.ten || 'Ngày Thường Niên',
+    chuDe:  lc?.gospel?.title || lc?.phucam?.trich || lc?.tinmung || '',
+    loiDoc: lc?.gospel?.content?.[0] || lc?.reading1 || '',
+  };
+};
+
 const LiturgyCard = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ['liturgy-today'],
+    queryFn:  fetchLiturgyToday,
+    staleTime: 4 * 60 * 60 * 1000,
+    retry: 2,
+  });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const dateStr = new Date().toISOString().split('T')[0];
-        const [lcRes, feastsRes] = await Promise.allSettled([
-          api.get(`/loi-chua?date=${dateStr}`),
-          api.get('/liturgy/feasts', { params: { month: new Date().getMonth() + 1, year: new Date().getFullYear() } }),
-        ]);
-
-        const lc     = lcRes.value?.data?.data || null;
-        const feasts = feastsRes.value?.data?.feasts || [];
-
-        // Xác định màu áo: ưu tiên API → romcal feast hôm nay
-        const dd = String(new Date().getDate()).padStart(2, '0');
-        const mm = String(new Date().getMonth() + 1).padStart(2, '0');
-        const todayFeast = feasts.find(f => f.ngay === `${dd}/${mm}`);
-
-        const apiColorRaw = lc?.color || lc?.mau || lc?.liturgicalColor || '';
-        const mauKey = getLiturgicalColor(apiColorRaw)
-          || todayFeast?.mauKey
-          || 'xanh';
-
-        const tenLe = lc?.name || lc?.title || lc?.liturgicalDay || todayFeast?.ten || 'Ngày Thường Niên';
-        const chuDe = lc?.gospel?.title || lc?.phucam?.trich || lc?.tinmung || '';
-        const loiDoc = lc?.gospel?.content?.[0] || lc?.reading1 || '';
-
-        setData({ mauKey, tenLe, chuDe, loiDoc });
-      } catch {
-        setData({ mauKey: 'xanh', tenLe: 'Phụng Vụ Hôm Nay', chuDe: '', loiDoc: '' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  if (loading) return (
-    <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm animate-pulse h-36" />
+  if (isLoading) return (
+    <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm animate-pulse h-36 dark:bg-slate-800 dark:border-slate-700" />
   );
 
-  const mau = MAU_AO_CARD[data.mauKey] || MAU_AO_CARD.xanh;
+  const mau = MAU_AO_CARD[data?.mauKey] || MAU_AO_CARD.xanh;
 
   return (
     <div className={`rounded-2xl p-5 ${mau.bg} shadow-sm`}>
@@ -365,43 +359,60 @@ const GlobalSearch = ({ users, classes }) => {
   );
 };
 
+// ── Skeleton Dashboard ────────────────────────────────────────────────────────
+const SkeletonDashboard = () => (
+  <div className="flex flex-col gap-5 animate-pulse">
+    <div className="flex gap-3">
+      <div className="h-9 flex-1 rounded-xl bg-gray-100 dark:bg-slate-700" />
+      <div className="h-9 w-32 rounded-xl bg-gray-100 dark:bg-slate-700" />
+      <div className="h-9 w-28 rounded-xl bg-gray-100 dark:bg-slate-700" />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex flex-col gap-3">
+          {[...Array(4)].map((_, j) => (
+            <div key={j} className="h-16 rounded-xl bg-gray-100 dark:bg-slate-700" />
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 const AdminDashboard = () => {
-  const [users,   setUsers]   = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [posts,   setPosts]   = useState([]);
-  const [stats,   setStats]   = useState({});
-  const [loading, setLoading] = useState(true);
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [showNotify,     setShowNotify]     = useState(false);
+  const [showNote,       setShowNote]       = useState(false);
+  const [showAttendance, setShowAttendance] = useState(false);
 
-  // Modal states
-  const [showAddStudent,  setShowAddStudent]  = useState(false);
-  const [showNotify,      setShowNotify]      = useState(false);
-  const [showNote,        setShowNote]        = useState(false);
-  const [showAttendance,  setShowAttendance]  = useState(false);
+  const [usersQ, classesQ, postsQ] = useQueries({
+    queries: [
+      { queryKey: ['admin-users'],   queryFn: () => api.get('/users').then(r => r.data.data),                           staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-classes'], queryFn: () => api.get('/classes').then(r => r.data.data),                         staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-posts'],   queryFn: () => api.get('/posts', { params: { limit: 5 } }).then(r => r.data.data), staleTime: 2 * 60 * 1000, retry: 3 },
+    ],
+  });
 
-  const loadData = useCallback(() => {
-    Promise.allSettled([
-      api.get('/users'),
-      api.get('/classes'),
-      api.get('/posts', { params: { limit: 5 } }),
-    ]).then(([u, c, p]) => {
-      const usersData   = u.value?.data?.data || [];
-      const classesData = c.value?.data?.data || [];
-      setUsers(usersData);
-      setClasses(classesData);
-      setPosts(p.value?.data?.data || []);
-      setStats({
-        lopHoc:      classesData.length,
-        giaoly:      usersData.filter(x => x.vaiTro === 'giaoly').length,
-        baiviet:     p.value?.data?.total ?? 0,
-        doanSinh:    classesData.reduce((sum, c) => sum + (c.siSo ?? 0), 0),
-        lopCoNhanSu: classesData.filter(c => c.huynhTruong || c.duTruong?.length > 0).length,
-      });
-      setLoading(false);
-    });
-  }, []);
+  const users   = usersQ.data   || [];
+  const classes = classesQ.data || [];
+  const posts   = postsQ.data   || [];
+  const loading = usersQ.isLoading || classesQ.isLoading || postsQ.isLoading;
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const stats = {
+    lopHoc:      classes.length,
+    giaoly:      users.filter(x => x.vaiTro === 'giaoly').length,
+    baiviet:     posts.length,
+    doanSinh:    classes.reduce((sum, c) => sum + (c.siSo ?? 0), 0),
+    lopCoNhanSu: classes.filter(c => c.huynhTruong || c.duTruong?.length > 0).length,
+  };
+
+  // kept for modal callbacks that add a student / send notification
+  const refetchAll = () => {
+    usersQ.refetch();
+    classesQ.refetch();
+    postsQ.refetch();
+  };
 
   const byNganh = classes.reduce((acc, l) => {
     (acc[l.nhanh] = acc[l.nhanh] || []).push(l); return acc;
@@ -421,7 +432,7 @@ const AdminDashboard = () => {
     { label: 'Nghỉ không phép', value: 12, color: '#ef4444' },
   ];
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <SkeletonDashboard />;
 
   return (
     <div className="flex flex-col gap-5">
@@ -469,7 +480,7 @@ const AdminDashboard = () => {
         open={showAddStudent}
         onClose={() => setShowAddStudent(false)}
         classes={classes}
-        onSuccess={loadData}
+        onSuccess={refetchAll}
       />
       <QuickAttendanceModal
         open={showAttendance}
@@ -479,7 +490,7 @@ const AdminDashboard = () => {
       <SendNotifyModal
         open={showNotify}
         onClose={() => setShowNotify(false)}
-        onSuccess={loadData}
+        onSuccess={refetchAll}
       />
       <StickyNote
         open={showNote}
@@ -491,9 +502,11 @@ const AdminDashboard = () => {
 
         {/* ══ CỘT 1 — NGƯỜI DÙNG ══════════════════════════════════════ */}
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Quản lý Người dùng</h2>
-            <Link to="/admin/nguoi-dung" className="btn-primary py-1! px-3! text-xs!">+ Tạo tài khoản</Link>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="admin-section-title">Quản lý Người dùng</h2>
+            <Link to="/admin/nguoi-dung" className="admin-compact-action inline-flex items-center justify-center whitespace-nowrap">
+              + Tạo tài khoản
+            </Link>
           </div>
 
           {/* Tabs mini */}
@@ -563,8 +576,8 @@ const AdminDashboard = () => {
 
         {/* ══ CỘT 2 — LỚP HỌC ═════════════════════════════════════════ */}
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Quản lý Lớp học</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="admin-section-title">Quản lý Lớp học</h2>
             <Link to="/admin/lop-hoc" className="text-xs text-red-600 hover:underline font-medium">Xem tất cả →</Link>
           </div>
 
@@ -579,7 +592,7 @@ const AdminDashboard = () => {
                   <div key={nhanh}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`} />
-                      <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">{cfg.label}</p>
+                      <p className="admin-section-title text-[10px]!">{cfg.label}</p>
                     </div>
                     <div className={`grid gap-2 ${lops.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                       {lops.map(lop => <ClassCard key={lop._id} lop={lop} />)}
@@ -596,7 +609,7 @@ const AdminDashboard = () => {
 
           {/* Stat cards */}
           <div>
-            <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-3">Tổng quan</h2>
+            <h2 className="admin-section-title mb-3">Tổng quan</h2>
             <div className="flex flex-col gap-2">
               <StatCard icon={LayoutGrid}    label="Lớp học"        value={stats.lopHoc}      to="/admin/lop-hoc"    iconCls="bg-blue-50 text-blue-600"      valCls="text-blue-700"   />
               <StatCard icon={GraduationCap} label="Tổng đoàn sinh" value={stats.doanSinh}    to="/admin/lop-hoc"    iconCls="bg-emerald-50 text-emerald-600" valCls="text-emerald-700" />
@@ -609,14 +622,14 @@ const AdminDashboard = () => {
           {/* Bar chart: Đoàn sinh theo ngành */}
           {barData.length > 0 && (
             <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-              <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-3">Đoàn sinh theo Ngành</p>
+              <p className="admin-section-title mb-3">Đoàn sinh theo Ngành</p>
               <SvgBarChart data={barData} />
             </div>
           )}
 
           {/* Donut chart: Tỉ lệ chuyên cần */}
           <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-            <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase mb-1">Tỉ lệ Chuyên cần</p>
+            <p className="admin-section-title mb-1">Tỉ lệ Chuyên cần</p>
             <p className="text-[10px] text-gray-300 italic mb-2">Dữ liệu mẫu · kết nối API chuyên cần để cập nhật thật</p>
             <SvgDonutChart data={pieData} />
           </div>
@@ -624,7 +637,7 @@ const AdminDashboard = () => {
           {/* Bài viết mới nhất */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[10px] font-black tracking-widest text-gray-400 dark:text-slate-500 uppercase">Bài viết mới nhất</h2>
+              <h2 className="admin-section-title">Bài viết mới nhất</h2>
               <Link to="/admin/bai-viet" className="text-xs text-red-600 hover:underline font-medium">Xem tất cả →</Link>
             </div>
             {posts.length === 0 ? (
