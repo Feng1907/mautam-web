@@ -205,6 +205,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/subscribe',     require('./routes/subscribe'));
 app.use('/api/events',       require('./routes/events'));
 app.use('/api/admin/stats', require('./routes/adminStats'));
+app.use('/api/chat',       require('./routes/chat'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

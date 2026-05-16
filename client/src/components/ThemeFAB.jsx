@@ -19,7 +19,7 @@ export default function ThemeFAB() {
       initial={{ opacity: 0, y: 16, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: 1.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-6 right-5 z-50"
+      className="fixed bottom-20 right-5 z-50"
     >
       <button
         onClick={toggle}

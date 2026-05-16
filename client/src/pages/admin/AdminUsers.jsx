@@ -94,44 +94,50 @@ const UserForm = ({ initial, onSave, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-        <h3 className="font-bold text-gray-800 mb-4">
-          {isEdit ? 'Chỉnh sửa tài khoản' : 'Tạo tài khoản mới'}
-        </h3>
-
-        {!isEdit && (
-          <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded px-3 py-2 mb-4">
-            Hệ thống tự tạo mật khẩu tạm và gửi qua email.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="border-b border-[#e5d5b5] bg-[#fffcf9] px-6 py-5">
+          <h3 className="admin-title text-xl">
+            {isEdit ? 'Chỉnh sửa tài khoản' : 'Tạo tài khoản mới'}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Thông tin tài khoản, vai trò và chức vụ được căn chỉnh theo cùng một hệ nhập liệu.
           </p>
-        )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2 mb-3">
-            {error}
-          </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <div className="p-6">
+          {!isEdit && (
+            <p className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+              Hệ thống tự tạo mật khẩu tạm và gửi qua email.
+            </p>
+          )}
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {error}
+            </div>
+          )}
+
+        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Họ tên *</label>
-            <input className="input" value={form.hoTen}
+            <label className="admin-field-label">Họ tên *</label>
+            <input className="admin-form-control" value={form.hoTen}
               onChange={e => set('hoTen', e.target.value)} required autoFocus />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
-            <input type="email" className="input" value={form.email}
+            <label className="admin-field-label">Email *</label>
+            <input type="email" className="admin-form-control" value={form.email}
               onChange={e => set('email', e.target.value)} required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Số điện thoại</label>
-            <input className="input" placeholder="0xxxxxxxxx" value={form.soDienThoai}
+            <label className="admin-field-label">Số điện thoại</label>
+            <input className="admin-form-control" placeholder="0xxxxxxxxx" value={form.soDienThoai}
               onChange={e => set('soDienThoai', e.target.value)} />
           </div>
 
           {/* Vai trò hệ thống */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Vai trò hệ thống</label>
-            <select className="input" value={form.vaiTro}
+            <label className="admin-field-label">Vai trò hệ thống</label>
+            <select className="admin-form-control" value={form.vaiTro}
               onChange={e => set('vaiTro', e.target.value)}>
               <option value="giaoly">Giáo lý viên</option>
               <option value="admin">Admin</option>
@@ -141,9 +147,9 @@ const UserForm = ({ initial, onSave, onCancel }) => {
 
           {/* Chức vụ — chỉ hiện khi là giaoly */}
           {form.vaiTro === 'giaoly' && (
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Chức vụ</label>
-              <select className="input" value={form.chucVu}
+            <div className="sm:col-span-2">
+              <label className="admin-field-label">Chức vụ</label>
+              <select className="admin-form-control" value={form.chucVu}
                 onChange={e => set('chucVu', e.target.value)}>
                 <option value="huynhtruong">Huynh trưởng</option>
                 <option value="dutruong">Dự trưởng</option>
@@ -152,13 +158,14 @@ const UserForm = ({ initial, onSave, onCancel }) => {
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-3 pt-2 sm:col-span-2">
             <button type="submit" disabled={saving} className="btn-primary flex-1">
               {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Tạo tài khoản'}
             </button>
             <button type="button" onClick={onCancel} className="btn-ghost flex-1">Huỷ</button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
@@ -244,7 +251,7 @@ const AdminUsers = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-gray-800">Quản lý Người dùng</h2>
+        <h2 className="admin-title text-2xl">Quản lý Người dùng</h2>
         <button onClick={() => setForm({})} className="btn-primary">+ Tạo tài khoản</button>
       </div>
 

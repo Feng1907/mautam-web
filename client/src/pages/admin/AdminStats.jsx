@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Bar,
   BarChart,
@@ -13,7 +14,7 @@ import {
 } from 'recharts';
 import { AlertTriangle, BarChart3, LineChart as LineChartIcon, UsersRound } from 'lucide-react';
 import api from '../../services/api';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import { SkeletonCard, SkeletonLine } from '../../components/Skeleton';
 
 const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
 const SANS = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
@@ -28,8 +29,14 @@ const BRANCH_CFG = {
 
 const BRANCH_KEYS = Object.keys(BRANCH_CFG);
 
+const cardMotion = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.24, ease: 'easeOut' },
+};
+
 const ChartPanel = ({ icon: Icon, title, subtitle, children }) => (
-  <section className="rounded-2xl border bg-white p-5 shadow-sm" style={{ borderColor: '#e5d5b5' }}>
+  <motion.section {...cardMotion} className="surface-card p-5">
     <div className="mb-4 flex items-start justify-between gap-3">
       <div>
         <div className="flex items-center gap-2 text-[#3d1515]">
@@ -40,12 +47,52 @@ const ChartPanel = ({ icon: Icon, title, subtitle, children }) => (
       </div>
     </div>
     {children}
-  </section>
+  </motion.section>
 );
 
 const EmptyChart = ({ text }) => (
-  <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
-    {text}
+  <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-dashed border-[#e5d5b5] bg-[#fffcf9] px-6 text-center">
+    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-2xl text-[#D4AF37]">
+      ✦
+    </div>
+    <p className="text-sm font-semibold text-[#3d1515]">{text}</p>
+    <p className="mt-1 text-xs text-gray-400">Khi có thêm dữ liệu điểm danh, biểu đồ sẽ tự cập nhật.</p>
+  </div>
+);
+
+const FriendlyState = ({ title, description }) => (
+  <motion.div
+    {...cardMotion}
+    className="rounded-2xl border border-[#e5d5b5] bg-white px-6 py-10 text-center shadow-sm"
+  >
+    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-3xl text-[#D4AF37]">
+      ✦
+    </div>
+    <h3 className="font-bold text-[#3d1515]" style={{ fontFamily: SERIF }}>{title}</h3>
+    <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">{description}</p>
+  </motion.div>
+);
+
+const StatsSkeleton = () => (
+  <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="space-y-2">
+        <SkeletonLine w="w-56" h="h-6" />
+        <SkeletonLine w="w-40" h="h-3" />
+      </div>
+      <div className="flex gap-2">
+        <SkeletonLine w="w-32" h="h-11" />
+        <SkeletonLine w="w-32" h="h-11" />
+      </div>
+    </div>
+    <div className="rounded-2xl border border-[#e5d5b5] bg-white p-5">
+      <SkeletonLine w="w-64" h="h-5" />
+      <div className="mt-5 h-80 rounded-xl bg-gray-100 animate-pulse" />
+    </div>
+    <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+      <SkeletonCard />
+      <SkeletonCard />
+    </div>
   </div>
 );
 
@@ -80,7 +127,7 @@ const ComparisonTooltip = ({ active, payload, label }) => {
 };
 
 const AttentionStudents = ({ students }) => (
-  <section className="rounded-2xl border bg-white p-5 shadow-sm" style={{ borderColor: '#fecaca' }}>
+  <motion.section {...cardMotion} className="rounded-2xl border bg-white p-5 shadow-sm" style={{ borderColor: '#fecaca' }}>
     <div className="mb-4 flex items-center gap-2 text-red-700">
       <AlertTriangle className="h-5 w-5" />
       <h3 className="font-bold" style={{ fontFamily: SERIF }}>Đoàn sinh cần quan tâm</h3>
@@ -125,7 +172,7 @@ const AttentionStudents = ({ students }) => (
         </table>
       </div>
     )}
-  </section>
+  </motion.section>
 );
 
 const AdminStats = () => {
@@ -133,6 +180,8 @@ const AdminStats = () => {
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
   const [trendMode, setTrendMode] = useState('week');
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedNamHocId, setSelectedNamHocId] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +190,9 @@ const AdminStats = () => {
       setLoading(true);
       setError('');
       try {
-        const res = await api.get('/admin/stats/trends');
+        const res = await api.get('/admin/stats/trends', {
+          params: { namHocId: selectedNamHocId || undefined },
+        });
         if (!cancelled) setData(res.data.data);
       } catch (err) {
         if (!cancelled) setError(err.response?.data?.message || 'Không tải được dữ liệu xu hướng.');
@@ -152,7 +203,7 @@ const AdminStats = () => {
 
     loadTrends();
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedNamHocId]);
 
   const trendData = trendMode === 'month'
     ? data?.monthlyAttendanceByBranch || []
@@ -166,9 +217,10 @@ const AdminStats = () => {
     [data]
   );
 
-  const hasTrendData = trendData.some((row) => BRANCH_KEYS.some((key) => Number(row[key]) > 0));
+  const visibleBranchKeys = selectedBranch === 'all' ? BRANCH_KEYS : [selectedBranch];
+  const hasTrendData = trendData.some((row) => visibleBranchKeys.some((key) => Number(row[key]) > 0));
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <StatsSkeleton />;
 
   return (
     <div className="flex flex-col gap-5" style={{ fontFamily: SANS }}>
@@ -182,35 +234,63 @@ const AdminStats = () => {
           </p>
         </div>
 
-        <div className="flex rounded-full border border-[#e5d5b5] bg-white p-1">
-          {[
-            { key: 'week', label: 'Tuần' },
-            { key: 'month', label: 'Tháng' },
-          ].map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setTrendMode(option.key)}
-              className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                trendMode === option.key ? 'bg-[#8B0000] text-white' : 'text-gray-500 hover:text-[#8B0000]'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="grid gap-2 sm:grid-cols-[180px_160px_auto]">
+          <select
+            value={selectedNamHocId}
+            onChange={(e) => setSelectedNamHocId(e.target.value)}
+            className="h-11 rounded-xl border border-[#e5d5b5] bg-white px-3 text-sm font-semibold text-gray-600 outline-none focus:border-[#D4AF37]"
+          >
+            <option value="">Năm học hiện tại</option>
+            {(data?.namHocList || []).map((year) => (
+              <option key={year._id} value={year._id}>
+                {year.ten}{year.dangHoatDong ? ' · đang hoạt động' : ''}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedBranch}
+            onChange={(e) => setSelectedBranch(e.target.value)}
+            className="h-11 rounded-xl border border-[#e5d5b5] bg-white px-3 text-sm font-semibold text-gray-600 outline-none focus:border-[#D4AF37]"
+          >
+            <option value="all">Tất cả ngành</option>
+            {BRANCH_KEYS.map((key) => (
+              <option key={key} value={key}>{BRANCH_CFG[key].label}</option>
+            ))}
+          </select>
+
+          <div className="flex rounded-xl border border-[#e5d5b5] bg-white p-1">
+            {[
+              { key: 'week', label: 'Tuần' },
+              { key: 'month', label: 'Tháng' },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setTrendMode(option.key)}
+                className={`min-h-9 rounded-lg px-4 py-1.5 text-sm font-bold transition ${
+                  trendMode === option.key ? 'bg-[#8B0000] text-white' : 'text-gray-500 hover:text-[#8B0000]'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <FriendlyState
+          title="Chưa tải được báo cáo"
+          description={error}
+        />
       )}
 
       {!data?.namHoc ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          Chưa có năm học đang hoạt động.
-        </p>
+        <FriendlyState
+          title="Chưa có năm học để thống kê"
+          description="Hãy tạo hoặc kích hoạt một năm học trong phần quản trị năm học."
+        />
       ) : (
         <>
           <ChartPanel
@@ -227,7 +307,7 @@ const AdminStats = () => {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v) => `${v}%`} />
                     <Tooltip content={<TrendTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    {BRANCH_KEYS.map((key) => (
+                    {visibleBranchKeys.map((key) => (
                       <Line
                         key={key}
                         type="monotone"

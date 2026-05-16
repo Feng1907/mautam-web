@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CalendarDays, Home, Images, LayoutDashboard, Newspaper, UserRound, UsersRound } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
@@ -69,14 +71,14 @@ const Navbar = () => {
       : 'block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-150';
 
   const NAV_LINKS = [
-    { to: '/',             label: t('nav.home')    },
-    { to: '/gio-le',       label: t('nav.liturgy') },
-    { to: '/tin-tuc',      label: t('nav.news')    },
-    { to: '/thu-vien',     label: t('nav.gallery') },
-    { to: '/lich-su-cuu-do', label: 'Lịch Sử'     },
-    { to: '/lop-hoc',      label: t('nav.classes'), authRequired: true  },
-    { to: '/phu-huynh',    label: 'Phụ Huynh',      parentOnly:   true  },
-    { to: '/admin',        label: t('nav.admin'),    adminOnly:    true  },
+    { to: '/',             label: t('nav.home'), Icon: Home },
+    { to: '/gio-le',       label: t('nav.liturgy'), Icon: CalendarDays },
+    { to: '/tin-tuc',      label: t('nav.news'), Icon: Newspaper },
+    { to: '/thu-vien',     label: t('nav.gallery'), Icon: Images },
+    { to: '/lich-su-cuu-do', label: 'Lịch Sử', Icon: LayoutDashboard },
+    { to: '/lop-hoc',      label: t('nav.classes'), Icon: UsersRound, authRequired: true  },
+    { to: '/phu-huynh',    label: 'Phụ Huynh', Icon: UserRound, parentOnly:   true  },
+    { to: '/admin',        label: t('nav.admin'), Icon: LayoutDashboard, adminOnly:    true  },
   ];
 
   const visibleLinks = NAV_LINKS.filter(l =>
@@ -84,6 +86,8 @@ const Navbar = () => {
     (!l.parentOnly   || user?.vaiTro === 'PARENT') &&
     (!l.adminOnly    || user?.vaiTro === 'admin')
   );
+
+  const bottomLinks = visibleLinks.slice(0, 5);
 
   return (
     <header
@@ -210,10 +214,14 @@ const Navbar = () => {
       </div>
 
       {/* ── Mobile menu ── */}
+      <AnimatePresence>
       {menuOpen && (
-        <div
+        <motion.div
           id="mobile-menu"
           className="md:hidden px-4 pt-2 pb-4 flex flex-col gap-1"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
           style={{
             background: 'rgba(90,0,0,0.97)',
             backdropFilter: 'blur(12px)',
@@ -252,8 +260,33 @@ const Navbar = () => {
               </>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
+
+      <nav className="fixed inset-x-3 bottom-3 z-50 md:hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid rounded-2xl border border-[#e5d5b5] bg-white/95 p-1.5 shadow-2xl backdrop-blur"
+          style={{ gridTemplateColumns: `repeat(${bottomLinks.length}, minmax(0, 1fr))` }}
+        >
+          {bottomLinks.map(({ to, label, Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) => `flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition ${
+                isActive ? 'bg-[#8B0000] text-white' : 'text-gray-500 hover:bg-amber-50 hover:text-[#8B0000]'
+              }`}
+            >
+              <Icon size={17} strokeWidth={2.2} />
+              <span className="max-w-full truncate px-1">{label}</span>
+            </NavLink>
+          ))}
+        </motion.div>
+      </nav>
     </header>
   );
 };

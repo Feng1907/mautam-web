@@ -237,6 +237,20 @@ const PostCard = ({ post, index }) => {
   );
 };
 
+const NewsState = ({ title, description }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 14 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="rounded-2xl border border-[#e5d5b5] bg-white/90 px-6 py-16 text-center shadow-sm"
+  >
+    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-3xl text-[#D4AF37]">
+      ✦
+    </div>
+    <h2 className="font-bold text-[#3d1515]" style={{ fontFamily: SERIF }}>{title}</h2>
+    <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">{description}</p>
+  </motion.div>
+);
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function News() {
   const [loai, setLoai] = useState('');
@@ -281,15 +295,15 @@ export default function News() {
       {isLoading ? (
         <SkeletonNewsFeed />
       ) : isError ? (
-        <div className="text-center py-24">
-          <span className="text-5xl block mb-4 opacity-20">✝</span>
-          <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>Không tải được bài viết. Vui lòng thử lại.</p>
-        </div>
+        <NewsState
+          title="Chưa tải được tin tức"
+          description="Kết nối đang không ổn định. Anh/chị vui lòng thử lại sau ít phút."
+        />
       ) : posts.length === 0 ? (
-        <div className="text-center py-24">
-          <span className="text-5xl block mb-4 opacity-20">✝</span>
-          <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>Chưa có bài viết nào.</p>
-        </div>
+        <NewsState
+          title="Chưa có bài viết"
+          description="Các thông báo và tin sinh hoạt mới sẽ xuất hiện tại đây."
+        />
       ) : (
         <>
           {/* Featured post */}

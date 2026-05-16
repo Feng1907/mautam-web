@@ -379,7 +379,7 @@ const AdminClasses = () => {
       {/* ── Page header ── */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold text-[#3d1515]" style={{ fontFamily: 'Georgia, serif' }}>
+          <h2 className="admin-title text-2xl">
             Quản lý Lớp học
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -406,7 +406,7 @@ const AdminClasses = () => {
               {/* Header ngành */}
               <div className="flex items-center gap-2 mb-3">
                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
-                <h3 className="text-xs font-black tracking-widest text-gray-500 uppercase">
+                <h3 className="admin-section-title">
                   {cfg.label}
                 </h3>
                 <span className="text-[10px] text-gray-400 font-medium">({lops.length} lớp)</span>
