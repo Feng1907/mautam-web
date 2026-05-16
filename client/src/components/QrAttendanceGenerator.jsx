@@ -719,7 +719,7 @@ export default function QrAttendanceGenerator({ classes = [], defaultDate, defau
 
       {/* Toast portal — hiện ở góc dưới phải khi đoàn sinh check-in */}
       {createPortal(
-        <div className="fixed bottom-5 right-5 flex flex-col gap-2 z-9999 pointer-events-none">
+        <div className="fixed bottom-36 right-4 sm:right-5 flex flex-col gap-2 z-9999 pointer-events-none">
           <AnimatePresence>
             {toasts.map(t => (
               <motion.div

@@ -19,8 +19,19 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --brand-red:  #c0392b;
+  --brand-red:  #8B0000;
+  --brand-red-700: #6f0000;
+  --brand-red-900: #3d0808;
+  --brand-gold: #D4AF37;
+  --brand-gold-soft: #f7ead0;
+  --brand-cream: #fffcf9;
+  --brand-ink: #2d1515;
   --brand-blue: #2980b9;
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --radius-card: 0.75rem;
   /* Circular Reveal origin (set by ThemeContext) */
   --vt-x: 50%;
   --vt-y: 50%;
@@ -56,6 +67,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+}
+
+button,
+[role="button"],
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger {
+  min-height: 2.5rem;
+}
+
+@media (max-width: 767px) {
+  body { padding-bottom: 4.5rem; }
+  button,
+  [role="button"],
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    min-height: 2.75rem;
+  }
 }
 
 .dark body, body:where(.dark *) {
@@ -100,21 +140,100 @@ h1, h2, h3, h4, h5, h6 {
 /* Admin dashboard headings */
 .admin-title {
   font-family: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-ligatures: none;
-  line-height: 1.45;
-  color: #2D3748;
+  line-height: 1.35;
+  color: #3d1515;
 }
 .dark .admin-title { color: #f1f5f9; }
 
-/* Tiện ích tái sử dụng */
-.btn-primary   { @apply bg-red-700 hover:bg-red-800 text-white font-semibold px-4 py-2 rounded transition cursor-pointer; }
-.btn-secondary { @apply bg-blue-700 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded transition cursor-pointer; }
-.btn-ghost     { @apply border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded transition cursor-pointer; }
-.btn-danger    { @apply bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-4 py-2 rounded transition cursor-pointer; }
+.admin-section-title {
+  color: #3d1515;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+.dark .admin-section-title { color: #f8d7d7; }
 
-.card  { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5 dark:bg-slate-800 dark:border-slate-700; }
+.admin-compact-action {
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  background: #a40000;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.14);
+  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.admin-compact-action:hover {
+  background: #8B0000;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(139, 0, 0, 0.18);
+}
+.admin-compact-action:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.12);
+}
+
+.admin-field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.dark .admin-field-label { color: #cbd5e1; }
+
+.admin-form-control {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #d8c7a8;
+  background: #fff;
+  padding: 0.625rem 0.875rem;
+  color: #1f2937;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.admin-form-control:focus {
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+}
+.dark .admin-form-control {
+  border-color: #475569;
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+/* Tiện ích tái sử dụng */
+.btn-primary   { @apply bg-red-800 hover:bg-red-900 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0; }
+.btn-secondary { @apply bg-amber-400 hover:bg-amber-500 text-red-950 font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0; }
+.btn-ghost     { @apply border border-gray-300 hover:border-amber-400 hover:bg-amber-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98]; }
+.btn-danger    { @apply bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98]; }
+
+.card  { @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-800 dark:border-slate-700; }
 .input { @apply w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder:text-slate-500; }
+
+.surface-card {
+  border: 1px solid #e5d5b5;
+  border-radius: var(--radius-card);
+  background: rgba(255, 252, 249, 0.94);
+  box-shadow: 0 2px 16px rgba(139, 0, 0, 0.06);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.surface-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand-gold);
+  box-shadow: 0 14px 36px rgba(139, 0, 0, 0.12);
+}
 
 .rich-text-editor .ProseMirror {
   min-height: 14rem;

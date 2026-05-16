@@ -37,7 +37,7 @@ export function ToastProvider({ children }) {
         role="status"
         aria-live="polite"
         aria-atomic="false"
-        className="fixed bottom-5 right-5 z-9999 flex flex-col gap-2 pointer-events-none"
+        className="fixed bottom-36 right-4 sm:right-5 z-9999 flex flex-col gap-2 pointer-events-none"
         style={{ maxWidth: 360 }}>
         <AnimatePresence>
           {toasts.map(t => (
