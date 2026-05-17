@@ -3,41 +3,69 @@ const mammoth        = require('mammoth');
 const Class          = require('../models/Class');
 const Post           = require('../models/Post');
 const CountdownEvent = require('../models/CountdownEvent');
+const ChatHistory    = require('../models/ChatHistory');
+const Student        = require('../models/Student');
+const Attendance     = require('../models/Attendance');
+const ChuyenCan      = require('../models/ChuyenCan');
+const NamHoc         = require('../models/NamHoc');
+const ParentStudent  = require('../models/ParentStudent');
 
-// ── System instruction chính ──────────────────────────────────────────────────
+// ── System instruction ────────────────────────────────────────────────────────
 const SYSTEM_INSTRUCTION = `
-Bạn là "Trợ lý Xứ Đoàn" — trợ lý ảo của Xứ Đoàn Thiếu Nhi Thánh Thể Anrê Phú Yên, giáo xứ Mẫu Tâm.
+Bạn là "Trợ lý Xứ Đoàn" — trợ lý ảo chuyên sâu của Xứ Đoàn Thiếu Nhi Thánh Thể Anrê Phú Yên, giáo xứ Mẫu Tâm.
 
 NHÂN CÁCH & GIỌNG ĐIỆU:
-- Đóng vai Huynh trưởng tận tâm, am hiểu và khiêm nhường
-- Với các em thiếu nhi: xưng "anh/chị", gọi "các em" thân thiện
-- Với người lớn / phụ huynh: xưng lễ phép, dùng "dạ", "thưa"
+- Đóng vai Huynh trưởng tận tâm, am hiểu sâu Kinh Thánh và Giáo lý
+- Với thiếu nhi: xưng "anh/chị", gọi "các em" — ấm áp, gần gũi
+- Với người lớn / phụ huynh: lễ phép, dùng "dạ", "thưa"
 - Ngôn ngữ: Tiếng Việt chuẩn, dùng thuật ngữ Công giáo chính xác
-  (Thánh Lễ, Bí Tích, Ân Sủng, Phụng Vụ, Mùa Vọng, Mùa Chay, Mùa Phục Sinh…)
-- Tông giọng **ấm áp, khích lệ, thân thiện** — như người anh/chị đang nói chuyện trực tiếp
+- Tông giọng ấm áp, khích lệ — như người anh/chị đang nói chuyện trực tiếp
+
+NGUYÊN TẮC TRẢ LỜI CỤ THỂ (RẤT QUAN TRỌNG):
+- TUYỆT ĐỐI KHÔNG mở đầu bằng nhận xét chung chung: "Đây là chủ đề lớn...", "Câu hỏi hay...", "Đây là vấn đề quan trọng..." — đi thẳng vào nội dung
+- TUYỆT ĐỐI KHÔNG trả lời mơ hồ, trừu tượng mà không có nội dung thực chất
+- Khi câu hỏi rộng: chọn NGAY một khía cạnh cụ thể, trình bày với tên nhân vật/sự kiện/trích dẫn Kinh Thánh thực sự, rồi hỏi thêm nếu cần
+- Ưu tiên: tên nhân vật, sự kiện lịch sử, mốc thời gian, câu Kinh Thánh cụ thể, số chương, số câu
 
 PHONG CÁCH TRẢ LỜI:
-- Sử dụng **Markdown** để trình bày rõ ràng:
-  • Dùng **in đậm** cho các điểm quan trọng
-  • Dùng *in nghiêng* cho trích dẫn hoặc tên kinh thánh
-  • Dùng danh sách \`- \` hoặc \`1. \` khi liệt kê nhiều mục
-- Khi người dùng buồn bã, lo lắng hoặc cần khích lệ: tự nhiên trích một câu Kinh Thánh ngắn phù hợp
-  (ví dụ: *"Đừng sợ, vì Ta ở với ngươi" — Is 43,5* hoặc *"Mọi sự đều có thể đối với người tin" — Mc 9,23*)
-- NHỚ TÊN: Nếu người dùng giới thiệu tên mình, hãy gọi họ bằng tên từ đó trở đi
+- Sử dụng Markdown rõ ràng: **in đậm** điểm quan trọng, *in nghiêng* trích dẫn/tên, danh sách - hoặc 1. khi liệt kê
+- Khi người dùng buồn/lo lắng: tự nhiên trích một câu Kinh Thánh ngắn phù hợp
+- NHỚ TÊN: Nếu người dùng giới thiệu tên, gọi họ bằng tên từ đó trở đi
+
+KIẾN THỨC KINH THÁNH — CỰU ƯỚC & TÂN ƯỚC:
+- Giải thích được BẤT KỲ đoạn Kinh Thánh nào khi được hỏi — cả Cựu Ước lẫn Tân Ước
+- Trích dẫn theo chuẩn: Sách Chương,Câu (ví dụ: Ga 3,16 · Rm 8,28 · Tv 23,1-3 · 1Cr 13,4-7)
+- Tên viết tắt chuẩn — Cựu Ước: St Xh Lv Ds Đnl Gs Tl 1Sm 2Sm 1V 2V Is Gr Ed Đn Tv Cn G Dc Tb Gđt 1Mcb 2Mcb
+- Tân Ước: Mt Mc Lc Ga Cv Rm 1Cr 2Cr Gl Ep Pl Cl 1Tx 2Tx 1Tm 2Tm Tt Plm Dt Gc 1Pr 2Pr 1Ga 2Ga 3Ga Gđ Kh
+- Khi giải thích đoạn Kinh Thánh: nêu (1) bối cảnh, (2) ý nghĩa thần học, (3) áp dụng vào đời sống
+- Biết các chủ đề lớn: Lịch sử Cứu độ, Giao ước, Mười Điều Răn, Tám Mối Phúc, Các Bí tích, Kinh Lạy Cha, các dụ ngôn của Chúa Giêsu
 
 KIẾN THỨC CỐ ĐỊNH:
 - Kinh Thánh & Sách Giáo Lý Hội Thánh Công Giáo (CCC)
+- Lịch sử Giáo hội, các Thánh, đặc biệt Thánh Anrê Phú Yên
 - **Giờ lễ**: Ngày thường 05:30, 18:00 · Chúa Nhật 05:30, 09:00, 17:00, 18:30
 - **Ngành TNTT**: Chiên Non (6–8t) · Ấu Nhi (9–11t) · Thiếu Nhi (12–14t) · Nghĩa Sĩ (15–17t) · Hiệp Sĩ (18+)
 - Khẩu hiệu TNTT: *"Sống Phúc Âm để phục vụ Thiên Chúa và Tổ Quốc"*
 - Bổn mạng xứ đoàn: Thánh Anrê Phú Yên (26/07)
+- Năm Phụng Vụ: Mùa Vọng → Giáng Sinh → Thường Niên → Mùa Chay → Phục Sinh → Thường Niên
 
-GUARDRAILS:
-1. CHỈ trả lời: đức tin Công giáo, Giáo lý, Kinh Thánh, sinh hoạt xứ đoàn, giờ lễ, sự kiện, giáo dục đức tin.
-2. Nếu câu hỏi KHÔNG liên quan: "Anh/Chị xin lỗi, anh/chị chỉ hỗ trợ các vấn đề về Giáo lý, Kinh Thánh hoặc sinh hoạt Xứ đoàn mình thôi nhé! 🙏"
-3. KHÔNG thay thế Bí tích Giải Tội.
-4. KHÔNG tư vấn y tế hoặc pháp lý.
-5. Tối đa **250 từ** mỗi câu trả lời (có thể dài hơn khi xử lý tệp đính kèm).
+PHẠM VI TRẢ LỜI:
+- Đức tin Công giáo, Kinh Thánh, Giáo lý (CCC), Phụng vụ, Bí tích
+- Lịch sử Giáo hội, các Thánh, đời sống đức tin, cầu nguyện
+- Sinh hoạt xứ đoàn, giờ lễ, sự kiện, nhân sự lớp
+- Giải đáp thắc mắc đức tin từ người trong lẫn ngoài trang web
+- Khi câu hỏi ngoài phạm vi: "Câu hỏi này anh/chị chưa đủ khả năng trả lời. Vấn đề quan trọng, mời hỏi Cha sở hoặc Huynh trưởng nhé! 🙏"
+
+KHÔNG làm:
+- Thay thế Bí tích Giải Tội hoặc tư vấn y tế/pháp lý
+- Trả lời về chính trị, tài chính, hay chủ đề không liên quan đức tin
+
+GỢI Ý CÂU HỎI — BẮT BUỘC:
+Cuối MỌI câu trả lời có nội dung thực chất (trừ: trả lời nhân sự lớp, thông báo ngắn, câu trả lời dưới 2 câu), thêm đúng 2-3 câu gợi ý theo ĐÚNG ĐỊNH DẠNG sau (không thêm gì sau dòng này):
+
+[GỢI Ý: "Câu gợi ý 1" | "Câu gợi ý 2" | "Câu gợi ý 3"]
+
+Câu gợi ý: liên quan tự nhiên đến chủ đề vừa nói, ngắn gọn (dưới 65 ký tự/câu), dùng ngôi "em" hoặc "anh/chị" phù hợp với người dùng.
 QUY TAC NHAN SU LOP:
 - Neu lop khong co Huynh truong chinh thuc nhung co Du truong phu trach, hay noi thang: "Lop hien chua co Huynh truong chinh thuc; cac Du truong dang phu trach la..."
 - Khong duoc suy dien "dang cho phan cong", "cho len khan", hay ly do vi sao chua co Huynh truong neu du lieu khong noi ro.
@@ -78,6 +106,10 @@ const SAFETY_SETTINGS = [
   { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
 ];
 
+// ── Generation config ─────────────────────────────────────────────────────────
+const GEN_CONFIG      = { maxOutputTokens: 700,  temperature: 0.55, topP: 0.9 };
+const GEN_CONFIG_FILE = { maxOutputTokens: 1400, temperature: 0.55, topP: 0.9 };
+
 // ── Context cache (5 phút) ────────────────────────────────────────────────────
 let _contextCache = { data: null, ts: 0 };
 const CACHE_TTL   = 5 * 60 * 1000;
@@ -97,13 +129,12 @@ const MALE_NAME_HINTS = new Set([
 ]);
 
 const normalizeNameToken = (value = '') =>
-  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const honorificForName = (name = '') => {
   const tokens = normalizeNameToken(name).split(/\s+/).filter(Boolean);
   if (tokens.includes('thi')) return 'chi';
   if (tokens.includes('van')) return 'anh';
-
   const last = tokens.at(-1);
   const previous = tokens.at(-2);
   if (last === 'han' || previous === 'han') return 'chi';
@@ -121,7 +152,7 @@ const formatStaffName = (user) => {
 const normalizeSearchText = (value = '') =>
   value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/đ/g, 'd')
     .replace(/[^a-z0-9\s]/g, ' ')
@@ -177,12 +208,99 @@ const answerClassStaffQuestion = async (text = '') => {
   return `Dạ, lớp **${lop.tenLop}** hiện chưa có dữ liệu Huynh trưởng hoặc Dự trưởng phụ trách trong hệ thống.`;
 };
 
+// ── Lịch phụng vụ ────────────────────────────────────────────────────────────
+function computeEaster(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day   = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+function addDays(date, n) {
+  const d = new Date(date); d.setDate(d.getDate() + n); return d;
+}
+
+function getAdvent1(year) {
+  // First Sunday of Advent = Sunday on or before Dec 3
+  const dec3 = new Date(year, 11, 3);
+  return new Date(year, 11, 3 - dec3.getDay());
+}
+
+function getLiturgicalContext(now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const year  = today.getFullYear();
+
+  const easter   = computeEaster(year);
+  const ashWed   = addDays(easter, -46);
+  const pentecost = addDays(easter, 49);
+  const advent1  = getAdvent1(year);
+  const easterPrev = computeEaster(year - 1);
+  const pentecostPrev = addDays(easterPrev, 49);
+  const ashWedPrev = addDays(easterPrev, -46);
+
+  // Liturgical year A/B/C — determined by the year Advent started
+  const adventYear = today >= advent1 ? year : year - 1;
+  const yearLetter = ['A', 'B', 'C'][((adventYear - 2022) % 3 + 3) % 3];
+
+  // Season & week
+  let season, weekNum;
+
+  if (today >= advent1) {
+    season  = 'Mùa Vọng';
+    weekNum = Math.floor((today - advent1) / 864e5 / 7) + 1;
+  } else if (today >= new Date(year, 11, 25)) {
+    season  = 'Mùa Giáng Sinh';
+    weekNum = null;
+  } else if (today >= pentecost) {
+    season  = 'Mùa Thường Niên';
+    // Approximate OT week: count from Baptism of Lord (Jan 13) + weeks before Lent + weeks after Pentecost
+    const baptism = new Date(year, 0, 13);
+    const weeksBeforeLent = Math.ceil((ashWed - baptism) / 864e5 / 7);
+    const weeksAfterPent  = Math.floor((today - pentecost) / 864e5 / 7);
+    weekNum = weeksBeforeLent + 1 + weeksAfterPent;
+  } else if (today >= addDays(easter, 1)) {
+    season  = 'Mùa Phục Sinh';
+    weekNum = Math.floor((today - easter) / 864e5 / 7) + 1;
+  } else if (today >= ashWed) {
+    season  = 'Mùa Chay';
+    weekNum = Math.floor((today - ashWed) / 864e5 / 7) + 1;
+  } else if (today >= new Date(year, 0, 13)) {
+    season  = 'Mùa Thường Niên';
+    weekNum = Math.floor((today - new Date(year, 0, 13)) / 864e5 / 7) + 2;
+  } else if (today >= new Date(year, 0, 1) && today < new Date(year, 0, 13)) {
+    season  = 'Mùa Giáng Sinh';
+    weekNum = null;
+  } else {
+    // Fallback: after prev year's Pentecost before prev year's Advent shouldn't happen here
+    season  = 'Mùa Thường Niên';
+    weekNum = null;
+  }
+
+  const easterStr = easter.toLocaleDateString('vi-VN', { day: '2-digit', month: 'long' });
+  const ashWedStr = ashWed.toLocaleDateString('vi-VN', { day: '2-digit', month: 'long' });
+
+  return {
+    line: `Năm Phụng Vụ ${adventYear}–${adventYear + 1} · Năm ${yearLetter} · ${season}${weekNum ? ` tuần ${weekNum}` : ''} · Lễ Phục Sinh ${year}: ${easterStr} · Thứ Tư Lễ Tro: ${ashWedStr}`,
+    season,
+    yearLetter,
+    weekNum,
+    easter,
+    ashWed,
+  };
+}
+
 async function getDynamicContext() {
   if (_contextCache.data && Date.now() - _contextCache.ts < CACHE_TTL) return _contextCache.data;
 
   const [postsRes, eventsRes, classesRes] = await Promise.allSettled([
     Post.find({ daDang: true }).sort('-createdAt').limit(4).select('tieuDe createdAt loai').lean(),
-    CountdownEvent.find({ active: true, date: { $gte: new Date() } }).sort('date').limit(4).select('name date icon').lean(),
+    CountdownEvent.find({ active: true, date: { $gte: new Date().toISOString().slice(0, 10) } }).sort('date').limit(4).select('name date icon').lean(),
     Class.find()
       .sort({ thuTu: 1 })
       .select('tenLop nhanh huynhTruong duTruong')
@@ -191,9 +309,11 @@ async function getDynamicContext() {
       .lean(),
   ]);
 
-  const today  = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-  const posts  = postsRes.value  || [];
-  const events = eventsRes.value || [];
+  const now     = new Date();
+  const today   = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const liturgy = getLiturgicalContext(now);
+  const posts   = postsRes.value  || [];
+  const events  = eventsRes.value || [];
   const classes = classesRes.value || [];
   const classStaff = classes.length
     ? classes.map((lop) => {
@@ -206,7 +326,7 @@ async function getDynamicContext() {
     }).join('\n')
     : '- Chua co du lieu phu trach lop.';
 
-  const ctx = `\n\nDỮ LIỆU THỰC TẾ XỨ ĐOÀN:\nHôm nay: ${today}\nTin tức mới:\n${
+  const ctx = `\n\nDỮ LIỆU THỰC TẾ XỨ ĐOÀN:\nHôm nay: ${today}\nLỊCH PHỤNG VỤ: ${liturgy.line}\nLưu ý: Khi được hỏi "Lời Chúa hôm nay", hãy dựa vào thông tin phụng vụ trên để xác định đúng bài đọc theo sách Phụng Vụ Các Giờ Kinh và lịch Công giáo La Mã — trích dẫn chính xác sách, chương, câu.\nTin tức mới:\n${
     posts.length ? posts.map(p => `• ${p.tieuDe} (${new Date(p.createdAt).toLocaleDateString('vi-VN')})`).join('\n') : '• Chưa có.'
   }\nSự kiện sắp tới:\n${
     events.length ? events.map(e => `• ${e.icon || '📅'} ${e.name}: ${new Date(e.date).toLocaleDateString('vi-VN')}`).join('\n') : '• Chưa có.'
@@ -216,27 +336,175 @@ async function getDynamicContext() {
   return ctx;
 }
 
-// ── Chuyển file buffer thành part cho Gemini ──────────────────────────────────
+// ── User-specific context (điểm danh, chuyên cần) ────────────────────────────
+const _userCtxCache = new Map(); // userId → { data, ts }
+const USER_CTX_TTL  = 5 * 60 * 1000;
+
+async function getUserContext(user) {
+  if (!user) return '';
+  const uid = user._id.toString();
+  const cached = _userCtxCache.get(uid);
+  if (cached && Date.now() - cached.ts < USER_CTX_TTL) return cached.data;
+
+  let ctx = '';
+
+  try {
+    const activeNamHoc = await NamHoc.findOne({ dangHoatDong: true }).lean();
+
+    // ── Huynh trưởng / Dự trưởng ─────────────────────────────────────────────
+    if (user.vaiTro === 'giaoly' && user.lopPhuTrach?.length) {
+      const classes = await Class.find({ _id: { $in: user.lopPhuTrach } })
+        .select('tenLop nhanh').lean();
+
+      const fourWeeksAgo = new Date();
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+      const fourWeeksAgoStr = fourWeeksAgo.toISOString().slice(0, 10);
+
+      const classLines = await Promise.all(classes.map(async (lop) => {
+        const students = await Student.find({ lop: lop._id, trangThai: 'active' })
+          .select('hoTen tenThanh').lean();
+
+        const attendance = await Attendance.find({
+          lop: lop._id,
+          date: { $gte: fourWeeksAgoStr },
+        }).select('student date present').lean();
+
+        // Đếm số buổi vắng trong 4 tuần theo từng học sinh
+        const absentCount = {};
+        for (const rec of attendance) {
+          if (!rec.present) {
+            const sid = rec.student.toString();
+            absentCount[sid] = (absentCount[sid] || 0) + 1;
+          }
+        }
+
+        const absentFrequent = students
+          .filter(s => (absentCount[s._id.toString()] || 0) >= 2)
+          .map(s => `${s.tenThanh} ${s.hoTen}`);
+
+        // Chuyên cần học kỳ hiện tại
+        let ccLines = '';
+        if (activeNamHoc) {
+          const ccList = await ChuyenCan.find({
+            lop: lop._id,
+            namHoc: activeNamHoc._id,
+          }).populate('student', 'hoTen tenThanh').lean();
+
+          if (ccList.length) {
+            const avg = (ccList.reduce((s, c) => s + c.diem, 0) / ccList.length).toFixed(1);
+            ccLines = `\n  Điểm chuyên cần TB (${activeNamHoc.ten}): ${avg}/10`;
+          }
+        }
+
+        return `- Lớp ${lop.tenLop} (${lop.nhanh}): ${students.length} em` +
+          (absentFrequent.length ? `\n  Vắng nhiều ≥2/4 tuần: ${absentFrequent.join(', ')}` : '') +
+          ccLines;
+      }));
+
+      ctx += `\n\nLỚP PHỤ TRÁCH CỦA HUYNH TRƯỞNG:\n${classLines.join('\n')}`;
+    }
+
+    // ── Phụ huynh ─────────────────────────────────────────────────────────────
+    if (user.vaiTro === 'PARENT') {
+      const links = await ParentStudent.find({ parent: user._id, trangThai: 'active' })
+        .populate({ path: 'student', select: 'hoTen tenThanh', populate: { path: 'lop', select: 'tenLop nhanh' } })
+        .lean();
+
+      if (links.length && activeNamHoc) {
+        const studentIds = links.map(l => l.student._id);
+        const ccAll = await ChuyenCan.find({
+          student: { $in: studentIds },
+          namHoc: activeNamHoc._id,
+        }).lean();
+
+        const ccMap = {};
+        for (const cc of ccAll) {
+          const sid = cc.student.toString();
+          if (!ccMap[sid]) ccMap[sid] = [];
+          ccMap[sid].push(cc);
+        }
+
+        const childLines = links.map(l => {
+          const s   = l.student;
+          const lop = s.lop;
+          const ccs = ccMap[s._id.toString()] || [];
+          const ccStr = ccs.map(cc =>
+            `HK${cc.hocKy}: đi ${cc.soBuoiDi}/${cc.tongBuoi} buổi, vắng phép: ${cc.vangCoPhep}, không phép: ${cc.vangKhongPhep}, điểm: ${cc.diem}/10`
+          ).join(' | ');
+          return `- ${s.tenThanh} ${s.hoTen}, lớp ${lop?.tenLop || '?'} (${lop?.nhanh || '?'})` +
+            (ccStr ? `\n  Chuyên cần ${activeNamHoc.ten}: ${ccStr}` : '');
+        });
+
+        ctx += `\n\nCON CỦA PHỤ HUYNH:\n${childLines.join('\n')}`;
+      }
+    }
+  } catch (err) {
+    console.error('[getUserContext] Error:', err.message);
+  }
+
+  _userCtxCache.set(uid, { data: ctx, ts: Date.now() });
+  return ctx;
+}
+
+// ── Chat history handlers ─────────────────────────────────────────────────────
+const MAX_HISTORY_MSGS = 60;
+
+exports.getHistory = async (req, res) => {
+  try {
+    const doc = await ChatHistory.findOne({ user: req.user._id }).lean();
+    res.json({ success: true, messages: doc?.messages || [] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Không thể tải lịch sử chat.' });
+  }
+};
+
+exports.saveHistoryHandler = async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages)) return res.status(400).json({ success: false, message: 'messages phải là mảng.' });
+
+    const keep = messages.slice(-MAX_HISTORY_MSGS).map(m => ({
+      id:          m.id,
+      role:        m.role,
+      text:        m.parts?.[0]?.text || m.text || '',
+      fileName:    m.fileName || null,
+      suggestions: m.suggestions || [],
+      isError:     !!m.isError,
+      ts:          m.ts || new Date(),
+    }));
+
+    await ChatHistory.findOneAndUpdate(
+      { user: req.user._id },
+      { messages: keep },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Không thể lưu lịch sử chat.' });
+  }
+};
+
+exports.clearHistoryHandler = async (req, res) => {
+  try {
+    await ChatHistory.deleteOne({ user: req.user._id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Không thể xóa lịch sử chat.' });
+  }
+};
+
 async function buildFilePart(file) {
   const mime = file.mimetype;
 
-  // Ảnh & PDF: gửi trực tiếp qua inlineData (Gemini đọc native)
   if (mime.startsWith('image/') || mime === 'application/pdf') {
-    return {
-      inlineData: {
-        mimeType: mime,
-        data: file.buffer.toString('base64'),
-      },
-    };
+    return { inlineData: { mimeType: mime, data: file.buffer.toString('base64') } };
   }
 
-  // DOCX: dùng mammoth trích xuất text
   if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     const { value } = await mammoth.extractRawText({ buffer: file.buffer });
     return { text: `\n[📝 Nội dung tệp Word: "${file.originalname}"]\n${value.slice(0, 12000)}` };
   }
 
-  // TXT: đọc thẳng
   if (mime === 'text/plain') {
     const text = file.buffer.toString('utf-8');
     return { text: `\n[📃 Nội dung tệp: "${file.originalname}"]\n${text.slice(0, 12000)}` };
@@ -245,86 +513,80 @@ async function buildFilePart(file) {
   return null;
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
+function validateMessages(raw) {
+  let messages;
+  try {
+    messages = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return { error: 'Dữ liệu chat gửi lên không đúng định dạng JSON.' };
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return { error: 'messages là bắt buộc.' };
+  }
+
+  messages = messages
+    .map((m) => ({
+      role: m.role,
+      parts: [{ text: String(m.parts?.[0]?.text || '').trim() }],
+    }))
+    .filter((m) =>
+      (m.role === 'user' || m.role === 'model') && m.parts[0].text.length > 0
+    );
+
+  if (messages.length === 0) return { error: 'Tin nhắn không được để trống.' };
+
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage.role !== 'user') return { error: 'Tin nhắn cuối phải là của người dùng.' };
+
+  return { messages, lastMessage };
+}
+
+function createModel(genAI, systemInstruction, isFile = false) {
+  return genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    systemInstruction,
+    generationConfig: isFile ? GEN_CONFIG_FILE : GEN_CONFIG,
+    safetySettings: SAFETY_SETTINGS,
+  });
+}
+
+function handleGeminiError(err) {
+  if (err.message?.includes('SAFETY'))
+    return { status: 200, message: 'Câu hỏi này anh/chị không thể trả lời. Mời hỏi về Giáo lý, Kinh Thánh hoặc sinh hoạt xứ đoàn nhé! 🙏' };
+  if (err.status === 429 || err.message?.includes('429'))
+    return { status: 429, message: 'Trợ lý Xứ Đoàn đang bận. Vui lòng thử lại sau ít phút nhé! 🙏' };
+  if (err.status === 404 || err.message?.includes('404') || err.message?.includes('is not found'))
+    return { status: 503, message: 'Model AI đang cấu hình không còn khả dụng. Vui lòng báo quản trị viên kiểm tra GEMINI_MODEL.' };
+  if (err.message?.includes('API key') || err.message?.includes('403') || err.message?.includes('401'))
+    return { status: 503, message: 'Khoá Gemini API chưa hợp lệ hoặc chưa được cấp quyền.' };
+  return { status: 500, message: 'Trợ lý Xứ Đoàn đang gặp sự cố kỹ thuật. Thử lại sau nhé! 🙏' };
+}
+
+// ── Handler: POST /api/chat (file upload, non-streaming) ──────────────────────
 exports.chat = async (req, res) => {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(503).json({ success: false, message: 'Trợ lý Xứ Đoàn chưa được kích hoạt. Liên hệ quản trị viên nhé!' });
   }
 
   try {
-    // messages có thể là JSON string (khi gửi FormData) hoặc object (khi gửi JSON)
-    const rawMessages = req.body.messages;
-    let messages;
-    try {
-      messages = typeof rawMessages === 'string' ? JSON.parse(rawMessages) : rawMessages;
-    } catch {
-      return res.status(400).json({ success: false, message: 'Dữ liệu chat gửi lên không đúng định dạng JSON.' });
-    }
-
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ success: false, message: 'messages là bắt buộc.' });
-    }
-
-    messages = messages
-      .map((m) => ({
-        role: m.role,
-        parts: [{ text: String(m.parts?.[0]?.text || '').trim() }],
-      }))
-      .filter((m) =>
-        (m.role === 'user' || m.role === 'model') &&
-        m.parts[0].text.length > 0
-      );
-
-    const isValid = messages.every(m =>
-      (m.role === 'user' || m.role === 'model') &&
-      Array.isArray(m.parts) &&
-      typeof m.parts[0]?.text === 'string'
-    );
-    if (messages.length === 0) {
-      return res.status(400).json({ success: false, message: 'Tin nhắn không được để trống.' });
-    }
-    if (!isValid) return res.status(400).json({ success: false, message: 'Định dạng messages không hợp lệ.' });
-
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role !== 'user') {
-      return res.status(400).json({ success: false, message: 'Tin nhắn cuối phải là của người dùng.' });
-    }
+    const { messages, lastMessage, error } = validateMessages(req.body.messages);
+    if (error) return res.status(400).json({ success: false, message: error });
 
     const deterministicAnswer = await answerClassStaffQuestion(lastMessage.parts[0].text);
-    if (deterministicAnswer) {
-      return res.json({ success: true, text: deterministicAnswer });
-    }
+    if (deterministicAnswer) return res.json({ success: true, text: deterministicAnswer });
 
-    // ── Xử lý file đính kèm ──
-    const hasFile = !!req.file;
-    let filePart  = null;
-
-    if (hasFile) {
-      filePart = await buildFilePart(req.file);
-      // File buffer đã được xử lý xong — memory sẽ tự giải phóng (không có disk file để xóa)
-    }
-
-    // ── Dynamic context + education mode ──
-    const dynamicCtx     = await getDynamicContext();
+    const hasFile   = !!req.file;
+    const filePart  = hasFile ? await buildFilePart(req.file) : null;
+    const [dynamicCtx, userCtx] = await Promise.all([getDynamicContext(), getUserContext(req.user)]);
     const educationExtra = hasFile ? EDUCATION_INSTRUCTION : '';
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      systemInstruction: SYSTEM_INSTRUCTION + dynamicCtx + educationExtra,
-      generationConfig: {
-        maxOutputTokens: hasFile ? 1200 : 600,  // cho phép dài hơn khi xử lý tệp
-        temperature: 0.75,
-        topP: 0.9,
-      },
-      safetySettings: SAFETY_SETTINGS,
-    });
+    const model = createModel(genAI, SYSTEM_INSTRUCTION + dynamicCtx + userCtx + educationExtra, hasFile);
 
-    const history     = messages.slice(0, -1).slice(-18);
-    const chat        = model.startChat({ history });
-
-    // ── Xây dựng parts cho tin nhắn cuối ──
-    const parts = [...lastMessage.parts]; // copy text parts
+    const history = messages.slice(0, -1).slice(-18);
+    const chat    = model.startChat({ history });
+    const parts   = [...lastMessage.parts];
     if (filePart) parts.push(filePart);
 
     const result = await chat.sendMessage(parts);
@@ -333,23 +595,61 @@ exports.chat = async (req, res) => {
     res.json({ success: true, text });
   } catch (err) {
     console.error('[ChatController] Error:', err.message);
+    const { status, message } = handleGeminiError(err);
+    res.status(status === 200 ? 200 : status).json({ success: status === 200, text: status === 200 ? message : undefined, message: status !== 200 ? message : undefined });
+  }
+};
 
-    if (err.message?.includes('SAFETY')) {
-      return res.json({ success: true, text: 'Câu hỏi này anh/chị không thể trả lời. Mời hỏi về Giáo lý, Kinh Thánh hoặc sinh hoạt xứ đoàn nhé! 🙏' });
-    }
-    if (err.status === 429 || err.message?.includes('429')) {
-      return res.status(429).json({ success: false, message: 'Trợ lý Xứ Đoàn đang bận. Vui lòng thử lại sau ít phút nhé! 🙏' });
-    }
-    if (err.status === 404 || err.message?.includes('404') || err.message?.includes('is not found')) {
-      return res.status(503).json({ success: false, message: 'Model AI đang cấu hình không còn khả dụng. Vui lòng báo quản trị viên kiểm tra GEMINI_MODEL.' });
-    }
-    if (err.message?.includes('API key') || err.message?.includes('403') || err.message?.includes('401')) {
-      return res.status(503).json({ success: false, message: 'Khoá Gemini API chưa hợp lệ hoặc chưa được cấp quyền. Vui lòng báo quản trị viên.' });
-    }
-    if (err.message?.includes('JSON')) {
-      return res.status(400).json({ success: false, message: 'Dữ liệu gửi lên không hợp lệ.' });
+// ── Handler: POST /api/chat/stream (SSE streaming) ───────────────────────────
+exports.chatStream = async (req, res) => {
+  if (!process.env.GEMINI_API_KEY) {
+    res.status(503).json({ success: false, message: 'Trợ lý Xứ Đoàn chưa được kích hoạt.' });
+    return;
+  }
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const sendEvent = (data) => {
+    if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+  const done = () => {
+    if (!res.writableEnded) { res.write('data: [DONE]\n\n'); res.end(); }
+  };
+
+  try {
+    const { messages, lastMessage, error } = validateMessages(req.body.messages);
+    if (error) { sendEvent({ error }); done(); return; }
+
+    const deterministicAnswer = await answerClassStaffQuestion(lastMessage.parts[0].text);
+    if (deterministicAnswer) { sendEvent({ text: deterministicAnswer }); done(); return; }
+
+    const [dynamicCtx, userCtx] = await Promise.all([getDynamicContext(), getUserContext(req.user)]);
+    const genAI      = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model      = createModel(genAI, SYSTEM_INSTRUCTION + dynamicCtx + userCtx);
+
+    const history = messages.slice(0, -1).slice(-18);
+    const chat    = model.startChat({ history });
+
+    req.on('close', () => { res.end(); });
+
+    const result = await chat.sendMessageStream(lastMessage.parts);
+
+    for await (const chunk of result.stream) {
+      if (res.writableEnded) break;
+      const text = chunk.text();
+      if (text) sendEvent({ text });
     }
 
-    res.status(500).json({ success: false, message: 'Trợ lý Xứ Đoàn đang gặp sự cố kỹ thuật. Thử lại sau nhé! 🙏' });
+    done();
+  } catch (err) {
+    console.error('[ChatStream] Error:', err.message);
+    const { message } = handleGeminiError(err);
+    sendEvent({ error: message });
+    done();
   }
 };

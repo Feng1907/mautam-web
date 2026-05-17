@@ -2,15 +2,63 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Send, Trash2, ChevronDown, Minus, Paperclip, Mic, MicOff,
+  Copy, Check, ArrowDown,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
-// ── File helpers ──────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const ACCEPTED_TYPES = '.pdf,.docx,.txt,.jpg,.jpeg,.png,.webp';
 const MAX_SIZE_MB    = 5;
 const BOT_LOGO_SRC   = '/logos/logos doan thieu nhi MT.jpg';
+const STREAM_URL     = '/api/chat/stream';
 
+// ── Server history helpers ────────────────────────────────────────────────────
+const serializeMessages = (messages) =>
+  messages.filter(m => m.role === 'user' || m.role === 'model').map(m => ({
+    id:          m.id,
+    role:        m.role,
+    text:        m.parts?.[0]?.text || '',
+    fileName:    m.fileName || null,
+    suggestions: m.suggestions || [],
+    isError:     !!m.isError,
+    ts:          m.ts || new Date().toISOString(),
+  }));
+
+const deserializeMessages = (raw) =>
+  (raw || []).map(m => ({
+    id:          m.id || Date.now() + Math.random(),
+    role:        m.role,
+    parts:       [{ text: m.text || '' }],
+    fileName:    m.fileName || null,
+    suggestions: m.suggestions || [],
+    isError:     !!m.isError,
+    ts:          m.ts,
+  }));
+
+// ── Bible verse intent detection ──────────────────────────────────────────────
+// Matches: "Ga 3,16"  "Mt 5,1-12"  "1Cr 13,4-7"  "Tv 23"  "Kh 21,1"
+const BIBLE_VERSE_RE = /^((?:\d\s*)?[A-ZÀ-Ỹa-zà-ỹ]{1,4})\s+(\d{1,3})(?:[,;](\d{1,3}(?:-\d{1,3})?))?\.?\s*$/;
+
+const expandBibleIntent = (text) => {
+  const m = text.trim().match(BIBLE_VERSE_RE);
+  if (!m) return text;
+  const ref = `${m[1]} ${m[2]}${m[3] ? `,${m[3]}` : ''}`;
+  return `Giải thích câu Kinh Thánh ${ref} cho em hiểu: bối cảnh, ý nghĩa và áp dụng vào cuộc sống.`;
+};
+
+// ── Suggestion parser ─────────────────────────────────────────────────────────
+const SUGGESTION_RE = /\[GỢI Ý:\s*"([^"]+)"\s*(?:\|\s*"([^"]+)")?\s*(?:\|\s*"([^"]+)")?\s*\]\s*$/;
+
+const parseSuggestions = (text = '') => {
+  const m = text.match(SUGGESTION_RE);
+  if (!m) return { text, suggestions: [] };
+  const suggestions = [m[1], m[2], m[3]].filter(Boolean);
+  const clean = text.slice(0, m.index).trimEnd();
+  return { text: clean, suggestions };
+};
+
+// ── Message helpers ───────────────────────────────────────────────────────────
 const toApiMessage = (msg) => ({
   role: msg.role,
   parts: [{ text: String(msg.parts?.[0]?.text || '').trim() }],
@@ -27,7 +75,7 @@ const buildApiHistory = (messages, userText) => {
 
   const completedTurns = [];
   for (let i = 0; i < clean.length - 1; i += 1) {
-    const userMsg = clean[i];
+    const userMsg  = clean[i];
     const modelMsg = clean[i + 1];
     if (userMsg.role === 'user' && modelMsg.role === 'model') {
       completedTurns.push(userMsg, modelMsg);
@@ -53,23 +101,21 @@ const fmtSize = (bytes) =>
     ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
     : `${Math.round(bytes / 1024)} KB`;
 
-// ── Câu hỏi gợi ý nhanh ──────────────────────────────────────────────────────
+// ── Quick actions ─────────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-  { icon: '🕐', label: 'Giờ lễ hôm nay',        text: 'Cho anh/chị hỏi giờ lễ hôm nay là mấy giờ?' },
-  { icon: '📖', label: 'Giáo lý cơ bản',         text: 'Giáo lý cơ bản của đạo Công giáo là gì?' },
-  { icon: '🏫', label: 'Các ngành xứ đoàn',      text: 'Xứ đoàn mình có những ngành nào?' },
-  { icon: '📅', label: 'Sự kiện sắp tới',        text: 'Xứ đoàn mình có sự kiện gì sắp tới không?' },
-  { icon: '🙏', label: 'Ý nghĩa Thánh Lễ',       text: 'Thánh Lễ có ý nghĩa gì với người Công giáo?' },
-  { icon: '🌿', label: 'Mùa phụng vụ hiện tại',  text: 'Hiện tại chúng ta đang ở mùa phụng vụ nào?' },
+  { icon: '📖', label: 'Lời Chúa',         text: 'Lời Chúa hôm nay là gì? Cho em nghe một đoạn Kinh Thánh ý nghĩa.' },
+  { icon: '🕐', label: 'Giờ lễ',           text: 'Cho anh/chị hỏi giờ lễ hôm nay là mấy giờ?' },
+  { icon: '✝️', label: 'Kinh Thánh',       text: 'Giải thích câu Kinh Thánh Ga 3,16 cho em hiểu với?' },
+  { icon: '📅', label: 'Sự kiện',          text: 'Xứ đoàn mình có sự kiện gì sắp tới không?' },
 ];
 
-const GREETING = `Chào các em! 👋 Anh là **Trợ lý Xứ Đoàn** — trợ lý ảo của Xứ Đoàn Anrê Phú Yên 🕊️
+const GREETING = `Chào các em! 👋 Anh là **Trợ lý Xứ Đoàn** của Xứ Đoàn Anrê Phú Yên 🕊️
 
 Anh có thể giúp các em về:
-- Giờ lễ & lịch sinh hoạt
-- Giáo lý & Kinh Thánh
-- Các ngành & hoạt động xứ đoàn
-- Hỗ trợ tinh thần đức tin
+- 📖 Giải thích Kinh Thánh (Cựu Ước & Tân Ước)
+- ✝️ Giáo lý, Bí tích, đời sống đức tin
+- 🏫 Sinh hoạt, lịch lễ, sự kiện xứ đoàn
+- 🙏 Giải đáp thắc mắc đức tin
 
 Các em cứ thoải mái hỏi nhé! 😊`;
 
@@ -88,33 +134,25 @@ const roleTitle = (user) => {
 const buildGreeting = (user) => {
   if (!user) return GREETING;
 
-  const title = roleTitle(user);
-  const name = firstName(user.hoTen);
+  const title      = roleTitle(user);
+  const name       = firstName(user.hoTen);
   const classNames = (user.lopPhuTrach || [])
     .map((lop) => lop?.tenLop || lop?.name)
     .filter(Boolean);
 
   if (user.vaiTro === 'giaoly' && classNames.length) {
-    return `Chào ${title} ${name}! 👋
-
-Hôm nay Trợ lý Xứ Đoàn đã sẵn sàng hỗ trợ lớp **${classNames.join(', ')}** của ${title.toLowerCase()}.
-
-${title === 'Trưởng' ? 'Nếu có đoàn sinh vắng hoặc đi trễ, anh có thể giúp soạn tin nhắn nhắc phụ huynh thật nhanh.' : 'Anh có thể hỗ trợ tra lịch sinh hoạt, giáo lý, điểm danh và soạn thông báo cho phụ huynh.'}`;
+    return `Chào ${title} ${name}! 👋\n\nHôm nay Trợ lý Xứ Đoàn đã sẵn sàng hỗ trợ lớp **${classNames.join(', ')}** của ${title.toLowerCase()}.\n\n${title === 'Trưởng' ? 'Nếu có đoàn sinh vắng hoặc đi trễ, anh có thể giúp soạn tin nhắn nhắc phụ huynh thật nhanh.' : 'Anh có thể hỗ trợ tra lịch sinh hoạt, giáo lý, điểm danh và soạn thông báo cho phụ huynh.'}`;
   }
 
-  return `Chào ${title ? `${title} ` : ''}${name || user.hoTen || 'anh/chị'}! 👋
-
-Anh là **Trợ lý Xứ Đoàn** của Xứ Đoàn Anrê Phú Yên.
-
-Anh có thể hỗ trợ tra lịch sinh hoạt, tin tức, giáo lý, điểm danh và soạn thông báo khi cần.`;
+  return `Chào ${title ? `${title} ` : ''}${name || user.hoTen || 'anh/chị'}! 👋\n\nAnh là **Trợ lý Xứ Đoàn** của Xứ Đoàn Anrê Phú Yên.\n\nAnh có thể giải thích Kinh Thánh, giải đáp giáo lý, tra lịch sinh hoạt và hỗ trợ nhiều hơn. Anh/chị cứ thoải mái hỏi nhé!`;
 };
 
-// ── Markdown renderer (bold, italic, code, bullet, numbered) ─────────────────
+// ── Markdown renderer ─────────────────────────────────────────────────────────
 const parseInline = (text) => {
   if (!text) return null;
   const result = [];
   let rest = text;
-  let key = 0;
+  let key  = 0;
 
   const PATTERNS = [
     { re: /\*\*(.*?)\*\*/, El: 'strong' },
@@ -133,7 +171,7 @@ const parseInline = (text) => {
     if (!earliest.match) { result.push(rest); break; }
     if (earliest.index > 0) result.push(rest.slice(0, earliest.index));
     const { El } = earliest.p;
-    const inner = earliest.match[1];
+    const inner  = earliest.match[1];
     if (El === 'code') {
       result.push(<code key={key++} className="bg-gray-100 dark:bg-slate-700 px-1 py-0.5 rounded text-[11.5px] font-mono text-[#8B0000]">{inner}</code>);
     } else if (El === 'strong') {
@@ -149,47 +187,53 @@ const parseInline = (text) => {
 
 const renderMarkdown = (text) => {
   if (!text) return null;
-  const lines = text.split('\n');
+  const lines    = text.split('\n');
   const elements = [];
-  let listItems = [];
+  let listItems  = [];
+  let listType   = null;
 
-  const flushList = (type) => {
+  const flushList = () => {
     if (!listItems.length) return;
-    const Tag = type === 'ol' ? 'ol' : 'ul';
+    const Tag = listType === 'ol' ? 'ol' : 'ul';
     elements.push(
-      <Tag key={`list-${elements.length}`} className={`${type === 'ol' ? 'list-decimal' : 'list-disc'} pl-4 my-1 space-y-0.5`}>
+      <Tag key={`list-${elements.length}`} className={`${listType === 'ol' ? 'list-decimal' : 'list-disc'} pl-4 my-1 space-y-0.5`}>
         {listItems.map((item, i) => <li key={i}>{parseInline(item)}</li>)}
       </Tag>
     );
     listItems = [];
+    listType  = null;
   };
 
   lines.forEach((line, i) => {
-    // Numbered list: "1. " "2. "
-    const numMatch = line.match(/^(\d+)\.\s+(.*)/);
-    if (numMatch) { listItems.push(numMatch[2]); return; }
-
-    // Bullet: "- " or "• "
+    const numMatch    = line.match(/^(\d+)\.\s+(.*)/);
     const bulletMatch = line.match(/^[-•]\s+(.*)/);
-    if (bulletMatch) { flushList('ul'); listItems.push(bulletMatch[1]); return; }
 
-    flushList(listItems.length ? 'ul' : null);
+    if (numMatch) {
+      if (listType !== 'ol') { flushList(); listType = 'ol'; }
+      listItems.push(numMatch[2]);
+      return;
+    }
+    if (bulletMatch) {
+      if (listType !== 'ul') { flushList(); listType = 'ul'; }
+      listItems.push(bulletMatch[1]);
+      return;
+    }
 
-    // Heading: "## " or "### "
+    flushList();
+
     const h2 = line.match(/^##\s+(.*)/);
     if (h2) { elements.push(<p key={i} className="font-bold text-[#3d1515] mt-2 mb-0.5">{parseInline(h2[1])}</p>); return; }
 
-    // Empty line = spacing
     if (!line.trim()) { elements.push(<div key={i} className="h-1.5" />); return; }
 
     elements.push(<p key={i} className="leading-relaxed">{parseInline(line)}</p>);
   });
 
-  flushList(listItems.length ? 'ul' : null);
+  flushList();
   return <div className="space-y-0.5">{elements}</div>;
 };
 
-// ── Trích tên người dùng từ lịch sử chat ─────────────────────────────────────
+// ── Trích tên người dùng ──────────────────────────────────────────────────────
 const extractUserName = (msgs) => {
   const patterns = [
     /(?:tên\s+(?:mình|tôi|em|con|anh|chị)\s+là|mình\s+tên|tôi\s+tên|em\s+tên|gọi\s+(?:mình|tôi|em)\s+(?:là|tên))\s+([A-ZÀ-Ỹa-zà-ỹ][a-zà-ỹ]{1,15})/i,
@@ -206,34 +250,78 @@ const extractUserName = (msgs) => {
   return null;
 };
 
-// ── Typing effect hook ────────────────────────────────────────────────────────
-// Reveals text progressively; speed adapts so total time ≈ 2–3s
-const useTypingEffect = (fullText, enabled) => {
-  const [displayed, setDisplayed] = useState('');
-  const [done, setDone] = useState(false);
+// ── Copy button ───────────────────────────────────────────────────────────────
+const CopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (!enabled || !fullText) { setDisplayed(fullText || ''); setDone(true); return; }
-    setDisplayed('');
-    setDone(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
 
-    const CHARS_PER_TICK = Math.max(3, Math.ceil(fullText.length / 80)); // ≈80 ticks → ~2.4s at 30ms
-    const INTERVAL_MS    = 30;
-    let pos = 0;
-
-    const timer = setInterval(() => {
-      pos = Math.min(pos + CHARS_PER_TICK, fullText.length);
-      setDisplayed(fullText.slice(0, pos));
-      if (pos >= fullText.length) { clearInterval(timer); setDone(true); }
-    }, INTERVAL_MS);
-
-    return () => clearInterval(timer);
-  }, [fullText, enabled]);
-
-  return { displayed, done };
+  return (
+    <button
+      onClick={copy}
+      title={copied ? 'Đã sao chép' : 'Sao chép'}
+      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-gray-300 hover:text-gray-500 hover:bg-gray-100"
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+    </button>
+  );
 };
 
-// ── Typing indicator (dots while waiting for API) ─────────────────────────────
+// ── Bot bubble ────────────────────────────────────────────────────────────────
+const BotBubble = ({ msg, onSuggestionClick }) => {
+  const text        = msg.parts[0]?.text || '';
+  const isStreaming = msg.isStreaming;
+  const suggestions = msg.suggestions || [];
+
+  return (
+    <div className="flex flex-col gap-1.5 max-w-[85%]">
+      <div className={`group relative rounded-2xl px-3.5 py-2.5 text-[13px] rounded-tl-sm shadow-sm ${
+        msg.isError
+          ? 'bg-red-50 border border-red-200 text-red-700'
+          : 'bg-white border border-[#e5d5b5] text-gray-700'
+      }`}>
+        {isStreaming && !text ? (
+          <TypingDots />
+        ) : (
+          <>
+            {renderMarkdown(text)}
+            {isStreaming && (
+              <span className="inline-block w-0.5 h-3.5 bg-[#8B0000] ml-0.5 animate-pulse align-middle" />
+            )}
+          </>
+        )}
+        {!isStreaming && !msg.isError && text && (
+          <div className="absolute -bottom-3 right-1">
+            <CopyButton text={text} />
+          </div>
+        )}
+      </div>
+
+      {/* Suggestion chips */}
+      {suggestions.length > 0 && !isStreaming && (
+        <div className="flex flex-wrap gap-1.5 mt-0.5">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onSuggestionClick(s)}
+              className="text-[11px] px-2.5 py-1 rounded-full border border-[#D4AF37]/60 bg-amber-50/70 text-[#5a1a1a] hover:bg-amber-100 hover:border-[#D4AF37] transition-all leading-tight text-left"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Typing dots ───────────────────────────────────────────────────────────────
 const TypingDots = () => (
   <div className="flex items-center gap-1 px-1 py-0.5">
     {[0, 1, 2].map(i => (
@@ -246,46 +334,14 @@ const TypingDots = () => (
   </div>
 );
 
-// ── Bubble đơn lẻ (tách ra để dùng typing effect) ────────────────────────────
-const BotBubble = ({ msg }) => {
-  const { displayed, done } = useTypingEffect(
-    msg.parts[0]?.text,
-    msg.isNew === true,
-  );
-
-  const text = msg.isNew ? displayed : (msg.parts[0]?.text || '');
-
-  return (
-    <div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] rounded-tl-sm shadow-sm ${
-      msg.isError
-        ? 'bg-red-50 border border-red-200 text-red-700'
-        : 'bg-white border border-[#e5d5b5] text-gray-700'
-    }`}>
-      {renderMarkdown(text)}
-      {msg.isNew && !done && (
-        <span className="inline-block w-0.5 h-3.5 bg-[#8B0000] ml-0.5 animate-pulse align-middle" />
-      )}
-    </div>
-  );
-};
-
-// ── Avatar huynh ảo ───────────────────────────────────────────────────────────
+// ── Bot avatar ────────────────────────────────────────────────────────────────
 const BotAvatar = ({ typing = false, large = false }) => (
-  <div
-    className={`${large ? 'w-11 h-11' : 'w-8 h-8'} rounded-full bg-white p-0 flex items-center justify-center shrink-0 shadow-md ring-1 ring-[#D4AF37]/45 select-none overflow-hidden ${
-      typing ? 'animate-pulse ring-4 ring-[#D4AF37]/25' : ''
-    }`}
-  >
-    <img
-      src={BOT_LOGO_SRC}
-      alt="Logo Xứ Đoàn"
-      className="w-full h-full rounded-full object-cover object-center"
-      draggable="false"
-    />
+  <div className={`${large ? 'w-11 h-11' : 'w-8 h-8'} rounded-full bg-white flex items-center justify-center shrink-0 shadow-md ring-1 ring-[#D4AF37]/45 select-none overflow-hidden ${typing ? 'animate-pulse' : ''}`}>
+    <img src={BOT_LOGO_SRC} alt="Logo Xứ Đoàn" className="w-full h-full rounded-full object-cover object-center" draggable="false" />
   </div>
 );
 
-// ── Confirm xoá ──────────────────────────────────────────────────────────────
+// ── Confirm delete ────────────────────────────────────────────────────────────
 const ConfirmDelete = ({ onConfirm, onCancel }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.9, y: -4 }}
@@ -295,33 +351,23 @@ const ConfirmDelete = ({ onConfirm, onCancel }) => (
   >
     <p className="text-xs text-gray-600 mb-2.5 leading-snug">Xoá toàn bộ lịch sử chat?</p>
     <div className="flex gap-2">
-      <button onClick={onConfirm}
-        className="flex-1 text-[11px] font-semibold bg-red-600 text-white rounded-lg py-1.5 hover:bg-red-700 transition">
-        Xoá
-      </button>
-      <button onClick={onCancel}
-        className="flex-1 text-[11px] font-semibold bg-gray-100 text-gray-600 rounded-lg py-1.5 hover:bg-gray-200 transition">
-        Huỷ
-      </button>
+      <button onClick={onConfirm} className="flex-1 text-[11px] font-semibold bg-red-600 text-white rounded-lg py-1.5 hover:bg-red-700 transition">Xoá</button>
+      <button onClick={onCancel}  className="flex-1 text-[11px] font-semibold bg-gray-100 text-gray-600 rounded-lg py-1.5 hover:bg-gray-200 transition">Huỷ</button>
     </div>
   </motion.div>
 );
 
-// ── Minimized pill ───────────────────────────────────────────────────────────
+// ── Minimized pill ────────────────────────────────────────────────────────────
 const MinimizedPill = ({ userName, hasNew, onExpand }) => (
   <motion.div
-    initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: 8 }}
+    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
     className="fixed bottom-20 right-4 sm:right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl shadow-lg cursor-pointer select-none"
     style={{ background: 'linear-gradient(135deg, #8B0000, #5a1010)' }}
     onClick={onExpand}
   >
     <BotAvatar />
     <div className="min-w-0">
-      <p className="text-white font-bold text-[12px] leading-tight">
-        Trợ lý Xứ Đoàn {userName ? `· ${userName}` : ''}
-      </p>
+      <p className="text-white font-bold text-[12px] leading-tight">Trợ lý Xứ Đoàn {userName ? `· ${userName}` : ''}</p>
       {hasNew && <p className="text-white/70 text-[10px]">Có tin nhắn mới 💬</p>}
     </div>
     <ChevronDown size={14} className="text-white/60 rotate-180" />
@@ -333,35 +379,48 @@ const MinimizedPill = ({ userName, hasNew, onExpand }) => (
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ChatWidget() {
   const { user } = useAuth();
-  const [open,       setOpen]       = useState(false);
-  const [minimized,  setMinimized]  = useState(false);
-  const [messages,   setMessages]   = useState([]);
-  const [input,      setInput]      = useState('');
-  const [loading,    setLoading]    = useState(false);
-  const [hasNew,     setHasNew]     = useState(false);
-  const [greeted,    setGreeted]    = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [listening,  setListening]  = useState(false);
+
+  const [open,        setOpen]        = useState(false);
+  const [minimized,   setMinimized]   = useState(false);
+  const [messages,    setMessages]    = useState([]);
+  const [input,       setInput]       = useState('');
+  const [loading,     setLoading]     = useState(false);
+  const [streaming,   setStreaming]   = useState(false);
+  const [hasNew,      setHasNew]      = useState(false);
+  const [greeted,     setGreeted]     = useState(false);
+  const [showDelete,  setShowDelete]  = useState(false);
+  const [listening,   setListening]   = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
+  const [showScrollBtn, setShowScrollBtn]   = useState(false);
 
-  const [attachedFile,    setAttachedFile]    = useState(null); // File object
-  const [attachedPreview, setAttachedPreview] = useState(null); // DataURL for images
+  const [attachedFile,    setAttachedFile]    = useState(null);
+  const [attachedPreview, setAttachedPreview] = useState(null);
 
-  const bottomRef  = useRef(null);
-  const inputRef   = useRef(null);
-  const fileInputRef = useRef(null);
+  const bottomRef      = useRef(null);
+  const inputRef       = useRef(null);
+  const fileInputRef   = useRef(null);
   const recognitionRef = useRef(null);
-  const voiceBaseRef = useRef('');
+  const voiceBaseRef   = useRef('');
+  const messagesRef    = useRef(null);
+  const abortRef       = useRef(null);
+
   const greetingText = useMemo(() => buildGreeting(user), [user]);
+  const userName     = useMemo(() => extractUserName(messages), [messages]);
 
-  // Tên người dùng được trích từ lịch sử chat
-  const userName = useMemo(() => extractUserName(messages), [messages]);
-
-  // Lần đầu mở → hiện lời chào
+  // Init greeting / restore history from server
   useEffect(() => {
     if (open && !greeted) {
       setGreeted(true);
-      setMessages([{ role: 'model', parts: [{ text: greetingText }] }]);
+      api.get('/chat/history').then(res => {
+        const msgs = deserializeMessages(res.data?.messages);
+        if (msgs.length > 0) {
+          setMessages(msgs);
+        } else {
+          setMessages([{ id: 0, role: 'model', parts: [{ text: greetingText }] }]);
+        }
+      }).catch(() => {
+        setMessages([{ id: 0, role: 'model', parts: [{ text: greetingText }] }]);
+      });
     }
     if (open && !minimized) {
       setHasNew(false);
@@ -369,49 +428,56 @@ export default function ChatWidget() {
     }
   }, [open, greeted, minimized, greetingText]);
 
+  // Voice recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setVoiceSupported(false);
-      return undefined;
-    }
+    if (!SpeechRecognition) { setVoiceSupported(false); return undefined; }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'vi-VN';
+    const recognition         = new SpeechRecognition();
+    recognition.lang          = 'vi-VN';
     recognition.interimResults = true;
-    recognition.continuous = false;
+    recognition.continuous    = false;
 
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
-        .map((result) => result[0]?.transcript || '')
-        .join(' ')
-        .trim();
+        .map((r) => r[0]?.transcript || '').join(' ').trim();
       setInput(`${voiceBaseRef.current}${voiceBaseRef.current && transcript ? ' ' : ''}${transcript}`);
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend  = () => setListening(false);
     recognition.onerror = () => setListening(false);
     recognitionRef.current = recognition;
 
-    return () => {
-      recognitionRef.current?.abort?.();
-      recognitionRef.current = null;
-    };
+    return () => { recognitionRef.current?.abort?.(); recognitionRef.current = null; };
   }, []);
 
-  // Auto-scroll khi có tin nhắn mới
+  // Auto scroll
   useEffect(() => {
-    if (!minimized) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, minimized]);
+    if (!minimized && !showScrollBtn) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading, minimized, showScrollBtn]);
 
+  // Scroll to bottom button visibility
+  const handleScroll = useCallback(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBtn(distFromBottom > 120);
+  }, []);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowScrollBtn(false);
+  };
+
+  // ── Send message ────────────────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
-    const userText = (text ?? input).trim();
-    if (!userText || loading) return;
+    const userText = expandBibleIntent((text ?? input).trim());
+    if ((!userText && !attachedFile) || loading || streaming) return;
 
     setInput('');
     setLoading(true);
     setShowDelete(false);
 
-    const fileToSend = attachedFile;
+    const fileToSend    = attachedFile;
     const previewToSend = attachedPreview;
     setAttachedFile(null);
     setAttachedPreview(null);
@@ -421,42 +487,145 @@ export default function ChatWidget() {
       ? `${userText ? userText + '\n' : ''}📎 ${fileToSend.name}`
       : userText;
 
-    const userMsg = { role: 'user', parts: [{ text: userText || `[Tệp đính kèm: ${fileToSend?.name}]` }], displayText, filePreview: previewToSend, fileName: fileToSend?.name };
+    const userMsg = {
+      id: Date.now(),
+      role: 'user',
+      parts: [{ text: userText || `[Tệp đính kèm: ${fileToSend?.name}]` }],
+      displayText,
+      filePreview: previewToSend,
+      fileName: fileToSend?.name,
+    };
     setMessages(prev => [...prev, userMsg]);
 
-    try {
-      const history = buildApiHistory(messages, userText || `[Tệp đính kèm: ${fileToSend?.name}]`);
+    const history = buildApiHistory(messages, userText || `[Tệp đính kèm: ${fileToSend?.name}]`);
 
-      let res;
+    try {
+      // ── File upload: non-streaming ──────────────────────────────────────────
       if (fileToSend) {
         const fd = new FormData();
         fd.append('messages', JSON.stringify(history));
         fd.append('file', fileToSend);
-        res = await api.post('/chat', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      } else {
-        res = await api.post('/chat', { messages: history });
+        const res = await api.post('/chat', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+        if (res.data.success) {
+          const { text: cleanText, suggestions } = parseSuggestions(res.data.text || '');
+          const botMsg = { id: Date.now(), role: 'model', parts: [{ text: cleanText }], suggestions };
+          setMessages(prev => {
+            const next = [...prev, botMsg];
+            api.post('/chat/history/save', { messages: serializeMessages(next) }).catch(() => {});
+            return next;
+          });
+        } else {
+          setMessages(prev => [...prev, {
+            id: Date.now(), role: 'model',
+            parts: [{ text: normalizeAssistantName(res.data.message || 'Trợ lý Xứ Đoàn đang gặp sự cố. Thử lại nhé! 🙏') }],
+            isError: true,
+          }]);
+        }
+        return;
       }
 
-      if (res.data.success) {
-        setMessages(prev => [
-          ...prev,
-          { role: 'model', parts: [{ text: res.data.text }], isNew: true },
-        ]);
-        if (!open || minimized) setHasNew(true);
-      } else {
-        setMessages(prev => [...prev, {
-          role: 'model',
-          parts: [{ text: normalizeAssistantName(res.data.message || 'Trợ lý Xứ Đoàn đang gặp sự cố. Thử lại nhé! 🙏') }],
-          isError: true,
-        }]);
+      // ── Text: streaming ─────────────────────────────────────────────────────
+      const msgId = Date.now() + 1;
+      setMessages(prev => [...prev, {
+        id: msgId, role: 'model', parts: [{ text: '' }], isStreaming: true,
+      }]);
+      setLoading(false);
+      setStreaming(true);
+
+      const token = localStorage.getItem('token');
+      abortRef.current = new AbortController();
+      const response = await fetch(STREAM_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ messages: history }),
+        signal: abortRef.current.signal,
+      });
+
+      if (response.status === 401) {
+        throw new Error('AUTH_REQUIRED');
       }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader  = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText  = '';
+      let buffer    = '';
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.error) throw new Error(parsed.error);
+            if (parsed.text) {
+              fullText += parsed.text;
+              setMessages(prev => prev.map(m =>
+                m.id === msgId ? { ...m, parts: [{ text: fullText }] } : m
+              ));
+            }
+          } catch (parseErr) {
+            if (parseErr.message && !parseErr.message.includes('JSON')) throw parseErr;
+          }
+        }
+      }
+
+      const { text: cleanText, suggestions } = parseSuggestions(fullText);
+      setMessages(prev => {
+        const next = prev.map(m =>
+          m.id === msgId
+            ? { ...m, parts: [{ text: cleanText }], isStreaming: false, suggestions }
+            : m
+        );
+        api.post('/chat/history/save', { messages: serializeMessages(next) }).catch(() => {});
+        return next;
+      });
+
+      if (!open || minimized) setHasNew(true);
     } catch (err) {
-      const msg = normalizeAssistantName(err.response?.data?.message || 'Không kết nối được. Vui lòng thử lại sau! 🙏');
-      setMessages(prev => [...prev, { role: 'model', parts: [{ text: msg }], isError: true }]);
+      if (err.name === 'AbortError') {
+        // User cancelled — finalize whatever was streamed
+        setMessages(prev => prev.map(m =>
+          m.isStreaming ? { ...m, isStreaming: false } : m
+        ));
+        return;
+      }
+      const msg = err.message === 'AUTH_REQUIRED'
+        ? 'Vui lòng **đăng nhập** để dùng Trợ lý Xứ Đoàn nhé! 🙏'
+        : normalizeAssistantName(err.response?.data?.message || err.message || 'Không kết nối được. Vui lòng thử lại sau! 🙏');
+      setMessages(prev => {
+        // Replace streaming placeholder if exists, else append
+        const hasPlaceholder = prev.some(m => m.isStreaming);
+        if (hasPlaceholder) {
+          return prev.map(m => m.isStreaming
+            ? { ...m, parts: [{ text: msg }], isStreaming: false, isError: true }
+            : m
+          );
+        }
+        return [...prev, { id: Date.now(), role: 'model', parts: [{ text: msg }], isError: true }];
+      });
     } finally {
       setLoading(false);
+      setStreaming(false);
+      abortRef.current = null;
     }
-  }, [input, loading, messages, open, minimized, attachedFile, attachedPreview]);
+  }, [input, loading, streaming, messages, open, minimized, attachedFile, attachedPreview]);
+
+  const cancelStream = () => {
+    abortRef.current?.abort();
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -487,46 +656,36 @@ export default function ChatWidget() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const clearHistory = () => {
-    setMessages([{ role: 'model', parts: [{ text: greetingText }] }]);
+  const handleClearHistory = () => {
+    cancelStream();
+    api.delete('/chat/history').catch(() => {});
+    setMessages([{ id: 0, role: 'model', parts: [{ text: greetingText }] }]);
     setShowDelete(false);
     setInput('');
     removeFile();
   };
 
   const startVoiceInput = () => {
-    if (!voiceSupported || loading || !recognitionRef.current) return;
+    if (!voiceSupported || loading || streaming || !recognitionRef.current) return;
     voiceBaseRef.current = input.trim();
-    try {
-      recognitionRef.current.start();
-      setListening(true);
-    } catch {
-      setListening(false);
-    }
+    try { recognitionRef.current.start(); setListening(true); }
+    catch { setListening(false); }
   };
 
-  const stopVoiceInput = () => {
-    recognitionRef.current?.stop?.();
-    setListening(false);
-  };
+  const stopVoiceInput = () => { recognitionRef.current?.stop?.(); setListening(false); };
 
   const isEmpty = messages.length <= 1;
 
-  // ── Minimized pill ── (chỉ hiện header nhỏ)
   return (
     <>
-      {/* ── Minimized pill ── */}
+      {/* Minimized pill */}
       <AnimatePresence>
         {open && minimized && (
-          <MinimizedPill
-            userName={userName}
-            hasNew={hasNew}
-            onExpand={() => setMinimized(false)}
-          />
+          <MinimizedPill userName={userName} hasNew={hasNew} onExpand={() => setMinimized(false)} />
         )}
       </AnimatePresence>
 
-      {/* ── Chat window ── */}
+      {/* Chat window */}
       <AnimatePresence>
         {open && !minimized && (
           <motion.div
@@ -537,7 +696,7 @@ export default function ChatWidget() {
             exit={{ opacity: 0, scale: 0.88, y: 20 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
           >
-            {/* ── Header ── */}
+            {/* Header */}
             <div className="relative flex items-center gap-3 px-4 py-3.5 border-b border-[#e5d5b5] shrink-0"
               style={{ background: 'linear-gradient(135deg, #8B0000, #5a1010)' }}>
               <BotAvatar large />
@@ -545,61 +704,49 @@ export default function ChatWidget() {
                 <p className="text-white font-bold text-sm leading-tight">
                   Trợ lý Xứ Đoàn {userName ? <span className="font-normal opacity-75">· {userName}</span> : ''}
                 </p>
-                <p className="text-white/55 text-[10px]">Trợ lý Xứ Đoàn Anrê Phú Yên</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${streaming ? 'bg-yellow-300 animate-pulse' : 'bg-green-400'}`} />
+                  <p className="text-white/60 text-[10px]">
+                    {streaming ? 'Đang trả lời...' : 'Trực tuyến'}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-0.5">
-                {/* Xoá lịch sử */}
-                <button
-                  onClick={() => setShowDelete(s => !s)}
-                  title="Xoá lịch sử chat"
-                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition"
-                >
+                <button onClick={() => setShowDelete(s => !s)} title="Xoá lịch sử chat"
+                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition">
                   <Trash2 size={14} />
                 </button>
-
-                {/* Thu nhỏ */}
-                <button
-                  onClick={() => setMinimized(true)}
-                  title="Thu nhỏ"
-                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition"
-                >
+                <button onClick={() => setMinimized(true)} title="Thu nhỏ"
+                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition">
                   <Minus size={14} />
                 </button>
-
-                {/* Đóng */}
-                <button
-                  onClick={() => setOpen(false)}
-                  title="Đóng"
-                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition"
-                >
+                <button onClick={() => setOpen(false)} title="Đóng"
+                  className="p-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition">
                   <X size={15} />
                 </button>
               </div>
 
-              {/* Confirm xoá dropdown */}
               <AnimatePresence>
                 {showDelete && (
-                  <ConfirmDelete
-                    onConfirm={clearHistory}
-                    onCancel={() => setShowDelete(false)}
-                  />
+                  <ConfirmDelete onConfirm={handleClearHistory} onCancel={() => setShowDelete(false)} />
                 )}
               </AnimatePresence>
             </div>
 
-            {/* ── Messages ── */}
+            {/* Messages */}
             <div
+              ref={messagesRef}
               className="flex-1 overflow-y-auto px-3 py-3 space-y-3 scroll-smooth"
               style={{ fontFamily: '"Be Vietnam Pro", "Inter", sans-serif' }}
               onClick={() => setShowDelete(false)}
+              onScroll={handleScroll}
             >
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'model' && <BotAvatar />}
                   {msg.role === 'user' ? (
                     <div className="max-w-[82%] flex flex-col gap-1.5 items-end">
-                      {/* File thumbnail hoặc badge */}
                       {msg.filePreview && (
                         <img src={msg.filePreview} alt="Ảnh đính kèm"
                           className="max-w-45 rounded-xl border border-white/20 shadow-sm object-cover" />
@@ -617,12 +764,12 @@ export default function ChatWidget() {
                       )}
                     </div>
                   ) : (
-                    <BotBubble msg={msg} />
+                    <BotBubble msg={msg} onSuggestionClick={(s) => sendMessage(s)} />
                   )}
                 </div>
               ))}
 
-              {/* Waiting dots while API call in progress */}
+              {/* Loading dots */}
               {loading && (
                 <div className="flex gap-2 justify-start">
                   <BotAvatar typing />
@@ -634,9 +781,22 @@ export default function ChatWidget() {
               <div ref={bottomRef} />
             </div>
 
-            {/* ── Quick actions ── */}
+            {/* Scroll to bottom FAB */}
             <AnimatePresence>
-              {isEmpty && !loading && (
+              {showScrollBtn && (
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                  onClick={scrollToBottom}
+                  className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-[#e5d5b5] shadow-md text-[11px] text-gray-500 hover:text-[#8B0000] hover:border-[#D4AF37] transition-all"
+                >
+                  <ArrowDown size={12} /> Xuống dưới
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Quick actions */}
+            <AnimatePresence>
+              {isEmpty && !loading && !streaming && (
                 <motion.div
                   className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0"
                   initial={{ opacity: 0, height: 0 }}
@@ -653,23 +813,19 @@ export default function ChatWidget() {
               )}
             </AnimatePresence>
 
-            {/* ── Input ── */}
+            {/* Input area */}
             <div className="px-3 pb-3 pt-2 shrink-0 border-t border-[#e5d5b5]" style={{ background: '#fffcf9' }}>
 
-              {/* File preview strip */}
+              {/* File preview */}
               <AnimatePresence>
                 {attachedFile && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-2 overflow-hidden"
+                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }} className="mb-2 overflow-hidden"
                   >
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-2">
-                      {/* Image thumbnail or file icon */}
                       {attachedPreview ? (
-                        <img src={attachedPreview} alt="preview"
-                          className="w-10 h-10 rounded-lg object-cover shrink-0 border border-amber-200" />
+                        <img src={attachedPreview} alt="preview" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-amber-200" />
                       ) : (
                         <span className="text-xl leading-none shrink-0">{fileIcon(attachedFile.type)}</span>
                       )}
@@ -677,8 +833,7 @@ export default function ChatWidget() {
                         <p className="text-[11px] font-semibold text-[#5a1a1a] truncate">{attachedFile.name}</p>
                         <p className="text-[10px] text-gray-400">{fmtSize(attachedFile.size)}</p>
                       </div>
-                      <button onClick={removeFile}
-                        className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
+                      <button onClick={removeFile} className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
                         <X size={13} />
                       </button>
                     </div>
@@ -688,18 +843,11 @@ export default function ChatWidget() {
 
               {/* Input row */}
               <div className="flex gap-1.5 items-end">
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ACCEPTED_TYPES}
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-                {/* Paperclip button */}
+                <input ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} className="hidden" onChange={handleFileSelect} />
+
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={loading}
+                  disabled={loading || streaming}
                   title="Đính kèm tệp (PDF, Word, TXT, ảnh)"
                   className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
                     attachedFile
@@ -716,14 +864,13 @@ export default function ChatWidget() {
                   onPointerUp={stopVoiceInput}
                   onPointerCancel={stopVoiceInput}
                   onPointerLeave={listening ? stopVoiceInput : undefined}
-                  disabled={loading || !voiceSupported}
+                  disabled={loading || streaming || !voiceSupported}
                   title={voiceSupported ? 'Nhấn giữ để nói' : 'Trình duyệt chưa hỗ trợ nhập giọng nói'}
                   className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
                     listening
                       ? 'bg-red-50 border-[#8B0000] text-[#8B0000] ring-4 ring-red-100'
                       : 'bg-white border-[#e5d5b5] text-gray-400 hover:text-[#8B0000] hover:border-[#D4AF37]'
                   } disabled:opacity-40`}
-                  aria-label="Nhấn giữ để nhập bằng giọng nói"
                 >
                   {listening ? <MicOff size={15} /> : <Mic size={15} />}
                 </button>
@@ -733,7 +880,7 @@ export default function ChatWidget() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={attachedFile ? 'Thêm hướng dẫn cho Trợ lý Xứ Đoàn...' : 'Nhắn tin cho Trợ lý Xứ Đoàn...'}
+                  placeholder={attachedFile ? 'Thêm hướng dẫn cho Trợ lý...' : 'Nhắn tin cho Trợ lý Xứ Đoàn...'}
                   rows={1}
                   disabled={loading}
                   className="flex-1 resize-none text-sm bg-white border border-[#e5d5b5] rounded-xl px-3.5 py-2.5 outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30 transition placeholder:text-gray-300 text-gray-700 disabled:opacity-60 max-h-28 overflow-y-auto"
@@ -743,14 +890,26 @@ export default function ChatWidget() {
                     e.target.style.height = Math.min(e.target.scrollHeight, 112) + 'px';
                   }}
                 />
-                <button
-                  onClick={() => sendMessage()}
-                  disabled={(!input.trim() && !attachedFile) || loading}
-                  className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed text-white"
-                  style={{ background: 'linear-gradient(135deg, #8B0000, #5a1010)' }}
-                >
-                  <Send size={15} />
-                </button>
+
+                {/* Send / Cancel button */}
+                {streaming ? (
+                  <button
+                    onClick={cancelStream}
+                    title="Dừng trả lời"
+                    className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-gray-100 border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                  >
+                    <span className="w-3 h-3 rounded-sm bg-current" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => sendMessage()}
+                    disabled={(!input.trim() && !attachedFile) || loading}
+                    className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed text-white"
+                    style={{ background: 'linear-gradient(135deg, #8B0000, #5a1010)' }}
+                  >
+                    <Send size={15} />
+                  </button>
+                )}
               </div>
 
               <p className="text-[9px] text-gray-300 text-center mt-1.5">
@@ -761,7 +920,7 @@ export default function ChatWidget() {
         )}
       </AnimatePresence>
 
-      {/* ── Floating bubble ── */}
+      {/* Floating bubble */}
       <div className="fixed bottom-24 right-4 sm:bottom-5 sm:right-6 z-50">
         <motion.button
           onClick={() => {
@@ -769,9 +928,7 @@ export default function ChatWidget() {
             else setOpen(o => !o);
           }}
           className={`relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center ${
-            open && !minimized
-              ? 'text-white'
-              : 'bg-white text-[#8B0000] ring-1 ring-[#D4AF37]/45'
+            open && !minimized ? 'text-white' : 'bg-white text-[#8B0000] ring-1 ring-[#D4AF37]/45'
           }`}
           style={{ background: (open && !minimized) ? 'linear-gradient(135deg, #5a1010, #3d0808)' : undefined }}
           whileHover={{ scale: 1.08 }}
@@ -791,24 +948,16 @@ export default function ChatWidget() {
                 exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.18 }}
                 className="w-12 h-12 rounded-full bg-white overflow-hidden shadow-sm ring-1 ring-[#D4AF37]/45"
               >
-                <img
-                  src={BOT_LOGO_SRC}
-                  alt="Mở Trợ lý Xứ Đoàn"
-                  className="w-full h-full rounded-full object-cover object-center"
-                  draggable="false"
-                />
+                <img src={BOT_LOGO_SRC} alt="Mở Trợ lý Xứ Đoàn" className="w-full h-full rounded-full object-cover object-center" draggable="false" />
               </motion.span>
             )}
           </AnimatePresence>
 
           {!greeted && !open && (
-            <span className="absolute inset-0 rounded-full animate-ping opacity-30"
-              style={{ background: '#8B0000' }} />
+            <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: '#8B0000' }} />
           )}
           {(hasNew && (!open || minimized)) && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white text-[8px] font-black text-white flex items-center justify-center">
-              !
-            </span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white text-[8px] font-black text-white flex items-center justify-center">!</span>
           )}
         </motion.button>
 
