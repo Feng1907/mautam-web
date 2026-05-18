@@ -69,9 +69,9 @@ export default defineConfig({
             },
           },
         ],
-        // Trang fallback khi offline hoàn toàn (không cache được)
-        navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // SPA fallback — mọi navigation đều về index.html để React Router xử lý
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/offline\.html$/],
       },
     }),
   ],
