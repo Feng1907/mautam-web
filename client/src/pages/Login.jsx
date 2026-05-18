@@ -33,19 +33,19 @@ const Login = () => {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">✝</div>
-          <h1 className="text-2xl font-bold text-gray-800">Đăng nhập</h1>
-          <p className="text-sm text-gray-500 mt-1">Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Đăng nhập</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</p>
         </div>
 
         <div className="card">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2 mb-4">
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded px-3 py-2 mb-4">
               {error}
             </div>
           )}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
               <input
                 type="email"
                 className="input"
@@ -57,7 +57,7 @@ const Login = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu</label>
               <PasswordInput
                 placeholder="••••••••"
                 value={form.matKhau}
@@ -71,14 +71,14 @@ const Login = () => {
           </form>
           <p className="text-center mt-4 text-sm text-gray-500">
             Quên mật khẩu?{' '}
-            <Link to="/forgot-password" className="text-red-700 hover:underline font-medium">
+            <Link to="/forgot-password" className="text-red-700 dark:text-red-400 hover:underline font-medium">
               Đặt lại tại đây
             </Link>
           </p>
-          <div className="border-t border-gray-100 mt-4 pt-4 text-center">
-            <p className="text-sm text-gray-500">
+          <div className="border-t border-gray-100 dark:border-slate-700 mt-4 pt-4 text-center">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
               Chưa có tài khoản?{' '}
-              <Link to="/dang-ky" className="text-red-700 hover:underline font-medium">
+              <Link to="/dang-ky" className="text-red-700 dark:text-red-400 hover:underline font-medium">
                 Đăng ký ngay
               </Link>
             </p>

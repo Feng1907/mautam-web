@@ -47,20 +47,20 @@ const Signup = () => {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">✝</div>
-          <h1 className="text-2xl font-bold text-gray-800">Tạo tài khoản</h1>
-          <p className="text-sm text-gray-500 mt-1">Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Tạo tài khoản</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</p>
         </div>
 
         <div className="card">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2 mb-4">
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded px-3 py-2 mb-4">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Họ tên *</label>
               <input
                 className="input" placeholder="Nguyễn Văn A"
                 value={form.hoTen} onChange={e => set('hoTen', e.target.value)}
@@ -69,7 +69,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email *</label>
               <input
                 type="email" className="input" placeholder="email@example.com"
                 value={form.email} onChange={e => set('email', e.target.value)}
@@ -78,7 +78,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Số điện thoại</label>
               <input
                 type="tel" className="input" placeholder="0xxxxxxxxx"
                 value={form.soDienThoai} onChange={e => set('soDienThoai', e.target.value)}
@@ -86,7 +86,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu *</label>
               <PasswordInput
                 placeholder="Ít nhất 6 ký tự"
                 value={form.matKhau} onChange={e => set('matKhau', e.target.value)}
@@ -95,7 +95,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Xác nhận mật khẩu *</label>
               <PasswordInput
                 placeholder="Nhập lại mật khẩu"
                 value={form.xacNhanMatKhau} onChange={e => set('xacNhanMatKhau', e.target.value)}
@@ -108,15 +108,15 @@ const Signup = () => {
             </button>
           </form>
 
-          <p className="text-center mt-4 text-sm text-gray-500">
+          <p className="text-center mt-4 text-sm text-gray-500 dark:text-slate-400">
             Đã có tài khoản?{' '}
-            <Link to="/login" className="text-red-700 hover:underline font-medium">
+            <Link to="/login" className="text-red-700 dark:text-red-400 hover:underline font-medium">
               Đăng nhập
             </Link>
           </p>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4 px-2">
+        <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-4 px-2">
           Tài khoản này dùng để xem thông tin xứ đoàn.<br />
           Huynh trưởng / Dự trưởng liên hệ Ban Điều Hành để được cấp quyền.
         </p>
