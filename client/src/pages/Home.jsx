@@ -248,20 +248,13 @@ const CountdownStrip = () => {
 
             {events.map((_, i) => (
               <button key={i} onClick={() => goTo(i)}
-                className="relative rounded-full overflow-hidden transition-all duration-300"
-                style={{ width: i === idx ? 14 : 3, height: 3, background: 'rgba(255,255,255,0.22)' }}
-              >
-                {i === idx && (
-                  <motion.span
-                    key={idx}
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ background: '#F8D444' }}
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: AUTO_ROTATE_MS / 1000, ease: 'linear' }}
-                  />
-                )}
-              </button>
+                className="rounded-full transition-all duration-300"
+                style={{
+                  width: 5, height: 5,
+                  background: i === idx ? '#F8D444' : 'rgba(255,255,255,0.3)',
+                  transform: i === idx ? 'scale(1)' : 'scale(0.7)',
+                }}
+              />
             ))}
 
             <button onClick={() => goTo((idx + 1) % events.length)}
