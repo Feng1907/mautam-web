@@ -4,7 +4,8 @@ const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const { checkAuth } = require('../middlewares/checkAuth');
 const {
   chat, chatStream,
-  getHistory, saveHistoryHandler, clearHistoryHandler,
+  listConversations, createConversation, getConversation,
+  deleteConversation, saveConversation,
 } = require('../controllers/chatController');
 
 const chatLimiter = rateLimit({
@@ -13,16 +14,12 @@ const chatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.user?._id?.toString() || ipKeyGenerator(req),
-  message: {
-    success: false,
-    message: 'Anh/Chị gửi quá nhiều tin nhắn rồi. Vui lòng chờ một chút nhé! 🙏',
-  },
+  message: { success: false, message: 'Anh/Chị gửi quá nhiều tin nhắn rồi. Vui lòng chờ một chút nhé! 🙏' },
 });
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-  'application/pdf',
-  'text/plain',
+  'application/pdf', 'text/plain',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
@@ -35,18 +32,18 @@ const upload = multer({
   },
 }).single('file');
 
-// Lịch sử chat (yêu cầu đăng nhập)
-router.get('/history',      checkAuth, getHistory);
-router.post('/history/save', checkAuth, saveHistoryHandler);
-router.delete('/history',   checkAuth, clearHistoryHandler);
+// ── Conversations ─────────────────────────────────────────────────────────────
+router.get('/conversations',           checkAuth, listConversations);
+router.post('/conversations',          checkAuth, createConversation);
+router.get('/conversations/:id',       checkAuth, getConversation);
+router.delete('/conversations/:id',    checkAuth, deleteConversation);
+router.post('/conversations/:id/save', checkAuth, saveConversation);
 
-// POST /api/chat — file upload (yêu cầu đăng nhập)
+// ── AI chat (yêu cầu đăng nhập) ──────────────────────────────────────────────
 router.post('/', checkAuth, chatLimiter, (req, res, next) => {
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      const msg = err.code === 'LIMIT_FILE_SIZE'
-        ? 'Tệp vượt quá 5MB. Vui lòng chọn tệp nhỏ hơn nhé!'
-        : err.message;
+      const msg = err.code === 'LIMIT_FILE_SIZE' ? 'Tệp vượt quá 5MB.' : err.message;
       return res.status(400).json({ success: false, message: msg });
     }
     if (err) return res.status(400).json({ success: false, message: err.message });
@@ -54,7 +51,6 @@ router.post('/', checkAuth, chatLimiter, (req, res, next) => {
   });
 }, chat);
 
-// POST /api/chat/stream — SSE streaming (yêu cầu đăng nhập)
 router.post('/stream', checkAuth, chatLimiter, chatStream);
 
 module.exports = router;
