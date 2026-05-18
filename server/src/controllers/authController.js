@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { logAction } = require('../utils/auditLog');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -50,6 +51,7 @@ exports.login = async (req, res, next) => {
 
     // Đăng nhập thành công — reset counter
     await User.updateOne({ _id: user._id }, { loginAttempts: 0, lockUntil: null });
+    logAction(req, 'login', 'user', user.hoTen);
 
     const token = signToken(user._id);
     user.matKhau = undefined;
@@ -134,6 +136,7 @@ exports.register = async (req, res, next) => {
     }
 
     user.matKhau = undefined;
+    logAction(req, 'create', 'user', `${hoTen} (${email})`);
     // Luôn trả về matKhauTam để admin copy thủ công nếu email thất bại
     res.status(201).json({ success: true, data: user, matKhauTam, emailSent });
   } catch (err) {
@@ -169,6 +172,7 @@ exports.adminResetPassword = async (req, res, next) => {
       emailSent = false;
     }
 
+    logAction(req, 'grant', 'user', `Reset mật khẩu: ${user.hoTen}`);
     res.json({ success: true, matKhauMoi, emailSent });
   } catch (err) {
     next(err);

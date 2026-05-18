@@ -8,6 +8,7 @@ const Student = require('../models/Student');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const { sendPushToUsers } = require('../utils/pushNotifier');
+const logger = require('../utils/logger');
 
 const resolveNamHocId = async (namHocId) => {
   if (namHocId) return namHocId;
@@ -242,7 +243,7 @@ exports.createAbsenceRequest = async (req, res, next) => {
             <p><strong>Lý do:</strong> ${reason}</p>
           </div>
         `,
-      }).catch(() => {});
+      }).catch((err) => logger.warn('absenceRequest email failed', { studentId: student._id, error: err.message }));
     }
 
     if (huynhTruong?._id) {
@@ -253,7 +254,7 @@ exports.createAbsenceRequest = async (req, res, next) => {
         badge: '/favicon.svg',
         url: '/admin/lop-hoc',
         type: 'absence-request',
-      }).catch(() => {});
+      }).catch((err) => logger.warn('absenceRequest push failed', { studentId: student._id, error: err.message }));
     }
 
     res.status(201).json({
@@ -318,7 +319,7 @@ exports.createLinkRequest = async (req, res, next) => {
         icon: '/favicon.svg',
         url: '/admin/phu-huynh',
         type: 'link-request',
-      }).catch(() => {});
+      }).catch((err) => logger.warn('linkRequest push failed', { userId: req.user._id, error: err.message }));
     }
 
     res.status(201).json({ success: true, message: 'Đã gửi yêu cầu liên kết, chờ admin duyệt.', data: link });

@@ -25,6 +25,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import PushNotificationManager from './components/PushNotificationManager';
 import ChatWidget from './components/ChatWidget';
 import PageTransition from './components/PageTransition';
+import RealtimeToasts from './components/RealtimeToasts';
 
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -57,6 +58,7 @@ const AdminRBAC = lazy(() => import('./pages/admin/AdminRBAC'));
 const AdminBackup = lazy(() => import('./pages/admin/AdminBackup'));
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
 const AdminParentLink = lazy(() => import('./pages/admin/AdminParentLink'));
+const AdminAssignments = lazy(() => import('./pages/admin/AdminAssignments'));
 
 const ConditionalFooter = () => {
   const { pathname } = useLocation();
@@ -141,6 +143,7 @@ const AnimatedRoutes = () => {
               <Route path="sao-luu" element={withErrorBoundary(<AdminBackup />, 'AdminBackup')} />
               <Route path="su-kien" element={withErrorBoundary(<AdminEvents />, 'AdminEvents')} />
               <Route path="phu-huynh" element={withErrorBoundary(<AdminParentLink />, 'AdminParentLink')} />
+              <Route path="phan-cong" element={withErrorBoundary(<AdminAssignments />, 'AdminAssignments')} />
             </Route>
           </Routes>
         </Suspense>
@@ -157,6 +160,7 @@ const App = () => (
         <HelmetProvider>
           <BrowserRouter>
             <PushNotificationManager />
+            <RealtimeToasts />
             <ChatWidget />
             <Navbar />
             <NavbarOffset />

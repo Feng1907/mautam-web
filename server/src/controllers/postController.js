@@ -3,6 +3,9 @@ const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const { notifyUrgentPostPublished } = require('../utils/pushNotifier');
 const sanitizeHtml = require('sanitize-html');
+const logger = require('../utils/logger');
+const { logAction } = require('../utils/auditLog');
+const { getIO } = require('../config/socket');
 
 const notFoundMessage = 'Khong tim thay bai viet';
 
@@ -57,7 +60,7 @@ const sendUrgentPostEmail = async (post) => {
     to: emailList,
     subject: `[KHAN] ${post.tieuDe}`,
     html: htmlBody,
-  }).catch(() => {});
+  }).catch((err) => logger.warn('sendUrgentPostEmail failed', { postId: post._id, error: err.message }));
 };
 
 const notifyUrgentPostIfPublished = async (post, wasPublished = false) => {
@@ -112,7 +115,10 @@ exports.create = async (req, res, next) => {
   try {
     const post = await Post.create({ ...sanitizePost({ ...req.body }), tacGia: req.user._id });
     const pushResult = await notifyUrgentPostIfPublished(post);
-
+    logAction(req, 'create', 'post', post.tieuDe);
+    if (post.daDang) {
+      try { getIO().emit('post:new', { id: post._id, tieuDe: post.tieuDe, loai: post.loai, slug: post.slug }); } catch { /* ignore */ }
+    }
     res.status(201).json({ success: true, data: post, push: pushResult });
   } catch (err) {
     next(err);
@@ -132,7 +138,10 @@ exports.update = async (req, res, next) => {
     });
 
     const pushResult = await notifyUrgentPostIfPublished(post, previous.daDang);
-
+    logAction(req, 'update', 'post', post.tieuDe);
+    if (post.daDang && !previous.daDang) {
+      try { getIO().emit('post:new', { id: post._id, tieuDe: post.tieuDe, loai: post.loai, slug: post.slug }); } catch { /* ignore */ }
+    }
     res.json({ success: true, data: post, push: pushResult });
   } catch (err) {
     next(err);
@@ -145,6 +154,7 @@ exports.remove = async (req, res, next) => {
     const post = await Post.findByIdAndDelete(req.params.id);
     if (!post)
       return res.status(404).json({ success: false, message: notFoundMessage });
+    logAction(req, 'delete', 'post', post.tieuDe);
     res.json({ success: true, message: 'Da xoa bai viet' });
   } catch (err) {
     next(err);

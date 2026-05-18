@@ -39,34 +39,6 @@ const AVATAR_COLORS = ['bg-red-400','bg-blue-500','bg-emerald-500','bg-amber-400
 const avatarBg   = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 const initials   = (name = '') => name.split(' ').filter(Boolean).slice(-2).map(w => w[0].toUpperCase()).join('');
 
-// ─── Mock log generator seeded by user list ───────────────────────────────────
-const TARGETS_BY_ROLE = {
-  admin:       ['Cấu hình hệ thống', 'Năm học 2025–2026', 'Tài khoản mới', 'Quyền Huynh trưởng', 'Bài viết thông báo', 'Xuất toàn đoàn'],
-  huynhtruong: ['Lớp Thiếu Nhi 1', 'Lớp Nghĩa Sĩ 2', 'Điểm danh tuần 18', 'Bảng điểm HK1', 'Đoàn sinh mới', 'Lịch lễ tuần 42'],
-  dutruong:    ['Lớp Ấu Nhi 2A', 'Lớp Xưng Tội 3B', 'Điểm CC đoàn sinh', 'Bài viết sự kiện', 'Avatar đoàn sinh', 'Điểm miệng HK2'],
-  giaoly:      ['Lớp Chiên Non', 'Điểm danh Chúa Nhật', 'Bảng điểm HK2', 'Email phụ huynh', 'Đoàn sinh #47', 'Lớp Thêm Sức 2'],
-  user:        ['Hồ sơ cá nhân', 'Thông tin liên hệ'],
-};
-
-const buildMockLogs = (users) => {
-  if (!users.length) return [];
-  const actions = ['create', 'update', 'delete', 'grant', 'login', 'export'];
-  return Array.from({ length: 40 }, (_, i) => {
-    const user   = users[i % users.length];
-    const role   = user.vaiTro === 'admin' ? 'admin' : (user.chucVu || user.vaiTro || 'user');
-    const targets = TARGETS_BY_ROLE[role] ?? TARGETS_BY_ROLE.user;
-    return {
-      id:        i + 1,
-      userId:    user._id,
-      user,
-      action:    actions[i % actions.length],
-      target:    targets[(i * 3) % targets.length],
-      ip:        `192.168.1.${10 + (i % 25)}`,
-      device:    ['Chrome / Windows', 'Safari / iOS', 'Firefox / Mac', 'Chrome / Android'][i % 4],
-      timestamp: new Date(Date.now() - i * 3_600_000 * (1 + (i % 3))).toISOString(),
-    };
-  });
-};
 
 const fmt = (iso) =>
   new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -167,17 +139,17 @@ export default function AdminAuditLog() {
   const [filterUserId, setFilterUserId] = useState('');
   const [page, setPage]             = useState(1);
 
-  // Fetch real users, then build mock logs seeded by them
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get('/users');
-        const list = res.data?.data ?? res.data ?? [];
-        setUsers(list);
-        // Replace with: const logRes = await api.get('/audit-logs'); setLogs(logRes.data)
-        setLogs(buildMockLogs(list));
+        const [usersRes, logsRes] = await Promise.all([
+          api.get('/users'),
+          api.get('/audit-logs?limit=200'),
+        ]);
+        setUsers(Array.isArray(usersRes.data?.data) ? usersRes.data.data : []);
+        setLogs(Array.isArray(logsRes.data?.data) ? logsRes.data.data : []);
       } catch {
-        setLogs(buildMockLogs([]));
+        setLogs([]);
       } finally {
         setLoading(false);
       }
