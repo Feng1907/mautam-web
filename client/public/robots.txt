@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mautam.net/sitemap.xml
+Sitemap: https://mautam-web.vercel.app/sitemap.xml
