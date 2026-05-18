@@ -601,8 +601,8 @@ const Home = () => {
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42, duration: 0.5 }}
-            className="text-white/80 max-w-md mx-auto leading-relaxed drop-shadow mb-12"
-            style={{ fontFamily: SERIF, fontSize: '1.05rem', fontStyle: 'italic' }}
+            className="text-white max-w-md mx-auto leading-relaxed mb-12"
+            style={{ fontFamily: SERIF, fontSize: '1.05rem', fontStyle: 'italic', textShadow: '0 1px 8px rgba(0,0,0,0.85), 0 0px 2px rgba(0,0,0,0.9)' }}
           >
             {t('home.quote')}
           </motion.p>
@@ -742,8 +742,7 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.4 }}
-            className="rounded-3xl p-7 border relative overflow-hidden"
-            style={{ ...glassStyle, background: 'linear-gradient(135deg, rgba(139,0,0,0.06) 0%, rgba(255,252,249,0.95) 100%)' }}
+            className="rounded-3xl p-7 border border-[#D4AF37]/20 dark:border-[#D4AF37]/10 relative overflow-hidden bg-[#fffcf9] dark:bg-slate-800/90"
           >
             {/* Watermark chữ thập chìm */}
             <span className="absolute -right-6 -bottom-6 select-none pointer-events-none"
@@ -751,13 +750,12 @@ const Home = () => {
                   aria-hidden="true">✝</span>
 
             {/* Label */}
-            <p className="text-[10px] uppercase tracking-[0.3em] text-[#8B0000] font-semibold mb-3" style={{ fontFamily: SANS }}>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[#8B0000] dark:text-red-400 font-semibold mb-3" style={{ fontFamily: SANS }}>
               {t('home.patronSection')}
             </p>
 
             {/* Tên Chân Phước — EB Garamond, vàng đồng */}
             <div className="flex items-start gap-2 mb-1">
-              {/* Nhành dương liễu — biểu tượng tử đạo */}
               <span className="text-2xl mt-0.5 select-none shrink-0" title="Nhành Dương Liễu — biểu tượng tử đạo" aria-hidden="true">🌿</span>
               <h2
                 className="font-bold leading-tight"
@@ -774,14 +772,14 @@ const Home = () => {
               <div className="h-px w-6 bg-[#D4AF37]/40" />
             </div>
 
-            <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed ml-8" style={{ fontFamily: SANS }}>
+            <p className="text-gray-600 dark:text-slate-200 text-sm leading-relaxed ml-8" style={{ fontFamily: SANS }}>
               {t('home.patronDesc')}
             </p>
 
             {/* Quote */}
             <p
-              className="mt-4 ml-8 font-semibold italic"
-              style={{ fontFamily: SERIF, color: '#8B0000', fontSize: '0.95rem' }}
+              className="mt-4 ml-8 font-semibold italic text-[#8B0000] dark:text-red-400"
+              style={{ fontFamily: SERIF, fontSize: '0.95rem' }}
             >
               {t('home.quote')}
             </p>
@@ -944,7 +942,7 @@ const Home = () => {
           {/* Section header */}
           <div className="flex items-center gap-3 mb-8">
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(212,175,55,0.4), transparent)' }} />
-            <h2 className="text-xl font-bold text-[#3d1515] shrink-0" style={{ fontFamily: SERIF }}>
+            <h2 className="text-xl font-bold text-[#3d1515] dark:text-amber-200 shrink-0" style={{ fontFamily: SERIF }}>
               Lịch Sử Xứ Đoàn
             </h2>
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, rgba(212,175,55,0.4), transparent)' }} />
@@ -953,12 +951,12 @@ const Home = () => {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             {/* Nội dung lịch sử */}
             <div className="space-y-5">
-              <p className="text-[#3d1515] leading-relaxed" style={{ fontFamily: SERIF, fontSize: '1.08rem' }}>
+              <p className="text-[#3d1515] dark:text-amber-100 leading-relaxed" style={{ fontFamily: SERIF, fontSize: '1.08rem' }}>
                 Xứ Đoàn <strong>Anrê Phú Yên – Mẫu Tâm</strong> được thành lập với tinh thần
                 noi gương Chân Phước Anrê Phú Yên — vị tử đạo trẻ tuổi đã dám sống và chết
                 vì đức tin.
               </p>
-              <p className="text-gray-600 leading-relaxed text-sm" style={{ fontFamily: SANS }}>
+              <p className="text-gray-600 dark:text-slate-300 leading-relaxed text-sm" style={{ fontFamily: SANS }}>
                 Trải qua nhiều giai đoạn phát triển, xứ đoàn không ngừng lớn mạnh với
                 5 ngành: Chiên Non, Ấu Nhi, Thiếu Nhi, Nghĩa Sĩ và Hiệp Sĩ — cùng nhau
                 sống Tin Mừng và phục vụ cộng đoàn.
@@ -997,11 +995,11 @@ const Home = () => {
                   className="relative mb-6 last:mb-0"
                 >
                   {/* Dot */}
-                  <div className="absolute -left-4 top-1.5 w-3 h-3 rounded-full border-2 border-[#D4AF37]"
+                  <div className="absolute -left-4 top-1.5 w-3 h-3 rounded-full border-2 border-[#D4AF37] dark:border-amber-400 dark:bg-slate-800"
                     style={{ background: '#fdf8ec' }} />
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#8B0000] mb-1"
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#8B0000] dark:text-amber-400 mb-1"
                     style={{ fontFamily: SANS }}>{item.year}</p>
-                  <p className="text-sm text-gray-600 leading-relaxed"
+                  <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed"
                     style={{ fontFamily: SANS }}>{item.desc}</p>
                 </motion.div>
               ))}

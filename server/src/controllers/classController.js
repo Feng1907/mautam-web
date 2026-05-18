@@ -2,6 +2,9 @@ const Class = require('../models/Class');
 const NamHoc = require('../models/NamHoc');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const { sendPushToUsers } = require('../utils/pushNotifier');
+const sendEmail = require('../utils/sendEmail');
+const logger = require('../utils/logger');
 
 // GET /api/classes?namHocId=...  (mặc định lấy năm đang hoạt động)
 exports.getAll = async (req, res, next) => {
@@ -164,6 +167,37 @@ exports.assign = async (req, res, next) => {
     const updated = await Class.findById(lop._id)
       .populate('huynhTruong', 'hoTen email')
       .populate('duTruong', 'hoTen email');
+
+    // Notify người vừa được phân công
+    const newIds = [huynhTruongId, ...(duTruongIds || [])].filter(Boolean);
+    if (newIds.length) {
+      const lopName = lop.tenLop;
+      sendPushToUsers(newIds, {
+        title: '📚 Bạn được phân công lớp mới',
+        body: `Bạn vừa được phân công phụ trách lớp ${lopName}.`,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        url: '/lop-hoc',
+        type: 'class-assignment',
+      }).catch((err) => logger.warn('classAssign push failed', { error: err.message }));
+
+      const assignedUsers = await User.find({ _id: { $in: newIds } }).select('hoTen email').lean();
+      for (const u of assignedUsers) {
+        if (!u.email) continue;
+        sendEmail({
+          to: u.email,
+          subject: `[Phân công] Lớp ${lopName}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+              <h3 style="color:#8B0000">📚 Phân công lớp học</h3>
+              <p>Xin chào <strong>${u.hoTen}</strong>,</p>
+              <p>Bạn vừa được phân công phụ trách <strong>lớp ${lopName}</strong>.</p>
+              <p>Vui lòng đăng nhập hệ thống để xem danh sách đoàn sinh.</p>
+            </div>
+          `,
+        }).catch((err) => logger.warn('classAssign email failed', { userId: u._id, error: err.message }));
+      }
+    }
 
     res.json({ success: true, data: updated });
   } catch (err) {
