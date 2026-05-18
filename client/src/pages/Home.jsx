@@ -249,7 +249,7 @@ const CountdownStrip = () => {
             {events.map((_, i) => (
               <button key={i} onClick={() => goTo(i)}
                 className="relative rounded-full overflow-hidden transition-all duration-300"
-                style={{ width: i === idx ? 20 : 4, height: 4, background: 'rgba(255,255,255,0.22)' }}
+                style={{ width: i === idx ? 14 : 3, height: 3, background: 'rgba(255,255,255,0.22)' }}
               >
                 {i === idx && (
                   <motion.span
