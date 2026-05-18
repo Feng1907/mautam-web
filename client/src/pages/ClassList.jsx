@@ -23,7 +23,7 @@ const SLUG_TO_KEY = {
 
 const NGANH_META = {
   ChienNon: {
-    label: 'Chiên Non', short: 'CN',
+    label: 'Chiên Non', short: 'Chiên',
     accent: '#ec4899',
     pill:   'bg-pink-50 border-pink-200 text-pink-700',
     strip:  'bg-pink-400',
@@ -32,7 +32,7 @@ const NGANH_META = {
     icon:   '🕊️',
   },
   AuNhi: {
-    label: 'Ấu Nhi', short: 'ẤN',
+    label: 'Ấu Nhi', short: 'Ấu',
     accent: '#22c55e',
     pill:   'bg-green-50 border-green-200 text-green-700',
     strip:  'bg-green-400',
@@ -41,7 +41,7 @@ const NGANH_META = {
     icon:   '🌿',
   },
   ThieuNhi: {
-    label: 'Thiếu Nhi', short: 'TN',
+    label: 'Thiếu Nhi', short: 'Thiếu',
     accent: '#3b82f6',
     pill:   'bg-blue-50 border-blue-200 text-blue-700',
     strip:  'bg-blue-400',
@@ -50,7 +50,7 @@ const NGANH_META = {
     icon:   '⭐',
   },
   NghiaSi: {
-    label: 'Nghĩa Sĩ', short: 'NS',
+    label: 'Nghĩa Sĩ', short: 'Nghĩa',
     accent: '#eab308',
     pill:   'bg-yellow-50 border-yellow-200 text-yellow-700',
     strip:  'bg-yellow-400',
@@ -59,7 +59,7 @@ const NGANH_META = {
     icon:   '🛡️',
   },
   HiepSi: {
-    label: 'Hiệp Sĩ', short: 'HS',
+    label: 'Hiệp Sĩ', short: 'Hiệp',
     accent: '#f97316',
     pill:   'bg-orange-50 border-orange-200 text-orange-700',
     strip:  'bg-orange-400',

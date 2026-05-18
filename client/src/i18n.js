@@ -24,11 +24,11 @@ const vi = {
     NghiaSi:  'Nghĩa Sĩ',
     HiepSi:   'Hiệp Sĩ',
     short: {
-      ChienNon: 'CN',
-      AuNhi:    'ẤN',
-      ThieuNhi: 'TN',
-      NghiaSi:  'NS',
-      HiepSi:   'HS',
+      ChienNon: 'Chiên',
+      AuNhi:    'Ấu',
+      ThieuNhi: 'Thiếu',
+      NghiaSi:  'Nghĩa',
+      HiepSi:   'Hiệp',
     },
     desc: {
       ChienNon: 'Khai Tâm',
