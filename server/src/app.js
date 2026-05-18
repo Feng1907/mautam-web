@@ -208,6 +208,8 @@ app.use('/subscribe',     require('./routes/subscribe'));
 app.use('/api/events',       require('./routes/events'));
 app.use('/api/admin/stats', require('./routes/adminStats'));
 app.use('/api/chat',       require('./routes/chat'));
+app.use('/api/audit-logs',   require('./routes/auditLogs'));
+app.use('/api/assignments',  require('./routes/assignments'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

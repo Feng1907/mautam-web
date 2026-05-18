@@ -2,6 +2,7 @@ const Student   = require('../models/Student');
 const Grade     = require('../models/Grade');
 const ChuyenCan = require('../models/ChuyenCan');
 const NamHoc    = require('../models/NamHoc');
+const { logAction } = require('../utils/auditLog');
 
 // GET /api/students?lopId=...
 exports.getByClass = async (req, res, next) => {
@@ -37,6 +38,7 @@ const normalizeBody = (body) => ({
 exports.create = async (req, res, next) => {
   try {
     const student = await Student.create(normalizeBody(req.body));
+    logAction(req, 'create', 'student', `${student.tenThanh || ''} ${student.hoTen}`.trim());
     res.status(201).json({ success: true, data: student });
   } catch (err) {
     next(err);
@@ -54,6 +56,7 @@ exports.update = async (req, res, next) => {
     });
     if (!student)
       return res.status(404).json({ success: false, message: 'Không tìm thấy đoàn sinh' });
+    logAction(req, 'update', 'student', `${student.tenThanh || ''} ${student.hoTen}`.trim());
     res.json({ success: true, data: student });
   } catch (err) {
     next(err);
@@ -119,6 +122,7 @@ exports.remove = async (req, res, next) => {
     );
     if (!student)
       return res.status(404).json({ success: false, message: 'Không tìm thấy đoàn sinh' });
+    logAction(req, 'delete', 'student', `${student.tenThanh || ''} ${student.hoTen}`.trim());
     res.json({ success: true, message: 'Đã xoá đoàn sinh' });
   } catch (err) {
     next(err);

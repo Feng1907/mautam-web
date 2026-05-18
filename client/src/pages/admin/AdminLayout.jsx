@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BarChart3, FileText, Users, BookOpen,
   Link2, Calendar, GraduationCap, Download, Shield,
-  History, HardDrive, Timer, ChevronRight, MoreHorizontal, X,
+  History, HardDrive, Timer, ChevronRight, MoreHorizontal, X, ClipboardList,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -22,6 +22,7 @@ const NAV_GROUPS = [
       { to: '/admin/nguoi-dung', label: 'Người dùng',  Icon: Users      },
       { to: '/admin/lop-hoc',    label: 'Lớp học',     Icon: BookOpen   },
       { to: '/admin/phu-huynh',  label: 'Phụ huynh',   Icon: Link2      },
+      { to: '/admin/phan-cong',  label: 'Phân công',   Icon: ClipboardList },
     ],
   },
   {

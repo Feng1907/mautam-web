@@ -165,6 +165,18 @@ exports.upsert = async (req, res, next) => {
         .catch((err) => logger.warn('Gui push diem danh muon that bai', { error: err.message }));
     }
 
+    // Notify admin room khi điểm danh thủ công
+    try {
+      const lop = await Class.findById(lopId).select('tenLop').lean();
+      getIO().to('admin').emit('attendance:saved', {
+        lopId,
+        lopName: lop?.tenLop || lopId,
+        date,
+        teacherName: req.user?.hoTen || 'Huynh trưởng',
+        present,
+      });
+    } catch { /* không làm crash response */ }
+
     res.json({ success: true, data: record });
   } catch (err) {
     next(err);

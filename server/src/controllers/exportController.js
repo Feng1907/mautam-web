@@ -6,6 +6,7 @@ const Grade      = require('../models/Grade');
 const ChuyenCan  = require('../models/ChuyenCan');
 const NamHoc     = require('../models/NamHoc');
 const { LOAI_DIEM, tinhTBHocTap, tinhTongKet, phanLoai: phanLoaiTK } = require('../utils/gradeCalculator');
+const { logAction } = require('../utils/auditLog');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -173,6 +174,7 @@ exports.exportAttendance = async (req, res, next) => {
 
     // ── Gửi file ──
     const fileName = `ChuyenCan_${lop.tenLop.replace(/\s/g, '_')}_${namHoc.ten}.xlsx`;
+    logAction(req, 'export', 'attendance', `Chuyên cần ${lop.tenLop} - ${namHoc.ten}`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
     await wb.xlsx.write(res);
@@ -335,6 +337,7 @@ exports.exportGrades = async (req, res, next) => {
 
     // ── Gửi file ──
     const fileName = `BangDiem_${lop.tenLop.replace(/\s/g, '_')}_HK${hocKy}_${namHoc.ten}.xlsx`;
+    logAction(req, 'export', 'grades', `Bảng điểm ${lop.tenLop} HK${hocKy} - ${namHoc.ten}`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
     await wb.xlsx.write(res);

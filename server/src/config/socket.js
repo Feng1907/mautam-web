@@ -29,6 +29,11 @@ function initSocket(httpServer) {
       socket.leave(`lop:${lopId}`);
     });
 
+    // Admin join room riêng để nhận thông báo hệ thống
+    socket.on('join:admin', () => {
+      socket.join('admin');
+    });
+
     socket.on('disconnect', () => {
       logger.info(`[Socket] disconnected: ${socket.id}`);
     });
