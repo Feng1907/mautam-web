@@ -402,7 +402,7 @@ const TabSelector = ({ activeTab, onSwitch }) => (
             >
               {theme.label}
             </span>
-            <span className="text-[10px] text-center leading-snug" style={{ color: isActive ? `${theme.tabActive.color}88` : 'rgba(255,255,255,0.22)' }}>
+            <span className="text-[12px] text-center leading-snug" style={{ color: isActive ? `${theme.tabActive.color}cc` : 'rgba(255,255,255,0.35)' }}>
               {theme.sublabel}
             </span>
 
@@ -434,12 +434,6 @@ const OTContent = ({ onOpen, theme, mapHighlight, onMapSync }) => {
   <div className="space-y-10">
     {/* BibleMap with parallax */}
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-1 h-4 rounded-full" style={{ background: '#D4AF37' }} />
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#D4AF3788' }}>
-          Địa lý Kinh Thánh · Cận Đông cổ đại
-        </p>
-      </div>
       <motion.div style={{ y: mapParallaxY, willChange: 'transform' }}>
         <ErrorBoundary
           boundaryName="BibleMap"
