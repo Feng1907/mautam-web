@@ -221,7 +221,7 @@ const en = {
   },
   home: {
     subtitle:        'Eucharistic Youth Society',
-    title:           'André Phú Yên – Mẫu Tâm',
+    title:           'Anrê Phú Yên – Mẫu Tâm',
     quote:           '"Repay love with love, life with life."',
     viewLiturgy:     'Mass Times',
     news:            'News',
@@ -230,7 +230,7 @@ const en = {
     loginDesc:       'For Youth Leaders & Catechists',
     nganhTitle:      '5 Groups of the Eucharistic Youth',
     patronSection:   'Patron Saint',
-    patronName:      'Saint André Phú Yên',
+    patronName:      'Saint Anrê Phú Yên',
     patronDesc:      'The first martyr of the Vietnamese Church, martyred on July 26, 1644 in Quảng Nam. Beatified by Pope John Paul II in 1989 and canonized on June 19, 2000.',
     liturgyLink:     'Mass Times',
     liturgyDesc:     'Daily mass schedule & Word of God',
