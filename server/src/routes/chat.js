@@ -1,6 +1,6 @@
 const router      = require('express').Router();
 const multer      = require('multer');
-const rateLimit   = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const { checkAuth } = require('../middlewares/checkAuth');
 const {
   chat, chatStream,
@@ -12,7 +12,7 @@ const chatLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+  keyGenerator: (req) => req.user?._id?.toString() || ipKeyGenerator(req),
   message: {
     success: false,
     message: 'Anh/Chị gửi quá nhiều tin nhắn rồi. Vui lòng chờ một chút nhé! 🙏',
