@@ -11,7 +11,7 @@ const UrgentBanner = () => {
 
   useEffect(() => {
     api.get('/posts', { params: { loai: 'thongbaokhan', limit: 5 } })
-      .then(r => setPosts(r.data.data))
+      .then(r => setPosts(Array.isArray(r.data.data) ? r.data.data : []))
       .catch(() => {});
   }, []);
 

@@ -29,26 +29,18 @@ export default function AdminBackup() {
       URL.revokeObjectURL(url);
       setLastBackup(new Date().toISOString());
       toast(`Xuất ${format.toUpperCase()} thành công`, 'success');
-    } catch {
-      // Fallback mock — remove when API is ready
-      const blob = new Blob([`{"exported":"${new Date().toISOString()}","mock":true}`], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `mautam_backup_${new Date().toISOString().slice(0,10)}.${format}`; a.click();
-      URL.revokeObjectURL(url);
-      setLastBackup(new Date().toISOString());
-      toast(`Xuất ${format.toUpperCase()} thành công`, 'success');
+    } catch (err) {
+      toast(err.response?.data?.message || `Xuất ${format.toUpperCase()} thất bại. Thử lại sau!`, 'error');
     } finally { setLoadingExport(null); }
   };
 
   const handleCloseYear = async () => {
     setClosingYear(true);
     try {
-      // Sẽ gọi: await api.post('/api/promote/close-year')
-      await new Promise(r => setTimeout(r, 2000)); // mock
+      await api.post('/api/promote/close-year');
       toast('Niên học đã được chốt! Toàn bộ đoàn sinh đã lên lớp mới.', 'success', 5000);
-    } catch {
-      toast('Có lỗi xảy ra khi chốt niên học', 'error');
+    } catch (err) {
+      toast(err.response?.data?.message || 'Có lỗi xảy ra khi chốt niên học', 'error');
     } finally { setClosingYear(false); setConfirmClose(false); }
   };
 

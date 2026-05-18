@@ -394,9 +394,9 @@ const AdminDashboard = () => {
     ],
   });
 
-  const users   = usersQ.data   || [];
-  const classes = classesQ.data || [];
-  const posts   = postsQ.data   || [];
+  const users   = Array.isArray(usersQ.data)   ? usersQ.data   : [];
+  const classes = Array.isArray(classesQ.data) ? classesQ.data : [];
+  const posts   = Array.isArray(postsQ.data)   ? postsQ.data   : [];
   const loading = usersQ.isLoading || classesQ.isLoading || postsQ.isLoading;
 
   const stats = {

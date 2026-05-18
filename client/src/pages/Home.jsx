@@ -1,4 +1,5 @@
-﻿import { Link } from 'react-router-dom';
+﻿import DOMPurify from 'dompurify';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -833,11 +834,14 @@ const Home = () => {
                   <p className="text-[#2a0f0f] leading-loose"
                     style={{ fontFamily: SERIF, fontSize: '1.05rem', fontStyle: 'italic' }}
                     dangerouslySetInnerHTML={{
-                      __html: (loiChua?.keyVerse || t('home.quote'))
-                        .replace(
-                          /(\d+)/g,
-                          '<sup style="font-size:0.65em;font-style:normal;font-weight:700;color:#8B0000;margin:0 1px;vertical-align:super;line-height:0;">$1</sup>'
-                        )
+                      __html: DOMPurify.sanitize(
+                        (loiChua?.keyVerse || t('home.quote'))
+                          .replace(
+                            /(\d+)/g,
+                            '<sup style="font-size:0.65em;font-style:normal;font-weight:700;color:#8B0000;margin:0 1px;vertical-align:super;line-height:0;">$1</sup>'
+                          ),
+                        { ADD_TAGS: ['sup'], ADD_ATTR: ['style'] }
+                      )
                     }}
                   />
                   {loiChua?.tinMungTen && (
