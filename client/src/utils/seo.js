@@ -13,4 +13,4 @@ export const toAbsoluteUrl = (url = '') => {
 
 export const pageUrl = (path = '') => toAbsoluteUrl(path || '/');
 
-export const DEFAULT_OG_IMAGE = toAbsoluteUrl('/logos/logos doan thieu nhi MT.jpg');
+export const DEFAULT_OG_IMAGE = 'https://res.cloudinary.com/dy5umkes6/image/upload/v1779085354/logos_doan_thieu_nhi_MT_azith6.jpg';
