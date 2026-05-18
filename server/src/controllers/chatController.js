@@ -3,7 +3,7 @@ const mammoth        = require('mammoth');
 const Class          = require('../models/Class');
 const Post           = require('../models/Post');
 const CountdownEvent = require('../models/CountdownEvent');
-const ChatHistory    = require('../models/ChatHistory');
+const Conversation   = require('../models/Conversation');
 const Student        = require('../models/Student');
 const Attendance     = require('../models/Attendance');
 const ChuyenCan      = require('../models/ChuyenCan');
@@ -446,50 +446,93 @@ async function getUserContext(user) {
   return ctx;
 }
 
-// ── Chat history handlers ─────────────────────────────────────────────────────
-const MAX_HISTORY_MSGS = 60;
+// ── Conversation handlers ─────────────────────────────────────────────────────
+const MAX_CONV_MSGS = 60;
 
-exports.getHistory = async (req, res) => {
+const serializeMsg = (m) => ({
+  id:          m.id,
+  role:        m.role,
+  text:        m.parts?.[0]?.text || m.text || '',
+  fileName:    m.fileName || null,
+  suggestions: m.suggestions || [],
+  isError:     !!m.isError,
+  ts:          m.ts || new Date(),
+});
+
+// GET /api/chat/conversations
+exports.listConversations = async (req, res) => {
   try {
-    const doc = await ChatHistory.findOne({ user: req.user._id }).lean();
-    res.json({ success: true, messages: doc?.messages || [] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Không thể tải lịch sử chat.' });
+    const convs = await Conversation.find({ user: req.user._id })
+      .sort({ updatedAt: -1 })
+      .limit(30)
+      .select('title updatedAt messages')
+      .lean();
+
+    res.json({
+      success: true,
+      conversations: convs.map(c => ({
+        _id:       c._id,
+        title:     c.title,
+        updatedAt: c.updatedAt,
+        preview:   c.messages.filter(m => m.role === 'user').slice(-1)[0]?.text?.slice(0, 60) || '',
+      })),
+    });
+  } catch {
+    res.status(500).json({ success: false, message: 'Không thể tải danh sách cuộc trò chuyện.' });
   }
 };
 
-exports.saveHistoryHandler = async (req, res) => {
+// POST /api/chat/conversations
+exports.createConversation = async (req, res) => {
+  try {
+    const conv = await Conversation.create({ user: req.user._id });
+    res.json({ success: true, conversation: { _id: conv._id, title: conv.title, updatedAt: conv.updatedAt } });
+  } catch {
+    res.status(500).json({ success: false, message: 'Không thể tạo cuộc trò chuyện.' });
+  }
+};
+
+// GET /api/chat/conversations/:id
+exports.getConversation = async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.id, user: req.user._id }).lean();
+    if (!conv) return res.status(404).json({ success: false, message: 'Không tìm thấy.' });
+    res.json({ success: true, messages: conv.messages, title: conv.title });
+  } catch {
+    res.status(500).json({ success: false, message: 'Không thể tải cuộc trò chuyện.' });
+  }
+};
+
+// DELETE /api/chat/conversations/:id
+exports.deleteConversation = async (req, res) => {
+  try {
+    await Conversation.deleteOne({ _id: req.params.id, user: req.user._id });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false, message: 'Không thể xóa cuộc trò chuyện.' });
+  }
+};
+
+// POST /api/chat/conversations/:id/save
+exports.saveConversation = async (req, res) => {
   try {
     const { messages } = req.body;
     if (!Array.isArray(messages)) return res.status(400).json({ success: false, message: 'messages phải là mảng.' });
 
-    const keep = messages.slice(-MAX_HISTORY_MSGS).map(m => ({
-      id:          m.id,
-      role:        m.role,
-      text:        m.parts?.[0]?.text || m.text || '',
-      fileName:    m.fileName || null,
-      suggestions: m.suggestions || [],
-      isError:     !!m.isError,
-      ts:          m.ts || new Date(),
-    }));
+    const keep = messages.slice(-MAX_CONV_MSGS).map(serializeMsg);
+    const conv = await Conversation.findOne({ _id: req.params.id, user: req.user._id });
+    if (!conv) return res.status(404).json({ success: false, message: 'Không tìm thấy.' });
 
-    await ChatHistory.findOneAndUpdate(
-      { user: req.user._id },
-      { messages: keep },
-      { upsert: true, new: true }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Không thể lưu lịch sử chat.' });
-  }
-};
-
-exports.clearHistoryHandler = async (req, res) => {
-  try {
-    await ChatHistory.deleteOne({ user: req.user._id });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Không thể xóa lịch sử chat.' });
+    conv.messages = keep;
+    // Auto-title từ tin nhắn user đầu tiên
+    if (conv.title === 'Cuộc trò chuyện mới') {
+      const first = keep.find(m => m.role === 'user' && m.text);
+      if (first) conv.title = first.text.slice(0, 50).trim();
+    }
+    await conv.save();
+    res.json({ success: true, title: conv.title });
+  } catch {
+    res.status(500).json({ success: false, message: 'Không thể lưu cuộc trò chuyện.' });
   }
 };
 
