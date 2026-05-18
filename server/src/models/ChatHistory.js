@@ -15,6 +15,4 @@ const chatHistorySchema = new mongoose.Schema({
   messages: { type: [messageSchema], default: [] },
 }, { timestamps: true });
 
-chatHistorySchema.index({ user: 1 }, { unique: true });
-
 module.exports = mongoose.model('ChatHistory', chatHistorySchema);
