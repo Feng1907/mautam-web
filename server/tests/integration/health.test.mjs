@@ -5,7 +5,8 @@ const require = createRequire(import.meta.url);
 const request = require('supertest');
 
 // BASE_URL được truyền từ CI (http://localhost:5000) hoặc fallback sang supertest với app
-const BASE_URL = process.env.BASE_URL;
+const raw = process.env.BASE_URL ?? '';
+const BASE_URL = /^https?:\/\/.+/.test(raw) ? raw : null;
 
 describe('Integration — server health', () => {
   it('GET /api/health trả về 200 và success:true', async () => {
