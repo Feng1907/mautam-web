@@ -64,18 +64,36 @@ exports.update = async (req, res, next) => {
 exports.lichSu = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const namHocList = await NamHoc.find().sort('-ngayBatDau');
+    const [namHocList, grades, ccList] = await Promise.all([
+      NamHoc.find().sort('-ngayBatDau').lean(),
+      Grade.find({ student: id }).lean(),
+      ChuyenCan.find({ student: id }).lean(),
+    ]);
 
-    const result = await Promise.all(
-      namHocList.map(async (nh) => {
-        const grades = await Grade.find({ student: id, namHoc: nh._id });
-        const ccList = await ChuyenCan.find({ student: id, namHoc: nh._id });
-        if (!grades.length && !ccList.length) return null;
-        return { namHoc: { _id: nh._id, ten: nh.ten }, grades, chuyenCan: ccList };
+    const gradesByNam = {};
+    for (const g of grades) {
+      const key = g.namHoc.toString();
+      if (!gradesByNam[key]) gradesByNam[key] = [];
+      gradesByNam[key].push(g);
+    }
+    const ccByNam = {};
+    for (const c of ccList) {
+      const key = c.namHoc.toString();
+      if (!ccByNam[key]) ccByNam[key] = [];
+      ccByNam[key].push(c);
+    }
+
+    const result = namHocList
+      .map((nh) => {
+        const key = nh._id.toString();
+        const gs = gradesByNam[key] || [];
+        const cs = ccByNam[key] || [];
+        if (!gs.length && !cs.length) return null;
+        return { namHoc: { _id: nh._id, ten: nh.ten }, grades: gs, chuyenCan: cs };
       })
-    );
+      .filter(Boolean);
 
-    res.json({ success: true, data: result.filter(Boolean) });
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

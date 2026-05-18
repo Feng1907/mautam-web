@@ -3,6 +3,7 @@ const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const { notifyUrgentPostPublished } = require('../utils/pushNotifier');
 const sanitizeHtml = require('sanitize-html');
+const logger = require('../utils/logger');
 
 const notFoundMessage = 'Khong tim thay bai viet';
 
@@ -57,7 +58,7 @@ const sendUrgentPostEmail = async (post) => {
     to: emailList,
     subject: `[KHAN] ${post.tieuDe}`,
     html: htmlBody,
-  }).catch(() => {});
+  }).catch((err) => logger.warn('sendUrgentPostEmail failed', { postId: post._id, error: err.message }));
 };
 
 const notifyUrgentPostIfPublished = async (post, wasPublished = false) => {

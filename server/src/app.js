@@ -163,8 +163,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 app.use('/api', globalLimiter);
-app.post('/api/auth/login',  loginLimiter);
-app.post('/api/auth/signup', loginLimiter);
+app.post('/api/auth/login',           loginLimiter);
+app.post('/api/auth/signup',          loginLimiter);
+app.post('/api/auth/forgot-password', loginLimiter);
 
 app.post('/api/auth/login', authValidators.login);
 app.post('/api/auth/signup', authValidators.signup);

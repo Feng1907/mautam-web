@@ -2,6 +2,7 @@ const ParentStudent = require('../models/ParentStudent');
 const Student = require('../models/Student');
 const User = require('../models/User');
 const { sendPushToUsers } = require('../utils/pushNotifier');
+const logger = require('../utils/logger');
 
 // GET /api/admin/parent-links?search=&status=&page=1&limit=20
 exports.getAll = async (req, res, next) => {
@@ -117,7 +118,7 @@ exports.update = async (req, res, next) => {
         icon: '/favicon.svg',
         url: '/phu-huynh',
         type: 'link-request-result',
-      }).catch(() => {});
+      }).catch((err) => logger.warn('linkRequestResult push failed', { linkId: link._id, error: err.message }));
     }
 
     res.json({ success: true, message: 'Đã cập nhật liên kết', data: link });
