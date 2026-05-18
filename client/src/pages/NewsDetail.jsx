@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, useScroll, useSpring } from 'framer-motion';
@@ -205,7 +206,7 @@ const NewsDetail = () => {
         {/* Article body */}
         <div
           className="rich-text-content"
-          dangerouslySetInnerHTML={{ __html: post.noiDung }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.noiDung) }}
         />
 
         {/* Footer divider */}

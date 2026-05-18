@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
@@ -254,7 +255,7 @@ const ReadingSection = ({ sec, idx }) => {
               : 'text-stone-800 dark:text-slate-200'
           }`}
           style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
-          dangerouslySetInnerHTML={{ __html: richHtml }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(richHtml) }}
         />
       ) : (
         <p className="text-sm text-stone-400 dark:text-slate-500 italic">Nội dung chưa có.</p>

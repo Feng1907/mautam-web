@@ -765,9 +765,9 @@ const ParentDashboard = () => {
     ],
   });
 
-  const students = studentsQ.data || [];
-  const posts    = postsQ.data    || [];
-  const events   = eventsQ.data   || [];
+  const students = Array.isArray(studentsQ.data) ? studentsQ.data : [];
+  const posts    = Array.isArray(postsQ.data)    ? postsQ.data    : [];
+  const events   = Array.isArray(eventsQ.data)   ? eventsQ.data   : [];
   const loading  = studentsQ.isLoading || postsQ.isLoading || eventsQ.isLoading;
   const error    = studentsQ.error?.message || postsQ.error?.message || eventsQ.error?.message || '';
 
@@ -818,7 +818,7 @@ const ParentDashboard = () => {
   const handleExportPdf = () => {
     if (!semesterReport) return;
     const student = selectedStudent;
-    const grades = semesterReport.grades || [];
+    const grades = Array.isArray(semesterReport?.grades) ? semesterReport.grades : [];
     const rows = grades.map((g) => `<tr><td>${scoreTypeLabel[g.loaiDiem] || g.loaiDiem}</td><td>${Number(g.diem).toFixed(1)}</td><td>${g.ghiChu || '—'}</td></tr>`).join('');
     const html = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Báo cáo học kỳ</title>
       <style>body{font-family:sans-serif;padding:32px;color:#111}h1{font-size:20px;margin-bottom:4px}
