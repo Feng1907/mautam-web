@@ -300,7 +300,7 @@ const AnimatedNumber = ({ target, duration = 1800 }) => {
 
 // ── StatsBar — 3 chỉ số nổi bật ─────────────────────────────────────────────
 const StatsBar = ({ stats }) => {
-  const yearFounded = 1960; // thay bằng năm thành lập thực tế
+  const yearFounded = 2018; // Năm đổi tên thành Anrê Phú Yên – Mẫu Tâm
   const yearsActive = new Date().getFullYear() - yearFounded;
 
   const items = [
