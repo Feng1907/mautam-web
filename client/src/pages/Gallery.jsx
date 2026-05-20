@@ -52,14 +52,14 @@ const useGallery = () => {
 
   const { data: fetchedPhotos, isLoading: loading } = useQuery({
     queryKey: ['gallery'],
-    queryFn: () => fetchPhotos().then(d => d.length === 0 ? MOCK_PHOTOS : d).catch(() => MOCK_PHOTOS),
+    queryFn: () => fetchPhotos().catch(() => MOCK_PHOTOS),
     staleTime:   10 * 60 * 1000,  // 10 phút — không refetch nếu data còn mới
     gcTime:      30 * 60 * 1000,  // 30 phút — giữ cache trong memory
     retry: 2,
   });
 
   const photos  = fetchedPhotos || [];
-  const useMock = photos === MOCK_PHOTOS || (photos.length > 0 && photos[0].storagePath === null);
+  const useMock = fetchedPhotos === MOCK_PHOTOS;
 
   const addPhoto    = (p)  => qc.setQueryData(['gallery'], prev => [p, ...(prev || [])]);
   const removePhoto = (id) => qc.setQueryData(['gallery'], prev => (prev || []).filter(p => p.id !== id));
@@ -619,7 +619,7 @@ const Gallery = () => {
               {lang === 'vi' ? 'Xứ Đoàn Anrê Phú Yên' : 'Parish Youth Group'}
             </p>
             <h1
-              className="text-2xl font-bold text-[#3d1515] leading-tight"
+              className="text-2xl font-bold text-[#3d1515] dark:text-slate-100 leading-tight"
               style={{ fontFamily: SERIF }}
             >
               {lang === 'vi' ? 'Thư Viện Ảnh' : 'Photo Gallery'}
