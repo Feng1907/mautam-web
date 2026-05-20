@@ -76,14 +76,14 @@ const SearchResults = ({ query, results, loading, error, onSelect, onClear }) =>
     <div className="mb-5 rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-700 px-4 py-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">Ket qua tim kiem</p>
+          <p className="text-xs font-black uppercase tracking-widest text-stone-400 dark:text-slate-500">Kết quả tìm kiếm</p>
           <p className="text-sm text-stone-600 dark:text-slate-300">
             Tu khoa: <span className="font-semibold text-stone-900 dark:text-slate-100">{query}</span>
           </p>
         </div>
         <button type="button" onClick={onClear}
           className="h-8 w-8 rounded-full border border-stone-200 dark:border-slate-600 flex items-center justify-center text-stone-400 hover:text-red-600 hover:border-red-200 transition"
-          aria-label="Xoa tim kiem">
+          aria-label="Xoá tìm kiếm">
           <X size={14} />
         </button>
       </div>
@@ -568,19 +568,19 @@ const LoiChua = () => {
                 type="search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tim trong kho Loi Chua..."
+                placeholder="Tìm trong kho Lời Chúa..."
                 className="w-full h-11 rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-11 pr-11 text-sm text-stone-800 dark:text-slate-100 outline-none focus:border-red-400 dark:focus:border-red-500 transition shadow-sm"
               />
               {searchTerm && (
                 <button type="button" onClick={() => setSearchTerm('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full flex items-center justify-center text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700 transition"
-                  aria-label="Xoa tim kiem">
+                  aria-label="Xoá tìm kiếm">
                   <X size={14} />
                 </button>
               )}
             </div>
             <p className="mt-1.5 text-xs text-stone-400 dark:text-slate-500">
-              Goi API sau khi ban ngung go 450ms; nhap toi thieu 2 ky tu.
+              Tìm kiếm bài đọc theo từ khoá — nhập tối thiểu 2 ký tự.
             </p>
           </motion.div>
 
