@@ -8,7 +8,7 @@ import { DEFAULT_OG_IMAGE, toAbsoluteUrl, pageUrl } from '../utils/seo';
 import {
   Upload, Download, Trash2, X,
   ChevronLeft, ChevronRight, ZoomIn, Loader2,
-  Search, Filter,
+  Search,
 } from 'lucide-react';
 import { fetchPhotos, uploadPhoto, deletePhoto, formatBytes } from '../services/galleryService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -547,6 +547,62 @@ const UploadModal = ({ onClose, onUploaded }) => {
   );
 };
 
+// ── Album Card ────────────────────────────────────────────────────────────────
+const AlbumCard = ({ album, lang, onClick }) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const eventCfg = EVENTS.find(e => e.value === album.event);
+  const label = eventCfg ? eventCfg.label[lang] : album.event;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="group cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="relative overflow-hidden rounded-2xl border border-[#e5d5b5] dark:border-slate-700 shadow-sm group-hover:shadow-xl group-hover:border-[#D4AF37] transition-all duration-300"
+           style={{ aspectRatio: '4/3' }}>
+        {/* Cover image */}
+        {album.cover ? (
+          <>
+            {!imgLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center"
+                   style={{ background: 'linear-gradient(135deg, #fdf6e3, #f5e6c8)' }}>
+                <span className="text-4xl opacity-20 select-none">✝</span>
+              </div>
+            )}
+            <img src={album.cover} alt={label} loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center"
+               style={{ background: 'linear-gradient(135deg, #3d1515, #6b0000)' }}>
+            <span className="text-5xl opacity-20 select-none text-white">✝</span>
+          </div>
+        )}
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+        {/* Photo count badge */}
+        <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+          {album.count} ảnh
+        </div>
+
+        {/* Bottom info */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <p className="text-white font-bold text-base leading-tight" style={{ fontFamily: SERIF }}>
+            {label}
+          </p>
+          <p className="text-white/60 text-xs mt-0.5">{album.year}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // ── Gallery Page ──────────────────────────────────────────────────────────────
 const Gallery = () => {
   const { user }  = useAuth();
@@ -554,30 +610,44 @@ const Gallery = () => {
   const lang      = i18n.language?.startsWith('en') ? 'en' : 'vi';
   const isAdmin   = user?.vaiTro === 'admin';
 
-  const { photos, loading, useMock, addPhoto, removePhoto } = useGallery();
+  const { photos, loading, addPhoto, removePhoto } = useGallery();
 
-  const [yearFilter,  setYearFilter]  = useState('all');
-  const [eventFilter, setEventFilter] = useState('all');
-  const [search,      setSearch]      = useState('');
-  const [showUpload,  setShowUpload]  = useState(false);
-  const [lightbox,    setLightbox]    = useState({ open: false, index: 0 });
+  const [selectedAlbum, setSelectedAlbum] = useState(null); // { event, year }
+  const [showUpload,    setShowUpload]     = useState(false);
+  const [lightbox,      setLightbox]       = useState({ open: false, index: 0 });
+  const [search,        setSearch]         = useState('');
 
-  const filtered = useMemo(() =>
-    photos
-      .filter(p => {
-        const okYear  = yearFilter  === 'all' || String(p.year) === String(yearFilter);
-        const okEvent = eventFilter === 'all' || p.event === eventFilter;
-        const okSearch = !search.trim() || p.title?.toLowerCase().includes(search.toLowerCase());
-        return okYear && okEvent && okSearch;
-      }),
-  [photos, yearFilter, eventFilter, search]);
+  // Tạo danh sách album từ photos
+  const albums = useMemo(() => {
+    const map = {};
+    for (const p of photos) {
+      const key = `${p.event}__${p.year}`;
+      if (!map[key]) map[key] = { event: p.event, year: p.year, cover: p.url, count: 0 };
+      map[key].count++;
+    }
+    return Object.values(map).sort((a, b) => b.year - a.year || a.event.localeCompare(b.event));
+  }, [photos]);
+
+  // Ảnh trong album đang chọn
+  const albumPhotos = useMemo(() => {
+    if (!selectedAlbum) return [];
+    return photos.filter(p =>
+      p.event === selectedAlbum.event &&
+      String(p.year) === String(selectedAlbum.year) &&
+      (!search.trim() || p.title?.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [photos, selectedAlbum, search]);
 
   const openLightbox = useCallback((photo) => {
-    const idx = filtered.findIndex(p => p.id === photo.id);
+    const idx = albumPhotos.findIndex(p => p.id === photo.id);
     setLightbox({ open: true, index: Math.max(0, idx) });
-  }, [filtered]);
+  }, [albumPhotos]);
 
   if (loading) return <LoadingSpinner />;
+
+  const eventLabel = selectedAlbum
+    ? (EVENTS.find(e => e.value === selectedAlbum.event)?.label[lang] || selectedAlbum.event)
+    : null;
 
   return (
     <>
@@ -585,180 +655,116 @@ const Gallery = () => {
       <title>Thư Viện Ảnh | Xứ Đoàn Anrê Phú Yên – Mẫu Tâm</title>
       <meta name="description" content="Thư viện ảnh sinh hoạt, lễ hội và các sự kiện của Xứ Đoàn Mẫu Tâm." />
       <meta property="og:title" content="Thư Viện Ảnh | Mẫu Tâm" />
-      <meta property="og:description" content="Thư viện ảnh sinh hoạt, lễ hội và các sự kiện của Xứ Đoàn Mẫu Tâm." />
       <meta property="og:image" content={toAbsoluteUrl(DEFAULT_OG_IMAGE)} />
       <meta property="og:url" content={pageUrl('/thu-vien')} />
       <meta property="og:type" content="website" />
     </Helmet>
-    <main
-      className="flex-1 min-h-screen bg-page"
-      style={{ fontFamily: SANS }}
-    >
+    <main className="flex-1 min-h-screen bg-page" style={{ fontFamily: SANS }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* Mock data warning */}
-        {useMock && (
-          <div className="mb-5 rounded-2xl px-5 py-3 flex items-start gap-3 border"
-               style={{ background: '#fef9ec', borderColor: '#e5d5b5' }}>
-            <span className="text-[#D4AF37] text-lg shrink-0 mt-0.5">⚠</span>
-            <div>
-              <p className="text-sm font-semibold text-[#5a1a1a]">
-                {lang === 'vi' ? 'Chế độ xem thử — dữ liệu mẫu' : 'Preview mode — sample data'}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {lang === 'vi' ? 'Điền các biến VITE_FIREBASE_* vào .env để kết nối Firebase thật.' : 'Fill in VITE_FIREBASE_* vars in .env to connect real Firebase.'}
-              </p>
+        {/* Header */}
+        <div className="flex items-center gap-3 flex-wrap mb-6">
+          <div className="shrink-0 flex-1">
+            {selectedAlbum ? (
+              <div className="flex items-center gap-3">
+                <button onClick={() => { setSelectedAlbum(null); setSearch(''); }}
+                  className="flex items-center gap-1.5 text-sm text-[#8B0000] dark:text-red-400 hover:underline font-medium">
+                  <ChevronLeft size={16} /> {lang === 'vi' ? 'Tất cả album' : 'All albums'}
+                </button>
+                <span className="text-gray-300">·</span>
+                <h1 className="text-xl font-bold text-[#3d1515] dark:text-slate-100" style={{ fontFamily: SERIF }}>
+                  {eventLabel} {selectedAlbum.year}
+                </h1>
+                <span className="text-xs text-gray-400">{albumPhotos.length} ảnh</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]/70 mb-0.5">
+                  {lang === 'vi' ? 'Xứ Đoàn Anrê Phú Yên' : 'Parish Youth Group'}
+                </p>
+                <h1 className="text-2xl font-bold text-[#3d1515] dark:text-slate-100 leading-tight" style={{ fontFamily: SERIF }}>
+                  {lang === 'vi' ? 'Thư Viện Ảnh' : 'Photo Gallery'}
+                </h1>
+              </>
+            )}
+          </div>
+
+          {/* Search (chỉ hiện trong album) */}
+          {selectedAlbum && (
+            <div className="relative flex-1 min-w-48">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[#D4AF37]" />
+              <input
+                className="w-full h-10 pl-10 pr-4 text-sm bg-white/80 dark:bg-slate-800 dark:text-slate-100 outline-none transition rounded-full border border-[#e5d5b5]"
+                placeholder={lang === 'vi' ? 'Tìm trong album...' : 'Search album...'}
+                value={search} onChange={e => setSearch(e.target.value)}
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── Header: Tiêu đề + Search + Upload ── */}
-        <div className="flex items-center gap-3 flex-wrap mb-5">
-          <div className="shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]/70 mb-0.5">
-              {lang === 'vi' ? 'Xứ Đoàn Anrê Phú Yên' : 'Parish Youth Group'}
-            </p>
-            <h1
-              className="text-2xl font-bold text-[#3d1515] dark:text-slate-100 leading-tight"
-              style={{ fontFamily: SERIF }}
-            >
-              {lang === 'vi' ? 'Thư Viện Ảnh' : 'Photo Gallery'}
-            </h1>
-          </div>
-
-          {/* Search — flex-1, icon absolute, pl-10 tránh đè chữ */}
-          <div className="relative flex-1 min-w-52">
-            <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-              style={{ color: '#D4AF37' }}
-            />
-            <input
-              className="w-full h-10 pl-10 pr-4 text-sm bg-white/80 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 outline-none transition"
-              style={{
-                borderRadius: '9999px',
-                border: '1.5px solid #e5d5b5',
-                fontFamily: SANS,
-              }}
-              onFocus={e => (e.target.style.borderColor = '#D4AF37')}
-              onBlur={e  => (e.target.style.borderColor = '#e5d5b5')}
-              placeholder={lang === 'vi' ? 'Tìm kiếm ảnh...' : 'Search photos...'}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Upload button (admin) */}
           {isAdmin && (
-            <button
-              onClick={() => setShowUpload(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 active:scale-95 transition shrink-0"
-              style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}
-            >
-              <Upload size={14} />
-              {lang === 'vi' ? 'Tải ảnh lên' : 'Upload'}
+            <button onClick={() => setShowUpload(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition shrink-0"
+              style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}>
+              <Upload size={14} /> {lang === 'vi' ? 'Tải ảnh lên' : 'Upload'}
             </button>
           )}
         </div>
 
-        {/* ── Filter bar (pill style) ── */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          <Filter size={14} className="text-gray-400 shrink-0" />
+        {/* Album grid */}
+        {!selectedAlbum && (
+          albums.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-28 text-center">
+              <span className="text-6xl block mb-4 opacity-20 select-none">📷</span>
+              <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>
+                {lang === 'vi' ? 'Chưa có album nào.' : 'No albums yet.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {albums.map(album => (
+                <AlbumCard
+                  key={`${album.event}__${album.year}`}
+                  album={album}
+                  lang={lang}
+                  onClick={() => setSelectedAlbum({ event: album.event, year: album.year })}
+                />
+              ))}
+            </div>
+          )
+        )}
 
-          {/* Year pills */}
-          <div className="flex gap-1.5 flex-wrap">
-            {[{ value: 'all', label: lang === 'vi' ? 'Tất cả năm' : 'All years' }, ...YEARS.map(y => ({ value: String(y), label: String(y) }))].map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setYearFilter(opt.value)}
-                className="text-xs px-3.5 py-1.5 rounded-full border font-medium transition-all"
-                style={{
-                  background: yearFilter === opt.value ? '#8B0000' : 'rgba(255,252,249,0.9)',
-                  borderColor: yearFilter === opt.value ? '#8B0000' : '#e5d5b5',
-                  color: yearFilter === opt.value ? 'white' : '#5a1a1a',
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-gray-300 text-sm select-none">|</span>
-
-          {/* Event pills */}
-          <div className="flex gap-1.5 flex-wrap">
-            {EVENTS.map(ev => (
-              <button
-                key={ev.value}
-                onClick={() => setEventFilter(ev.value)}
-                className="text-xs px-3.5 py-1.5 rounded-full border font-medium transition-all"
-                style={{
-                  background: eventFilter === ev.value ? '#6e1a1a' : 'rgba(255,252,249,0.9)',
-                  borderColor: eventFilter === ev.value ? '#6e1a1a' : '#e5d5b5',
-                  color: eventFilter === ev.value ? 'white' : '#5a1a1a',
-                }}
-              >
-                {ev.label[lang]}
-              </button>
-            ))}
-          </div>
-
-          {/* Count */}
-          <span className="ml-auto text-xs text-gray-400 shrink-0" style={{ fontFamily: SANS }}>
-            {lang === 'vi' ? `${filtered.length} / ${photos.length} ảnh` : `${filtered.length} / ${photos.length} photos`}
-          </span>
-        </div>
-
-        {/* ── Grid ảnh ── */}
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-28 text-center">
-            <span className="text-6xl block mb-4 opacity-20 select-none">✝</span>
-            <p className="text-gray-400 italic" style={{ fontFamily: SERIF }}>
-              {lang === 'vi' ? 'Không có ảnh nào phù hợp.' : 'No photos match your filter.'}
-            </p>
-          </div>
-        ) : (
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              key="gallery-grid"
-              layout
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-            >
-              <AnimatePresence mode="popLayout">
-                {filtered.map((photo, idx) => (
-                  <ImageCard
-                    key={photo.id}
-                    photo={photo}
-                    index={idx}
-                    isAdmin={isAdmin}
-                    onDelete={removePhoto}
-                    onOpen={openLightbox}
-                  />
+        {/* Album detail — photo grid */}
+        {selectedAlbum && (
+          albumPhotos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-28 text-center">
+              <span className="text-6xl block mb-4 opacity-20 select-none">✝</span>
+              <p className="text-gray-400 italic">{lang === 'vi' ? 'Không có ảnh nào.' : 'No photos.'}</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {albumPhotos.map((photo, idx) => (
+                  <ImageCard key={photo.id} photo={photo} index={idx}
+                    isAdmin={isAdmin} onDelete={removePhoto} onOpen={openLightbox} />
                 ))}
-              </AnimatePresence>
-            </motion.div>
-          </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          )
         )}
       </div>
 
-      {/* Upload Modal */}
       <AnimatePresence>
         {showUpload && (
-          <UploadModal
-            onClose={() => setShowUpload(false)}
-            onUploaded={(p) => { addPhoto(p); setShowUpload(false); }}
-          />
+          <UploadModal onClose={() => setShowUpload(false)}
+            onUploaded={(p) => { addPhoto(p); setShowUpload(false); }} />
         )}
       </AnimatePresence>
 
-      {/* Lightbox */}
       <AnimatePresence>
         {lightbox.open && (
-          <Lightbox
-            photos={filtered}
-            index={lightbox.index}
+          <Lightbox photos={albumPhotos} index={lightbox.index}
             onClose={() => setLightbox({ open: false, index: 0 })}
-            onGoto={(i) => setLightbox(lb => ({ ...lb, index: i }))}
-          />
+            onGoto={(i) => setLightbox(lb => ({ ...lb, index: i }))} />
         )}
       </AnimatePresence>
     </main>
