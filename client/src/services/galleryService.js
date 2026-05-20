@@ -6,7 +6,7 @@ import {
   ref, uploadBytesResumable, getDownloadURL, deleteObject,
 } from 'firebase/storage';
 import {
-  collection, addDoc, getDocs, deleteDoc, doc, query, orderBy,
+  collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, limit,
 } from 'firebase/firestore';
 import { storage, db } from '../firebase';
 
@@ -52,7 +52,7 @@ export const formatBytes = (bytes) => {
 
 // ── Lấy toàn bộ ảnh từ Firestore ────────────────────────────────────────────
 export const fetchPhotos = async () => {
-  const q = query(collection(db, COLLECTION), orderBy('timestamp', 'desc'));
+  const q = query(collection(db, COLLECTION), orderBy('timestamp', 'desc'), limit(200));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 };

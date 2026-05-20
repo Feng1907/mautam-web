@@ -53,8 +53,9 @@ const useGallery = () => {
   const { data: fetchedPhotos, isLoading: loading } = useQuery({
     queryKey: ['gallery'],
     queryFn: () => fetchPhotos().then(d => d.length === 0 ? MOCK_PHOTOS : d).catch(() => MOCK_PHOTOS),
-    staleTime: 5 * 60 * 1000,
-    retry: 3,
+    staleTime:   10 * 60 * 1000,  // 10 phút — không refetch nếu data còn mới
+    gcTime:      30 * 60 * 1000,  // 30 phút — giữ cache trong memory
+    retry: 2,
   });
 
   const photos  = fetchedPhotos || [];
