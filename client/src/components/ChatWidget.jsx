@@ -11,7 +11,7 @@ import { useAuth } from '../store/AuthContext';
 const ACCEPTED_TYPES = '.pdf,.docx,.txt,.jpg,.jpeg,.png,.webp';
 const MAX_SIZE_MB    = 5;
 const BOT_LOGO_SRC   = '/logos/logos doan thieu nhi MT.jpg';
-const STREAM_URL     = '/api/chat/stream';
+const STREAM_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '') + '/api/chat/stream';
 
 // ── Time formatter ────────────────────────────────────────────────────────────
 const fmtRelative = (date) => {
