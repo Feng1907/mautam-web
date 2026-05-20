@@ -566,6 +566,9 @@ const AlbumCard = ({ album, lang, onClick }) => {
         {/* Cover image */}
         {album.cover ? (
           <>
+            {/* Blurred background để fill khoảng trống khi ảnh dọc */}
+            <img src={album.cover} alt="" aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60" />
             {!imgLoaded && (
               <div className="absolute inset-0 flex items-center justify-center"
                    style={{ background: 'linear-gradient(135deg, #fdf6e3, #f5e6c8)' }}>
@@ -574,7 +577,7 @@ const AlbumCard = ({ album, lang, onClick }) => {
             )}
             <img src={album.cover} alt={label} loading="lazy"
               onLoad={() => setImgLoaded(true)}
-              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} />
+              className={`absolute inset-0 w-full h-full object-contain transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center"
