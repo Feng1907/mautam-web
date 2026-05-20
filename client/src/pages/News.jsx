@@ -141,14 +141,13 @@ const FeaturedCard = ({ post }) => {
 
         {/* Content */}
         <div className="flex flex-col flex-1 p-5 sm:p-6 justify-center">
-          <h2 className="font-bold leading-snug mb-3 line-clamp-2 group-hover:text-[#8B0000] transition-colors"
-            style={{ fontFamily: SERIF, fontSize: 'clamp(1.1rem, 2vw, 1.35rem)', color: '#3d1515',
-              fontWeight: 700, fontVariantLigatures: 'none' }}>
+          <h2 className="font-bold leading-snug mb-3 line-clamp-2 group-hover:text-[#8B0000] dark:group-hover:text-red-400 transition-colors text-[#3d1515] dark:text-slate-100"
+            style={{ fontFamily: SERIF, fontSize: 'clamp(1.1rem, 2vw, 1.35rem)', fontWeight: 700, fontVariantLigatures: 'none' }}>
             {post.tieuDe}
           </h2>
           {summary && (
-            <p className="text-sm leading-relaxed line-clamp-3 mb-4"
-              style={{ fontFamily: SANS, color: '#4A5568' }}>
+            <p className="text-sm leading-relaxed line-clamp-3 mb-4 text-[#4A5568] dark:text-slate-300"
+              style={{ fontFamily: SANS }}>
               {summary}
             </p>
           )}
@@ -207,14 +206,13 @@ const PostCard = ({ post, index }) => {
 
         {/* Content */}
         <div className="flex flex-col flex-1 p-4">
-          <h2 className="font-semibold leading-snug mb-2 line-clamp-2 group-hover:text-[#8B0000] transition-colors"
-            style={{ fontFamily: SERIF, fontSize: '1rem', color: '#3d1515',
-              fontWeight: 600, fontVariantLigatures: 'none' }}>
+          <h2 className="font-semibold leading-snug mb-2 line-clamp-2 group-hover:text-[#8B0000] dark:group-hover:text-red-400 transition-colors text-[#3d1515] dark:text-slate-100"
+            style={{ fontFamily: SERIF, fontSize: '1rem', fontWeight: 600, fontVariantLigatures: 'none' }}>
             {post.tieuDe}
           </h2>
           {summary && (
-            <p className="text-[13px] leading-relaxed line-clamp-2 flex-1 mb-3"
-              style={{ fontFamily: SANS, color: '#4A5568' }}>
+            <p className="text-[13px] leading-relaxed line-clamp-2 flex-1 mb-3 text-[#4A5568] dark:text-slate-300"
+              style={{ fontFamily: SANS }}>
               {summary}
             </p>
           )}
