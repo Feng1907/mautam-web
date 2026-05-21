@@ -210,13 +210,13 @@ const Profile = () => {
         {/* ── Panel chính ── */}
         <div className="flex-1 min-w-0">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-5">
+          <div className="flex border-b border-gray-200 dark:border-slate-700 mb-5">
             {[['thongtin', 'Thông tin'], ['matkhau', 'Mật khẩu']].map(([k, l]) => (
               <button key={k} onClick={() => setTab(k)}
                 className={`px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
                   tab === k
-                    ? 'border-red-600 text-red-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-red-600 text-red-700 dark:text-red-400'
+                    : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                 }`}>
                 {l}
               </button>
@@ -250,19 +250,19 @@ const Profile = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Họ tên *</label>
                 <input className="input" value={form.hoTen}
                   onChange={e => setForm(f => ({ ...f, hoTen: e.target.value }))} required />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
                 <input className="input bg-gray-50 cursor-not-allowed" value={merged.email} readOnly />
-                <p className="text-xs text-gray-400 mt-1">Email không thể thay đổi</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Email không thể thay đổi</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Số điện thoại</label>
                 <input className="input" placeholder="0xxxxxxxxx" value={form.soDienThoai}
                   onChange={e => setForm(f => ({ ...f, soDienThoai: e.target.value }))} />
               </div>
@@ -291,19 +291,19 @@ const Profile = () => {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu hiện tại *</label>
                 <PasswordInput placeholder="••••••••"
                   value={pwForm.matKhauCu}
                   onChange={e => setPwForm(f => ({ ...f, matKhauCu: e.target.value }))} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Mật khẩu mới *</label>
                 <PasswordInput placeholder="Ít nhất 6 ký tự"
                   value={pwForm.matKhauMoi}
                   onChange={e => setPwForm(f => ({ ...f, matKhauMoi: e.target.value }))} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Xác nhận mật khẩu mới *</label>
                 <PasswordInput placeholder="Nhập lại mật khẩu mới"
                   value={pwForm.xacNhan}
                   onChange={e => setPwForm(f => ({ ...f, xacNhan: e.target.value }))} required />
