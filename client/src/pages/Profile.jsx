@@ -146,7 +146,7 @@ const Profile = () => {
 
   return (
     <main className="flex-1 page-container max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Hồ sơ cá nhân</h1>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">Hồ sơ cá nhân</h1>
 
       <div className="flex flex-col md:flex-row gap-6">
 
