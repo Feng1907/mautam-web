@@ -180,7 +180,7 @@ const Profile = () => {
                 <div className="flex flex-wrap justify-center gap-1">
                   {merged.lopPhuTrach.map(l => (
                     <span key={l._id || l} className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                      {l.tenLop || formatClassName(l)}
+                      {formatClassName(l.tenLop || l)}
                     </span>
                   ))}
                 </div>
