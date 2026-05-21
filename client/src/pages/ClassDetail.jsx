@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueries } from '@tanstack/react-query';
-import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck, Printer } from 'lucide-react';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
 import { useAuth } from '../store/AuthContext';
@@ -105,7 +105,7 @@ const ClassDetail = () => {
       {/* Breadcrumb */}
       <Link
         to="/lop-hoc"
-        className="inline-flex items-center gap-1.5 text-sm text-[#8B0000] hover:underline mb-5"
+        className="no-print inline-flex items-center gap-1.5 text-sm text-[#8B0000] hover:underline mb-5"
       >
         <ChevronLeft className="w-4 h-4" />
         Danh sách lớp
@@ -186,6 +186,14 @@ const ClassDetail = () => {
                   {user?.chucVu === 'dutruong' ? 'Dự Trưởng — Toàn quyền' : 'Bạn có quyền quản lý'}
                 </span>
               )}
+              <button
+                onClick={() => window.print()}
+                className="no-print inline-flex items-center gap-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 font-semibold px-2.5 py-1.5 rounded-full hover:bg-gray-100 transition"
+                title="In danh sách"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                In danh sách
+              </button>
             </div>
           </div>
         </div>
@@ -193,7 +201,7 @@ const ClassDetail = () => {
 
       {/* ── Tab bar với motion indicator ── */}
       <div
-        className="relative flex gap-1 mb-4 p-1 rounded-2xl border border-[#e5d5b5]"
+        className="no-print relative flex gap-1 mb-4 p-1 rounded-2xl border border-[#e5d5b5]"
         style={{ background: '#fffcf9' }}
       >
         {TABS.map(t => {
