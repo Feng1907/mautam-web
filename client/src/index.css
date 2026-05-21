@@ -484,3 +484,47 @@ html * { scrollbar-width: none; }
 .scrollbar-light::-webkit-scrollbar-thumb   { background-color: #b45309; border-radius: 9999px; }
 .scrollbar-light::-webkit-scrollbar-thumb:hover { background-color: #8B0000; }
 .scrollbar-light { scrollbar-width: thin; scrollbar-color: #b45309 #f3e8d0; }
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  /* Ẩn toàn bộ UI chrome */
+  nav, header, footer,
+  .no-print,
+  [data-no-print],
+  [data-chat-widget],
+  [data-theme-fab],
+  [data-navbar],
+  [data-sidebar],
+  [data-tab-bar],
+  .fixed:not([data-print-keep]) { display: none !important; }
+
+  /* Nền trắng toàn trang */
+  html, body, #root { background: white !important; color: black !important; }
+
+  /* Bỏ padding bottom mobile */
+  body { padding-bottom: 0 !important; }
+
+  /* Bỏ animation */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Table — hiển thị đầy đủ, không scroll */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; font-size: 11px; }
+  thead { background: #f5f5f5 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* Ép ngang A4 cho bảng điểm danh / bảng điểm */
+  .print-landscape { page: landscape; }
+
+  /* Không ngắt trang trong row */
+  tr { page-break-inside: avoid; }
+
+  /* Main content — bỏ max-width, dùng hết trang */
+  main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+  /* Ẩn nút bấm, badge không cần thiết */
+  button:not([data-print-keep]),
+  a[href]:not([data-print-keep]) { text-decoration: none; }
+}

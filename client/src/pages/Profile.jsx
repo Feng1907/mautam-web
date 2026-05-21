@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../store/AuthContext';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
@@ -73,6 +74,21 @@ const AvatarUploader = ({ user, previewUrl, onFile }) => {
 const Profile = () => {
   const { user, updateUser } = useAuth();
 
+  // Fetch fresh profile data — retry on Render cold start
+  const { data: freshProfile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => api.get('/auth/profile').then(r => r.data.data),
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
+  });
+
+  // Sync fresh profile into AuthContext when loaded
+  useEffect(() => {
+    if (freshProfile) updateUser(freshProfile);
+  }, [freshProfile, updateUser]);
+
+  const merged = freshProfile ?? user;
+
   const [tab, setTab] = useState('thongtin'); // 'thongtin' | 'matkhau'
 
   // Tab thông tin
@@ -126,7 +142,7 @@ const Profile = () => {
     }
   };
 
-  if (!user) return null;
+  if (!merged) return null;
 
   return (
     <main className="flex-1 page-container max-w-2xl">
@@ -138,31 +154,31 @@ const Profile = () => {
         <div className="flex flex-col items-center gap-4 md:w-56 shrink-0">
           <div className="card w-full flex flex-col items-center gap-3 py-6">
             <AvatarUploader
-              user={user}
+              user={merged}
               previewUrl={avatarData}
               onFile={setAvatarData}
             />
             <div className="text-center">
-              <p className="font-bold text-gray-800">{user.hoTen}</p>
-              <p className="text-xs text-gray-500">{user.email}</p>
+              <p className="font-bold text-gray-800">{merged.hoTen}</p>
+              <p className="text-xs text-gray-500">{merged.email}</p>
             </div>
             {/* Badges */}
             <div className="flex flex-wrap justify-center gap-1.5">
               <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                {VAI_TRO[user.vaiTro] || user.vaiTro}
+                {VAI_TRO[merged.vaiTro] || merged.vaiTro}
               </span>
-              {user.chucVu && (
+              {merged.chucVu && (
                 <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {CHUC_VU[user.chucVu] || user.chucVu}
+                  {CHUC_VU[merged.chucVu] || merged.chucVu}
                 </span>
               )}
             </div>
             {/* Lớp phụ trách */}
-            {user.lopPhuTrach?.length > 0 && (
+            {merged.lopPhuTrach?.length > 0 && (
               <div className="text-center">
                 <p className="text-xs text-gray-400 mb-1">Lớp phụ trách</p>
                 <div className="flex flex-wrap justify-center gap-1">
-                  {user.lopPhuTrach.map(l => (
+                  {merged.lopPhuTrach.map(l => (
                     <span key={l._id || l} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
                       {formatClassName(l.tenLop || l)}
                     </span>
@@ -179,10 +195,10 @@ const Profile = () => {
               <div className="flex justify-between">
                 <span className="text-gray-500 text-xs">Tham gia</span>
                 <span className="text-gray-700 text-xs font-medium">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : '—'}
+                  {merged.createdAt ? new Date(merged.createdAt).toLocaleDateString('vi-VN') : '—'}
                 </span>
               </div>
-              {user.phaiBatDauDoiMatKhau && (
+              {merged.phaiBatDauDoiMatKhau && (
                 <p className="text-xs text-orange-600 bg-orange-50 rounded px-2 py-1 mt-1">
                   ⚠ Vui lòng đổi mật khẩu tạm
                 </p>
@@ -241,7 +257,7 @@ const Profile = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input className="input bg-gray-50 cursor-not-allowed" value={user.email} readOnly />
+                <input className="input bg-gray-50 cursor-not-allowed" value={merged.email} readOnly />
                 <p className="text-xs text-gray-400 mt-1">Email không thể thay đổi</p>
               </div>
 
@@ -269,7 +285,7 @@ const Profile = () => {
                   {pwMsg.text}
                 </div>
               )}
-              {user.phaiBatDauDoiMatKhau && (
+              {merged.phaiBatDauDoiMatKhau && (
                 <div className="bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded px-3 py-2">
                   ⚠ Tài khoản của bạn đang dùng mật khẩu tạm. Vui lòng đổi mật khẩu ngay.
                 </div>
