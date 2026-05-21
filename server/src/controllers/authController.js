@@ -63,7 +63,9 @@ exports.login = async (req, res, next) => {
 
 // GET /api/auth/me
 exports.getMe = async (req, res) => {
-  res.json({ success: true, user: req.user });
+  const user = await require('../models/User').findById(req.user._id)
+    .populate('lopPhuTrach', 'tenLop').lean();
+  res.json({ success: true, user, data: user });
 };
 
 // POST /api/auth/signup  (Đăng ký công khai — mặc định vaiTro='user')

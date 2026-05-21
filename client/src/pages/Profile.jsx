@@ -77,7 +77,7 @@ const Profile = () => {
   // Fetch fresh profile data — retry on Render cold start
   const { data: freshProfile } = useQuery({
     queryKey: ['profile'],
-    queryFn: () => api.get('/auth/profile').then(r => r.data.data),
+    queryFn: () => api.get('/auth/me').then(r => r.data.data || r.data.user),
     staleTime: 5 * 60 * 1000,
     retry: 3,
   });
@@ -159,16 +159,16 @@ const Profile = () => {
               onFile={setAvatarData}
             />
             <div className="text-center">
-              <p className="font-bold text-gray-800">{merged.hoTen}</p>
-              <p className="text-xs text-gray-500">{merged.email}</p>
+              <p className="font-bold text-gray-800 dark:text-slate-100">{merged.hoTen}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">{merged.email}</p>
             </div>
             {/* Badges */}
             <div className="flex flex-wrap justify-center gap-1.5">
-              <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+              <span className="bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 text-xs font-semibold px-2 py-0.5 rounded-full">
                 {VAI_TRO[merged.vaiTro] || merged.vaiTro}
               </span>
               {merged.chucVu && (
-                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                <span className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">
                   {CHUC_VU[merged.chucVu] || merged.chucVu}
                 </span>
               )}
@@ -176,11 +176,11 @@ const Profile = () => {
             {/* Lớp phụ trách */}
             {merged.lopPhuTrach?.length > 0 && (
               <div className="text-center">
-                <p className="text-xs text-gray-400 mb-1">Lớp phụ trách</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Lớp phụ trách</p>
                 <div className="flex flex-wrap justify-center gap-1">
                   {merged.lopPhuTrach.map(l => (
-                    <span key={l._id || l} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                      {formatClassName(l.tenLop || l)}
+                    <span key={l._id || l} className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">
+                      {l.tenLop || formatClassName(l)}
                     </span>
                   ))}
                 </div>
@@ -190,16 +190,16 @@ const Profile = () => {
 
           {/* Thông tin tài khoản */}
           <div className="card w-full text-sm">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tài khoản</p>
+            <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Tài khoản</p>
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between">
-                <span className="text-gray-500 text-xs">Tham gia</span>
-                <span className="text-gray-700 text-xs font-medium">
+                <span className="text-gray-500 dark:text-slate-400 text-xs">Tham gia</span>
+                <span className="text-gray-700 dark:text-slate-200 text-xs font-medium">
                   {merged.createdAt ? new Date(merged.createdAt).toLocaleDateString('vi-VN') : '—'}
                 </span>
               </div>
               {merged.phaiBatDauDoiMatKhau && (
-                <p className="text-xs text-orange-600 bg-orange-50 rounded px-2 py-1 mt-1">
+                <p className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-950/30 rounded px-2 py-1 mt-1">
                   ⚠ Vui lòng đổi mật khẩu tạm
                 </p>
               )}
