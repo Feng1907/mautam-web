@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Bar,
@@ -176,34 +177,20 @@ const AttentionStudents = ({ students }) => (
 );
 
 const AdminStats = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [data, setData] = useState(null);
   const [trendMode, setTrendMode] = useState('week');
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedNamHocId, setSelectedNamHocId] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['admin-stats', selectedNamHocId],
+    queryFn: () => api.get('/admin/stats/trends', {
+      params: { namHocId: selectedNamHocId || undefined },
+    }).then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+  });
 
-    const loadTrends = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await api.get('/admin/stats/trends', {
-          params: { namHocId: selectedNamHocId || undefined },
-        });
-        if (!cancelled) setData(res.data.data);
-      } catch (err) {
-        if (!cancelled) setError(err.response?.data?.message || 'Không tải được dữ liệu xu hướng.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    loadTrends();
-    return () => { cancelled = true; };
-  }, [selectedNamHocId]);
+  const error = queryError?.response?.data?.message || (queryError ? 'Không tải được dữ liệu xu hướng.' : '');
 
   const trendData = trendMode === 'month'
     ? data?.monthlyAttendanceByBranch || []

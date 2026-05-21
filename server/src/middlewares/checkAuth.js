@@ -7,7 +7,7 @@ const checkAuth = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
+    req.user = await User.findById(decoded.id).populate('lopPhuTrach', 'tenLop');
     if (!req.user) return res.status(401).json({ success: false, message: 'Tài khoản không tồn tại' });
     next();
   } catch {

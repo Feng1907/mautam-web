@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Pencil, Trash2, Search, UserPlus, Users, History, Upload, X } from 'lucide-react';
+import { Pencil, Trash2, Search, UserPlus, Users, History, Upload, X, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../services/firebase';
@@ -570,6 +571,13 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
 
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1.5">
+                      <Link
+                        to={`/hoc-sinh/${lopId}/${s._id}`}
+                        title="Xem hồ sơ"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
                       <button
                         onClick={() => setLichSuModal(s)}
                         title="Lịch sử điểm"

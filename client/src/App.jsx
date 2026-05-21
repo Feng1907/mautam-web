@@ -43,6 +43,7 @@ const Gallery = lazy(() => import('./pages/Gallery'));
 const LichSuCuuDo = lazy(() => import('./pages/LichSuCuuDo'));
 const NhanVat = lazy(() => import('./pages/NhanVat'));
 const QrScanPage = lazy(() => import('./pages/QrScanPage'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -108,6 +109,10 @@ const AnimatedRoutes = () => {
             />
             <Route path="/nhan-vat" element={withErrorBoundary(<NhanVat />, 'NhanVat')} />
             <Route path="/diem-danh-qr" element={withErrorBoundary(<QrScanPage />, 'QrScanPage')} />
+            <Route
+              path="/hoc-sinh/:lopId/:id"
+              element={withErrorBoundary(<RouteGuard><StudentProfile /></RouteGuard>, 'StudentProfile')}
+            />
 
             <Route
               path="/ho-so"
