@@ -8,6 +8,7 @@ const {
   updateProfile,
   changePassword,
   forgotPassword,
+  getLoginHistory,
 } = require('../controllers/authController');
 const { checkAuth, requireAdmin } = require('../middlewares/checkAuth');
 
@@ -19,5 +20,6 @@ router.put('/profile',          checkAuth, updateProfile);
 router.put('/change-password',  checkAuth, changePassword);
 router.post('/forgot-password',    forgotPassword);
 router.post('/admin-reset-password', checkAuth, requireAdmin, adminResetPassword);
+router.get('/login-history',     checkAuth, getLoginHistory);
 
 module.exports = router;

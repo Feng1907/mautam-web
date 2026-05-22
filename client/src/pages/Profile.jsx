@@ -4,6 +4,11 @@ import { useAuth } from '../store/AuthContext';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
 import PasswordInput from '../components/PasswordInput';
+import {
+  getPushPermissionState,
+  registerPushNotifications,
+  getNotificationSettingsHint,
+} from '../utils/pushNotifications';
 
 const CHUC_VU = { huynhtruong: 'Huynh trưởng', dutruong: 'Dự trưởng' };
 const VAI_TRO = { admin: 'Admin', giaoly: 'Giáo lý viên', user: 'Phụ huynh' };
@@ -89,7 +94,35 @@ const Profile = () => {
 
   const merged = freshProfile ?? user;
 
-  const [tab, setTab] = useState('thongtin'); // 'thongtin' | 'matkhau'
+  const [tab, setTab] = useState('thongtin'); // 'thongtin' | 'matkhau' | 'lichsu' | 'thongbao'
+
+  // Push notification state
+  const [pushState, setPushState]   = useState(() => getPushPermissionState());
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushMsg, setPushMsg]       = useState('');
+
+  const handleEnablePush = async () => {
+    setPushLoading(true);
+    setPushMsg('');
+    const result = await registerPushNotifications();
+    setPushLoading(false);
+    if (result.success) {
+      setPushState('granted');
+      setPushMsg('Đã bật thông báo thành công!');
+    } else if (result.reason === 'denied') {
+      setPushMsg(getNotificationSettingsHint());
+    } else {
+      setPushMsg('Không thể bật thông báo. Vui lòng thử lại.');
+    }
+  };
+
+  // Login history
+  const { data: loginHistory } = useQuery({
+    queryKey: ['login-history'],
+    queryFn: () => api.get('/auth/login-history').then(r => r.data.data),
+    enabled: tab === 'lichsu',
+    staleTime: 60 * 1000,
+  });
 
   // Tab thông tin
   const [form,       setForm]       = useState({ hoTen: user?.hoTen || '', soDienThoai: user?.soDienThoai || '' });
@@ -210,10 +243,10 @@ const Profile = () => {
         {/* ── Panel chính ── */}
         <div className="flex-1 min-w-0">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-slate-700 mb-5">
-            {[['thongtin', 'Thông tin'], ['matkhau', 'Mật khẩu']].map(([k, l]) => (
+          <div className="flex flex-wrap border-b border-gray-200 dark:border-slate-700 mb-5">
+            {[['thongtin', 'Thông tin'], ['matkhau', 'Mật khẩu'], ['lichsu', 'Lịch sử đăng nhập'], ['thongbao', 'Thông báo']].map(([k, l]) => (
               <button key={k} onClick={() => setTab(k)}
-                className={`px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+                className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
                   tab === k
                     ? 'border-red-600 text-red-700 dark:text-red-400'
                     : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
@@ -312,6 +345,93 @@ const Profile = () => {
                 {pwSaving ? 'Đang đổi...' : 'Đổi mật khẩu'}
               </button>
             </form>
+          )}
+
+          {/* ── Tab lịch sử đăng nhập ── */}
+          {tab === 'lichsu' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-500 dark:text-slate-400">10 lần đăng nhập gần nhất</p>
+              {!loginHistory ? (
+                <p className="text-sm text-gray-400 dark:text-slate-500">Đang tải...</p>
+              ) : loginHistory.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-slate-500">Chưa có lịch sử đăng nhập</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {loginHistory.map((h, i) => (
+                    <div key={i} className="flex items-start gap-3 bg-gray-50 dark:bg-slate-800 rounded-lg px-4 py-3">
+                      <div className="mt-0.5 text-gray-400 dark:text-slate-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-700 dark:text-slate-200">{h.device || 'Thiết bị không xác định'}</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-500">IP: {h.ip || '—'}</p>
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-slate-500 whitespace-nowrap">
+                        {h.loginAt ? new Date(h.loginAt).toLocaleString('vi-VN') : '—'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Tab thông báo ── */}
+          {tab === 'thongbao' && (
+            <div className="flex flex-col gap-4">
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-5 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    pushState === 'granted' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-200 dark:bg-slate-700'
+                  }`}>
+                    <svg className={`w-5 h-5 ${pushState === 'granted' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 dark:text-slate-100 text-sm">Thông báo đẩy</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      {pushState === 'granted' && 'Đang bật — bạn sẽ nhận thông báo từ xứ đoàn'}
+                      {pushState === 'denied' && 'Đã tắt trong trình duyệt'}
+                      {pushState === 'default' && 'Chưa được cấp quyền'}
+                      {pushState === 'unsupported' && 'Trình duyệt không hỗ trợ'}
+                    </p>
+                  </div>
+                  <div className="ml-auto">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      pushState === 'granted'
+                        ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
+                        : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
+                    }`}>
+                      {pushState === 'granted' ? 'Bật' : 'Tắt'}
+                    </span>
+                  </div>
+                </div>
+
+                {pushState !== 'granted' && pushState !== 'unsupported' && (
+                  <button onClick={handleEnablePush} disabled={pushLoading}
+                    className="btn-primary w-full">
+                    {pushLoading ? 'Đang kích hoạt...' : 'Bật thông báo'}
+                  </button>
+                )}
+
+                {pushMsg && (
+                  <p className={`text-xs rounded px-3 py-2 ${
+                    pushState === 'granted'
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
+                  }`}>
+                    {pushMsg}
+                  </p>
+                )}
+
+                {pushState === 'denied' && (
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{getNotificationSettingsHint()}</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
