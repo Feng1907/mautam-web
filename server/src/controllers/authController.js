@@ -49,8 +49,14 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Đăng nhập thành công — reset counter
-    await User.updateOne({ _id: user._id }, { loginAttempts: 0, lockUntil: null });
+    // Đăng nhập thành công — reset counter + ghi lịch sử
+    const ua = req.headers['user-agent'] || '';
+    const browser = ua.includes('Firefox') ? 'Firefox' : ua.includes('Edg') ? 'Edge' : ua.includes('Chrome') ? 'Chrome' : ua.includes('Safari') ? 'Safari' : 'Browser';
+    const os = ua.includes('Windows') ? 'Windows' : ua.includes('iPhone') || ua.includes('iPad') ? 'iOS' : ua.includes('Android') ? 'Android' : ua.includes('Mac') ? 'Mac' : 'Unknown';
+    await User.updateOne({ _id: user._id }, {
+      loginAttempts: 0, lockUntil: null,
+      $push: { loginHistory: { $each: [{ ip: req.ip, device: `${browser} / ${os}`, loginAt: new Date() }], $slice: -10 } },
+    });
     logAction(req, 'login', 'user', user.hoTen);
 
     const token = signToken(user._id);
@@ -66,6 +72,14 @@ exports.getMe = async (req, res) => {
   const user = await require('../models/User').findById(req.user._id)
     .populate('lopPhuTrach', 'tenLop').lean();
   res.json({ success: true, user, data: user });
+};
+
+// GET /api/auth/login-history
+exports.getLoginHistory = async (req, res) => {
+  const user = await require('../models/User').findById(req.user._id)
+    .select('loginHistory').lean();
+  const history = (user?.loginHistory || []).slice().reverse();
+  res.json({ success: true, data: history });
 };
 
 // POST /api/auth/signup  (Đăng ký công khai — mặc định vaiTro='user')

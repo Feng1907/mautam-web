@@ -18,6 +18,15 @@ const userSchema = new mongoose.Schema(
     // Bảo mật: đếm lần đăng nhập sai và khóa tài khoản tạm thời
     loginAttempts: { type: Number, default: 0, select: false },
     lockUntil:     { type: Date,   default: null, select: false },
+    loginHistory: {
+      type: [{
+        ip:        { type: String },
+        device:    { type: String },
+        loginAt:   { type: Date, default: Date.now },
+      }],
+      default: [],
+      select: false,
+    },
     pushSubscriptions: [
       {
         endpoint: { type: String, required: true },
