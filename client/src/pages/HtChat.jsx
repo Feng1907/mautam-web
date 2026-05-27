@@ -6,6 +6,7 @@ import { storage } from '../firebase';
 import { Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip, FileText, MessageCircle } from 'lucide-react';
 import HuynhTruongLogo from '../components/HuynhTruongLogo';
 import HuynhTruongRoom from '../components/HuynhTruongRoom';
+import { formatClassName } from '../utils/formatClassName';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
@@ -363,7 +364,7 @@ export default function HtChatWidget() {
                           theme="dark"
                           className="rounded-xl!"
                           // Override name to class name
-                          _name={room.classRef?.tenLop || room.name}
+                          _name={formatClassName(room.classRef?.tenLop || room.name)}
                         />
                       ))}
                     </div>
