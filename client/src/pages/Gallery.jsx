@@ -326,7 +326,7 @@ const Lightbox = ({ photos, index, onClose, onGoto }) => {
 // ── UploadModal ───────────────────────────────────────────────────────────────
 const CONCURRENCY = 3;
 
-const UploadModal = ({ onClose, onUploaded }) => {
+const UploadModal = ({ onClose, onUploaded, defaultEvent, defaultYear }) => {
   const { i18n } = useTranslation();
   const lang     = i18n.language?.startsWith('en') ? 'en' : 'vi';
   const inputRef    = useRef(null);
@@ -334,8 +334,8 @@ const UploadModal = ({ onClose, onUploaded }) => {
 
   const [fileItems, setFileItems] = useState([]); // { id, file, preview, size, status, progress, error }
   const [title,     setTitle]     = useState('');
-  const [event,     setEvent]     = useState('sinh-hoat');
-  const [year,      setYear]      = useState(new Date().getFullYear());
+  const [event,     setEvent]     = useState(defaultEvent || 'sinh-hoat');
+  const [year,      setYear]      = useState(defaultYear  || new Date().getFullYear());
   const [status,    setStatus]    = useState('idle'); // 'idle'|'uploading'|'done'|'partial'
   const [dragOver,  setDragOver]  = useState(false);
 
@@ -776,7 +776,7 @@ const Gallery = () => {
             </div>
           )}
 
-          {isAdmin && !selectedAlbum && (
+          {isAdmin && (
             <button onClick={() => setShowUpload(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition shrink-0"
               style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}>
@@ -830,8 +830,12 @@ const Gallery = () => {
 
       <AnimatePresence>
         {showUpload && (
-          <UploadModal onClose={() => setShowUpload(false)}
-            onUploaded={(p) => { addPhoto(p); setShowUpload(false); }} />
+          <UploadModal
+            onClose={() => setShowUpload(false)}
+            onUploaded={(p) => { addPhoto(p); setShowUpload(false); }}
+            defaultEvent={selectedAlbum?.event}
+            defaultYear={selectedAlbum?.year}
+          />
         )}
       </AnimatePresence>
 
