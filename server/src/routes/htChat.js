@@ -7,8 +7,10 @@ router.use(checkAuth, requireGiaoly);
 router.get('/users',                   ctrl.getUsers);
 router.get('/rooms',                   ctrl.getRooms);
 router.post('/rooms',                  ctrl.createRoom);
-router.get('/rooms/:id/messages',      ctrl.getMessages);
-router.post('/rooms/:id/messages',     ctrl.sendMessage);
-router.put('/rooms/:id/read',          ctrl.markRead);
+router.get('/rooms/:id/messages',                    ctrl.getMessages);
+router.post('/rooms/:id/messages',                   ctrl.sendMessage);
+router.put('/rooms/:id/read',                        ctrl.markRead);
+router.delete('/rooms/:roomId/messages/:msgId',      ctrl.deleteMessage);
+router.post('/rooms/:roomId/messages/:msgId/react',  ctrl.reactMessage);
 
 module.exports = router;

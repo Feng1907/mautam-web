@@ -79,11 +79,11 @@ exports.getMessages = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// POST /api/ht-chat/rooms/:id/messages — gửi tin
+// POST /api/ht-chat/rooms/:id/messages — gửi tin (text và/hoặc attachments)
 exports.sendMessage = async (req, res, next) => {
   try {
-    const { text } = req.body;
-    if (!text?.trim())
+    const { text, attachments } = req.body;
+    if (!text?.trim() && !attachments?.length)
       return res.status(400).json({ success: false, message: 'Tin nhắn không được trống' });
 
     const room = await HtRoom.findOne({ _id: req.params.id, members: req.user._id });
@@ -92,18 +92,16 @@ exports.sendMessage = async (req, res, next) => {
     const msg = await HtMessage.create({
       room: room._id,
       sender: req.user._id,
-      text: text.trim(),
+      text: text?.trim() || '',
+      attachments: attachments || [],
       readBy: [req.user._id],
     });
     const populated = await msg.populate('sender', 'hoTen avatar');
 
-    // Cập nhật lastMsg trên room
-    await HtRoom.updateOne({ _id: room._id }, { lastMsg: text.trim(), lastMsgAt: new Date() });
+    const preview = text?.trim() || (attachments?.length ? `[${attachments[0].fileType === 'image' ? 'Ảnh' : 'Tệp'}]` : '');
+    await HtRoom.updateOne({ _id: room._id }, { lastMsg: preview, lastMsgAt: new Date() });
 
-    // Broadcast realtime
-    try {
-      getIO().to(`htchat:${room._id}`).emit('htchat:message', populated);
-    } catch { /* ignore */ }
+    try { getIO().to(`htchat:${room._id}`).emit('htchat:message', populated); } catch { /* ignore */ }
 
     res.status(201).json({ success: true, data: populated });
   } catch (err) { next(err); }
@@ -117,5 +115,63 @@ exports.markRead = async (req, res, next) => {
       { $addToSet: { readBy: req.user._id } }
     );
     res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+// DELETE /api/ht-chat/rooms/:roomId/messages/:msgId — xóa tin nhắn
+exports.deleteMessage = async (req, res, next) => {
+  try {
+    const msg = await HtMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ success: false, message: 'Không tìm thấy tin nhắn' });
+
+    const isOwner = msg.sender.toString() === req.user._id.toString();
+    const isAdmin = req.user.vaiTro === 'admin';
+    if (!isOwner && !isAdmin)
+      return res.status(403).json({ success: false, message: 'Không có quyền xóa tin nhắn này' });
+
+    msg.deleted = true;
+    msg.text = '';
+    msg.attachments = [];
+    await msg.save();
+
+    try {
+      getIO().to(`htchat:${msg.room}`).emit('htchat:message:deleted', { _id: msg._id, room: msg.room });
+    } catch { /* ignore */ }
+
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+// POST /api/ht-chat/rooms/:roomId/messages/:msgId/react — toggle emoji reaction
+exports.reactMessage = async (req, res, next) => {
+  try {
+    const { emoji } = req.body;
+    if (!emoji) return res.status(400).json({ success: false, message: 'Thiếu emoji' });
+
+    const msg = await HtMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ success: false, message: 'Không tìm thấy tin nhắn' });
+
+    const userId = req.user._id;
+    const entry = msg.reactions.find(r => r.emoji === emoji);
+
+    if (entry) {
+      const alreadyReacted = entry.users.some(u => u.toString() === userId.toString());
+      if (alreadyReacted) {
+        entry.users = entry.users.filter(u => u.toString() !== userId.toString());
+        if (entry.users.length === 0) msg.reactions = msg.reactions.filter(r => r.emoji !== emoji);
+      } else {
+        entry.users.push(userId);
+      }
+    } else {
+      msg.reactions.push({ emoji, users: [userId] });
+    }
+
+    await msg.save();
+
+    try {
+      getIO().to(`htchat:${msg.room}`).emit('htchat:reaction', { msgId: msg._id, reactions: msg.reactions });
+    } catch { /* ignore */ }
+
+    res.json({ success: true, data: msg.reactions });
   } catch (err) { next(err); }
 };
