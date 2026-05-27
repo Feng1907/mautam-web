@@ -132,13 +132,13 @@ const darkTokens = {
   adminBadge:    'rgba(248,212,68,0.95)',
 };
 const lightTokens = {
-  fg:            '#3D1515',
-  subtle:        '#6B7280',
-  bgActive:      'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(139,0,0,0.10))',
-  bgIdle:        'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(139,0,0,0.04))',
-  borderActive:  'rgba(212,175,55,0.85)',
-  borderIdle:    'rgba(212,175,55,0.50)',
-  shadowActive:  '0 6px 24px rgba(212,175,55,0.20), inset 0 1px 0 rgba(255,255,255,0.30)',
-  shadowIdle:    '0 2px 10px rgba(139,0,0,0.06)',
-  adminBadge:    '#A8810A',
+  fg:            '#5A0A0A',
+  subtle:        '#6B4040',
+  bgActive:      'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(139,0,0,0.08))',
+  bgIdle:        'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(139,0,0,0.04))',
+  borderActive:  'rgba(139,0,0,0.50)',
+  borderIdle:    'rgba(139,0,0,0.20)',
+  shadowActive:  '0 6px 24px rgba(139,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.50)',
+  shadowIdle:    '0 2px 8px rgba(139,0,0,0.06)',
+  adminBadge:    '#8B0000',
 };

@@ -9,6 +9,7 @@ import HuynhTruongRoom from '../components/HuynhTruongRoom';
 import { formatClassName } from '../utils/formatClassName';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import { useTheme } from '../store/ThemeContext';
 
 const SERVER_URL = import.meta.env.VITE_API_URL || '';
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🙏', '😮'];
@@ -66,6 +67,7 @@ function ReactionBar({ onReact }) {
 
 export default function HtChatWidget() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const qc = useQueryClient();
   const [open, setOpen]               = useState(false);
   const [activeRoom, setActiveRoom]   = useState(null);
@@ -361,7 +363,7 @@ export default function HtChatWidget() {
                           members={room.members?.length || 0}
                           unread={room.unread || 0}
                           density="compact"
-                          theme="dark"
+                          theme={isDark ? 'dark' : 'light'}
                           className="rounded-xl!"
                           // Override name to class name
                           _name={formatClassName(room.classRef?.tenLop || room.name)}
