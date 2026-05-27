@@ -324,66 +324,89 @@ const Lightbox = ({ photos, index, onClose, onGoto }) => {
 };
 
 // ── UploadModal ───────────────────────────────────────────────────────────────
+const CONCURRENCY = 3;
+
 const UploadModal = ({ onClose, onUploaded }) => {
   const { i18n } = useTranslation();
   const lang     = i18n.language?.startsWith('en') ? 'en' : 'vi';
-  const inputRef = useRef(null);
+  const inputRef    = useRef(null);
+  const addMoreRef  = useRef(null);
 
-  const [files,       setFiles]       = useState([]);
-  const [previews,    setPreviews]    = useState([]);
-  const [fileSizes,   setFileSizes]   = useState([]);
-  const [title,       setTitle]       = useState('');
-  const [event,       setEvent]       = useState('sinh-hoat');
-  const [year,        setYear]        = useState(new Date().getFullYear());
-  const [progress,    setProgress]    = useState(0);
-  const [phase,       setPhase]       = useState('compress');
-  const [currentFile, setCurrentFile] = useState(0);
-  const [savedBytes,  setSavedBytes]  = useState(0);
-  const [status,      setStatus]      = useState('idle');
-  const [dragOver,    setDragOver]    = useState(false);
-  const [errorMsg,    setErrorMsg]    = useState('');
+  const [fileItems, setFileItems] = useState([]); // { id, file, preview, size, status, progress, error }
+  const [title,     setTitle]     = useState('');
+  const [event,     setEvent]     = useState('sinh-hoat');
+  const [year,      setYear]      = useState(new Date().getFullYear());
+  const [status,    setStatus]    = useState('idle'); // 'idle'|'uploading'|'done'|'partial'
+  const [dragOver,  setDragOver]  = useState(false);
 
-  const handleFiles = (incoming) => {
+  const addFiles = (incoming) => {
     const arr = Array.from(incoming).filter(f => f.type.startsWith('image/'));
     if (!arr.length) return;
-    setFiles(arr); setFileSizes(arr.map(f => f.size));
-    setPreviews(arr.map(f => URL.createObjectURL(f)));
-    if (!title) setTitle(arr[0].name.replace(/\.[^/.]+$/, ''));
+    setFileItems(prev => {
+      if (!title && prev.length === 0) setTitle(arr[0].name.replace(/\.[^/.]+$/, ''));
+      return [
+        ...prev,
+        ...arr.map(f => ({
+          id: crypto.randomUUID(), file: f,
+          preview: URL.createObjectURL(f), size: f.size,
+          status: 'pending', progress: 0, error: '',
+        })),
+      ];
+    });
   };
+
+  const removeFile = (id) => setFileItems(prev => prev.filter(f => f.id !== id));
+
+  const updateItem = useCallback((id, patch) =>
+    setFileItems(prev => prev.map(f => f.id === id ? { ...f, ...patch } : f)), []);
+
+  const uploadOne = useCallback(async (item) => {
+    updateItem(item.id, { status: 'compressing', progress: 0 });
+    try {
+      const photo = await uploadPhoto({
+        file: item.file, title, event, year,
+        onProgress: (pct, ph) => updateItem(item.id, {
+          status: ph === 'compress' ? 'compressing' : 'uploading',
+          progress: pct,
+        }),
+      });
+      updateItem(item.id, { status: 'done', progress: 100 });
+      onUploaded(photo);
+      return true;
+    } catch (err) {
+      updateItem(item.id, { status: 'error', error: err?.message || 'Thất bại' });
+      return false;
+    }
+  }, [title, event, year, onUploaded, updateItem]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!files.length) return;
-    setStatus('uploading'); setProgress(0); setCurrentFile(0); setSavedBytes(0); setErrorMsg('');
-    try {
-      const uploaded = []; let totalSaved = 0;
-      for (let i = 0; i < files.length; i++) {
-        setCurrentFile(i);
-        const photo = await uploadPhoto({
-          file:  files[i],
-          title: files.length === 1 ? title : `${title} ${i + 1}`,
-          event, year,
-          onProgress: (pct, ph) => {
-            setPhase(ph);
-            const perFile = 100 / files.length;
-            setProgress(Math.round(i * perFile + (pct / 100) * perFile));
-          },
-        });
-        totalSaved += (photo.originalSize || 0) - (photo.compressedSize || 0);
-        setSavedBytes(totalSaved);
-        uploaded.push(photo);
-      }
-      setProgress(100); setStatus('done');
-      uploaded.forEach(p => onUploaded(p));
-      setTimeout(onClose, 1200);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg(lang === 'vi' ? 'Upload thất bại. Kiểm tra cấu hình Firebase và thử lại.' : 'Upload failed. Check Firebase config and try again.');
-      setStatus('error');
+    e?.preventDefault();
+    const queue = fileItems.filter(f => f.status === 'pending' || f.status === 'error');
+    if (!queue.length) return;
+    setStatus('uploading');
+    let successCount = 0;
+    for (let i = 0; i < queue.length; i += CONCURRENCY) {
+      const batch = queue.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(batch.map(uploadOne));
+      successCount += results.filter(Boolean).length;
     }
+    const finalStatus = successCount === queue.length ? 'done' : 'partial';
+    setStatus(finalStatus);
+    if (finalStatus === 'done') setTimeout(onClose, 2000);
   };
 
-  const totalOriginal = fileSizes.reduce((s, b) => s + b, 0);
+  const handleRetry = () => {
+    setFileItems(prev => prev.map(f =>
+      f.status === 'error' ? { ...f, status: 'pending', progress: 0, error: '' } : f
+    ));
+    setStatus('idle');
+  };
+
+  const totalSize    = fileItems.reduce((s, f) => s + f.size, 0);
+  const doneCount    = fileItems.filter(f => f.status === 'done').length;
+  const errorCount   = fileItems.filter(f => f.status === 'error').length;
+  const pendingCount = fileItems.filter(f => f.status === 'pending').length;
+  const isUploading  = status === 'uploading';
 
   return (
     <motion.div
@@ -395,22 +418,19 @@ const UploadModal = ({ onClose, onUploaded }) => {
       <motion.div
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 22 }}
-        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         style={{ background: '#fffcf9', border: '1px solid #e5d5b5' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b"
-          style={{ borderColor: '#e5d5b5' }}
-        >
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: '#e5d5b5' }}>
           <div>
             <h2 className="font-bold text-[#3d1515]" style={{ fontFamily: SERIF }}>
               {lang === 'vi' ? 'Tải ảnh lên' : 'Upload Photos'}
             </h2>
-            {files.length > 0 && (
+            {fileItems.length > 0 && (
               <p className="text-[11px] text-gray-400 mt-0.5" style={{ fontFamily: SANS }}>
-                {files.length} {lang === 'vi' ? 'ảnh' : 'photo(s)'} · {formatBytes(totalOriginal)}
+                {fileItems.length} {lang === 'vi' ? 'ảnh' : 'photo(s)'} · {formatBytes(totalSize)}
                 {' · '}
                 <span className="text-emerald-600 font-semibold">
                   {lang === 'vi' ? 'Tự nén → ~500 KB/ảnh' : 'Auto-compress → ~500 KB each'}
@@ -418,128 +438,180 @@ const UploadModal = ({ onClose, onUploaded }) => {
               </p>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
-            <X size={20} />
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition"><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4" style={{ fontFamily: SANS }}>
-          {/* Dropzone */}
-          <div
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-            onClick={() => status === 'idle' && inputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all ${status !== 'idle' ? 'cursor-default' : 'cursor-pointer'} ${dragOver ? 'border-[#8B0000] bg-red-50/40' : 'border-[#e5d5b5] hover:border-[#D4AF37] hover:bg-amber-50/30'}`}
-          >
-            <input ref={inputRef} type="file" multiple accept="image/*" className="hidden"
-              onChange={e => handleFiles(e.target.files)} />
-            {previews.length > 0 ? (
-              <div className="flex gap-2 flex-wrap justify-center">
-                {previews.slice(0, 6).map((src, i) => (
-                  <div key={i} className="relative">
-                    <img src={src} alt="" className="w-16 h-16 object-cover rounded-xl border-2 border-white shadow" />
-                    <span className="absolute -bottom-1 -right-1 text-[9px] bg-gray-700 text-white px-1 rounded-full">
-                      {formatBytes(fileSizes[i] || 0)}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1" style={{ fontFamily: SANS }}>
+          {/* Dropzone — chỉ hiện khi chưa có ảnh */}
+          {fileItems.length === 0 ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
+              onClick={() => inputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-[#8B0000] bg-red-50/40' : 'border-[#e5d5b5] hover:border-[#D4AF37] hover:bg-amber-50/30'}`}
+            >
+              <input ref={inputRef} type="file" multiple accept="image/*" className="hidden"
+                onChange={e => addFiles(e.target.files)} />
+              <span className="block text-3xl mb-2 opacity-30 select-none">✝</span>
+              <p className="text-sm font-semibold text-[#5a1a1a]">
+                {lang === 'vi' ? 'Kéo & thả ảnh vào đây' : 'Drag & drop photos here'}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {lang === 'vi' ? 'hoặc nhấp để chọn nhiều ảnh' : 'or click to select multiple photos'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Tổng progress khi đang upload */}
+              {isUploading && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                  <div className="flex justify-between text-xs text-gray-600 mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 size={11} className="animate-spin text-[#8B0000]" />
+                      {lang === 'vi' ? `Đang xử lý song song (tối đa ${CONCURRENCY} ảnh)…` : `Uploading in parallel (up to ${CONCURRENCY} at once)…`}
                     </span>
+                    <span className="font-bold text-[#8B0000]">{doneCount}/{fileItems.length}</span>
                   </div>
-                ))}
-                {previews.length > 6 && (
-                  <div className="w-16 h-16 rounded-xl bg-amber-50 flex items-center justify-center text-sm font-bold text-[#8B0000]">
-                    +{previews.length - 6}
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-[#8B0000]"
+                      animate={{ width: `${(doneCount / fileItems.length) * 100}%` }}
+                      transition={{ ease: 'linear', duration: 0.2 }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Danh sách file */}
+              <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                <div
+                  className="divide-y divide-gray-100 px-3"
+                  style={{ maxHeight: '220px', overflowY: 'auto' }}
+                >
+                  {fileItems.map(item => (
+                    <div key={item.id} className="flex items-center gap-2.5 py-2 group">
+                      <img src={item.preview} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">{item.file.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {item.status === 'compressing' || item.status === 'uploading' ? (
+                            <>
+                              <span className={`w-2 h-2 rounded-full shrink-0 animate-pulse ${item.status === 'compressing' ? 'bg-[#D4AF37]' : 'bg-[#8B0000]'}`} />
+                              <div className="flex-1 bg-gray-100 rounded-full h-1 overflow-hidden">
+                                <motion.div
+                                  className={`h-full rounded-full ${item.status === 'compressing' ? 'bg-[#D4AF37]' : 'bg-[#8B0000]'}`}
+                                  animate={{ width: `${item.progress}%` }}
+                                  transition={{ ease: 'linear', duration: 0.1 }}
+                                />
+                              </div>
+                              <span className="text-[10px] text-gray-400 shrink-0">{item.progress}%</span>
+                            </>
+                          ) : (
+                            <>
+                              {item.status === 'done' && <span className="text-emerald-500 text-xs">✓</span>}
+                              {item.status === 'error' && <span className="text-red-500 text-xs">✕</span>}
+                              {item.status === 'pending' && <span className="w-3 h-3 rounded-full border-2 border-gray-200 shrink-0" />}
+                              <span className={`text-[10px] ${item.status === 'error' ? 'text-red-500' : item.status === 'done' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                {item.status === 'done'
+                                  ? (lang === 'vi' ? 'Xong' : 'Done')
+                                  : item.status === 'error'
+                                    ? (item.error || (lang === 'vi' ? 'Lỗi' : 'Error'))
+                                    : formatBytes(item.size)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {/* Nút xóa — chỉ khi chưa upload */}
+                      {!isUploading && item.status !== 'done' && (
+                        <button type="button" onClick={() => removeFile(item.id)}
+                          className="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 shrink-0">
+                          <X size={15} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Thêm ảnh */}
+                {!isUploading && status !== 'done' && (
+                  <div
+                    className="border-t border-dashed border-gray-200 px-3 py-2 flex items-center gap-2 cursor-pointer hover:bg-amber-50/40 transition"
+                    onClick={() => addMoreRef.current?.click()}
+                  >
+                    <input ref={addMoreRef} type="file" multiple accept="image/*" className="hidden"
+                      onChange={e => addFiles(e.target.files)} />
+                    <span className="w-6 h-6 rounded-full border-2 border-dashed border-[#D4AF37] flex items-center justify-center text-[#8B0000] text-sm font-bold">+</span>
+                    <span className="text-xs text-gray-500">{lang === 'vi' ? 'Thêm ảnh' : 'Add more photos'}</span>
                   </div>
                 )}
               </div>
-            ) : (
-              <>
-                <span className="block text-3xl mb-2 opacity-30 select-none">✝</span>
-                <p className="text-sm font-semibold text-[#5a1a1a]">
-                  {lang === 'vi' ? 'Kéo & thả ảnh vào đây' : 'Drag & drop photos here'}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {lang === 'vi' ? 'hoặc nhấp để chọn' : 'or click to browse'}
-                </p>
-              </>
-            )}
-          </div>
+            </>
+          )}
 
           {/* Metadata */}
           <div className="space-y-3">
             <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-              placeholder={lang === 'vi' ? 'Tên ảnh / tiêu đề' : 'Photo title'}
-              className="input rounded-xl" />
+              placeholder={lang === 'vi' ? 'Tiêu đề album' : 'Album title'}
+              className="input rounded-xl" disabled={isUploading} />
             <div className="grid grid-cols-2 gap-3">
-              <select value={event} onChange={e => setEvent(e.target.value)} className="input rounded-xl">
+              <select value={event} onChange={e => setEvent(e.target.value)} className="input rounded-xl" disabled={isUploading}>
                 {EVENTS.filter(ev => ev.value !== 'all').map(ev => (
                   <option key={ev.value} value={ev.value}>{ev.label[lang]}</option>
                 ))}
               </select>
-              <select value={year} onChange={e => setYear(Number(e.target.value))} className="input rounded-xl">
+              <select value={year} onChange={e => setYear(Number(e.target.value))} className="input rounded-xl" disabled={isUploading}>
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Progress */}
-          {status === 'uploading' && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="flex items-center gap-1.5">
-                  <Loader2 size={12} className="animate-spin text-[#8B0000]" />
-                  <span className="text-gray-600 font-medium">
-                    {lang === 'vi'
-                      ? phase === 'compress' ? `Đang nén ảnh ${currentFile + 1}/${files.length}…` : `Đang tải lên ${currentFile + 1}/${files.length}…`
-                      : phase === 'compress' ? `Compressing ${currentFile + 1}/${files.length}…`   : `Uploading ${currentFile + 1}/${files.length}…`}
-                  </span>
-                </span>
-                <span className="font-bold text-[#8B0000]">{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full transition-colors ${phase === 'compress' ? 'bg-[#D4AF37]' : 'bg-[#8B0000]'}`}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ ease: 'linear', duration: 0.15 }}
-                />
-              </div>
-              <div className="flex gap-3 text-[10px] text-gray-400">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#D4AF37] inline-block" />{lang === 'vi' ? 'Nén ảnh' : 'Compressing'}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#8B0000] inline-block" />{lang === 'vi' ? 'Tải lên Firebase' : 'Uploading'}</span>
-              </div>
-            </div>
-          )}
-
+          {/* Kết quả */}
           {status === 'done' && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-center">
               <p className="text-sm text-emerald-700 font-bold">
-                {lang === 'vi' ? '✓ Tải lên thành công!' : '✓ Upload successful!'}
+                ✓ {lang === 'vi' ? `Đã tải lên ${doneCount} ảnh thành công!` : `${doneCount} photo(s) uploaded!`}
               </p>
-              {savedBytes > 0 && (
-                <p className="text-xs text-emerald-600 mt-0.5">
-                  {lang === 'vi' ? `Đã tiết kiệm ${formatBytes(savedBytes)} dung lượng Firebase` : `Saved ${formatBytes(savedBytes)} of Firebase storage`}
-                </p>
-              )}
+              <p className="text-xs text-emerald-500 mt-0.5">{lang === 'vi' ? 'Tự đóng sau 2 giây…' : 'Closing in 2 seconds…'}</p>
             </div>
           )}
 
-          {errorMsg && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{errorMsg}</p>
+          {status === 'partial' && errorCount > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+              <p className="text-sm text-orange-700 font-semibold">
+                {lang === 'vi'
+                  ? `${doneCount} ảnh thành công, ${errorCount} ảnh thất bại`
+                  : `${doneCount} succeeded, ${errorCount} failed`}
+              </p>
+              <button type="button" onClick={handleRetry}
+                className="mt-2 text-xs font-semibold text-[#8B0000] underline underline-offset-2">
+                {lang === 'vi' ? 'Thử lại ảnh lỗi' : 'Retry failed photos'}
+              </button>
+            </div>
           )}
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition">
+            <button type="button" onClick={onClose} disabled={isUploading}
+              className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-40 transition">
               {lang === 'vi' ? 'Hủy' : 'Cancel'}
             </button>
-            <button
-              type="submit"
-              disabled={!files.length || status === 'uploading' || status === 'done'}
-              className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50 transition"
-              style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}
-            >
-              {status === 'uploading'
-                ? <><Loader2 size={15} className="animate-spin" /> {lang === 'vi' ? 'Đang tải…' : 'Uploading…'}</>
-                : <><Upload size={15} /> {lang === 'vi' ? 'Tải lên' : 'Upload'}</>}
-            </button>
+            {status === 'partial' ? (
+              <button type="button" onClick={handleRetry}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition"
+                style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}>
+                {lang === 'vi' ? 'Thử lại' : 'Retry'}
+              </button>
+            ) : (
+              <button type="submit"
+                disabled={!fileItems.length || isUploading || status === 'done' || pendingCount === 0}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50 transition"
+                style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}>
+                {isUploading
+                  ? <><Loader2 size={15} className="animate-spin" /> {lang === 'vi' ? 'Đang tải…' : 'Uploading…'}</>
+                  : <><Upload size={15} /> {lang === 'vi' ? `Tải lên (${fileItems.length})` : `Upload (${fileItems.length})`}</>}
+              </button>
+            )}
           </div>
         </form>
       </motion.div>
