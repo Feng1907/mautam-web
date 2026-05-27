@@ -1,7 +1,46 @@
 const HtRoom    = require('../models/HtRoom');
 const HtMessage = require('../models/HtMessage');
 const User      = require('../models/User');
+const Class     = require('../models/Class');
+const NamHoc    = require('../models/NamHoc');
 const { getIO } = require('../config/socket');
+
+// Seed group rooms cho các lớp mà user phụ trách (năm học đang hoạt động)
+async function seedClassRooms(userId) {
+  const namHoc = await NamHoc.findOne({ dangHoatDong: true }).lean();
+  if (!namHoc) return;
+
+  const classes = await Class.find({
+    namHoc: namHoc._id,
+    $or: [{ huynhTruong: userId }, { duTruong: userId }],
+  }).lean();
+
+  for (const lop of classes) {
+    const memberIds = [lop.huynhTruong, ...(lop.duTruong || [])]
+      .filter(Boolean)
+      .map(id => id.toString());
+    const uniqueMembers = [...new Set(memberIds)];
+
+    const existing = await HtRoom.findOne({ classRef: lop._id });
+    if (existing) {
+      // Sync members nếu thay đổi
+      const currentSet = existing.members.map(m => m.toString()).sort().join(',');
+      const newSet = uniqueMembers.sort().join(',');
+      if (currentSet !== newSet) {
+        existing.members = uniqueMembers;
+        await existing.save();
+      }
+    } else {
+      await HtRoom.create({
+        name: lop.tenLop,
+        members: uniqueMembers,
+        createdBy: userId,
+        isGroup: true,
+        classRef: lop._id,
+      });
+    }
+  }
+}
 
 // GET /api/ht-chat/users — danh sách giaoly/admin để tạo DM/nhóm
 exports.getUsers = async (req, res, next) => {
@@ -14,11 +53,14 @@ exports.getUsers = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// GET /api/ht-chat/rooms — danh sách phòng của tôi, kèm số tin chưa đọc
+// GET /api/ht-chat/rooms — seed class rooms rồi trả danh sách, kèm số tin chưa đọc
 exports.getRooms = async (req, res, next) => {
   try {
+    await seedClassRooms(req.user._id);
+
     const rooms = await HtRoom.find({ members: req.user._id })
       .populate('members', 'hoTen avatar vaiTro')
+      .populate('classRef', 'tenLop nhanh')
       .sort({ lastMsgAt: -1, updatedAt: -1 })
       .lean();
 
