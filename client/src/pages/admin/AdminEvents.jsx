@@ -28,7 +28,7 @@ const COLOR_PRESETS = [
   { label: 'Trắng bạc',   v: '#e2e8f0' },
 ];
 
-const EMPTY_FORM = { name: '', date: '', icon: '📅', color: '#F8D444', active: true, order: 0, rsvpEnabled: false, rsvpDeadline: '' };
+const EMPTY_FORM = { name: '', date: '', icon: '📅', color: '#F8D444', active: true, order: 0, rsvpEnabled: false, rsvpDeadline: '', studentRsvpEnabled: false };
 
 // Chuyển datetime-local value → YYYY-MM-DD (date only) hoặc YYYY-MM-DDTHH:MM
 const normDate = (v) => v ? v.slice(0, 16) : '';
@@ -56,7 +56,7 @@ export default function AdminEvents() {
 
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setEditId(null); setShowForm(true); setError(''); };
   const openEdit   = (ev) => {
-    setForm({ name: ev.name, date: normDate(ev.date), icon: ev.icon, color: ev.color, active: ev.active, order: ev.order ?? 0, rsvpEnabled: ev.rsvpEnabled ?? false, rsvpDeadline: ev.rsvpDeadline ? ev.rsvpDeadline.slice(0, 10) : '' });
+    setForm({ name: ev.name, date: normDate(ev.date), icon: ev.icon, color: ev.color, active: ev.active, order: ev.order ?? 0, rsvpEnabled: ev.rsvpEnabled ?? false, rsvpDeadline: ev.rsvpDeadline ? ev.rsvpDeadline.slice(0, 10) : '', studentRsvpEnabled: ev.studentRsvpEnabled ?? false });
     setEditId(ev._id);
     setShowForm(true);
     setError('');
@@ -244,6 +244,14 @@ export default function AdminEvents() {
                     onChange={e => setForm(f => ({ ...f, rsvpDeadline: e.target.value }))} />
                 </div>
               )}
+              <label className="flex items-center gap-2 cursor-pointer w-fit mt-1">
+                <input type="checkbox" className="sr-only" checked={form.studentRsvpEnabled}
+                  onChange={e => setForm(f => ({ ...f, studentRsvpEnabled: e.target.checked }))} />
+                {form.studentRsvpEnabled
+                  ? <ToggleRight size={22} className="text-green-500" />
+                  : <ToggleLeft  size={22} className="text-gray-400" />}
+                <span className="text-sm text-gray-700 dark:text-slate-300">Cho phép đăng ký thiếu nhi (sự kiện trại)</span>
+              </label>
             </div>
 
             <div className="flex gap-2 pt-1">

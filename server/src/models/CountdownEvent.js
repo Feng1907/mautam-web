@@ -9,13 +9,20 @@ const countdownEventSchema = new mongoose.Schema(
     active:  { type: Boolean, default: true },
     order:   { type: Number, default: 0 },
     reminderPushSentAt: { type: Date, default: null },
-    rsvpEnabled:  { type: Boolean, default: false },
-    rsvpDeadline: { type: Date, default: null },
+    rsvpEnabled:        { type: Boolean, default: false },
+    rsvpDeadline:       { type: Date, default: null },
+    studentRsvpEnabled: { type: Boolean, default: false },
     rsvpList: [{
       user:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
       status:      { type: String, enum: ['confirmed', 'tentative', 'declined'], required: true },
       note:        { type: String, maxlength: 200, default: '' },
       respondedAt: { type: Date, default: Date.now },
+    }],
+    studentRsvps: [{
+      student:  { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+      lop:      { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
+      addedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      addedAt:  { type: Date, default: Date.now },
     }],
   },
   { timestamps: true }

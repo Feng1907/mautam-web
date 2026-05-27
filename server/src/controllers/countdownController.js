@@ -1,9 +1,14 @@
 const CountdownEvent = require('../models/CountdownEvent');
+const Class   = require('../models/Class');
+const Student = require('../models/Student');
 
 // GET /api/events — public, trả về sự kiện active sắp theo ngày
 exports.list = async (req, res, next) => {
   try {
-    const events = await CountdownEvent.find({ active: true }).sort({ date: 1 }).lean();
+    const events = await CountdownEvent.find({ active: true })
+      .populate('rsvpList.user', 'hoTen avatar')
+      .populate('studentRsvps.student', 'hoTen')
+      .sort({ date: 1 }).lean();
     res.json({ success: true, data: events });
   } catch (err) { next(err); }
 };
@@ -19,11 +24,11 @@ exports.listAll = async (req, res, next) => {
 // POST /api/events
 exports.create = async (req, res, next) => {
   try {
-    const { name, date, icon, color, active, order } = req.body;
+    const { name, date, icon, color, active, order, studentRsvpEnabled } = req.body;
     if (!name?.trim() || !date) {
       return res.status(400).json({ success: false, message: 'Tên và ngày là bắt buộc.' });
     }
-    const ev = await CountdownEvent.create({ name: name.trim(), date, icon, color, active, order, reminderPushSentAt: null });
+    const ev = await CountdownEvent.create({ name: name.trim(), date, icon, color, active, order, studentRsvpEnabled, reminderPushSentAt: null });
     res.status(201).json({ success: true, data: ev });
   } catch (err) { next(err); }
 };
@@ -31,10 +36,10 @@ exports.create = async (req, res, next) => {
 // PUT /api/events/:id
 exports.update = async (req, res, next) => {
   try {
-    const { name, date, icon, color, active, order } = req.body;
+    const { name, date, icon, color, active, order, studentRsvpEnabled } = req.body;
     const ev = await CountdownEvent.findByIdAndUpdate(
       req.params.id,
-      { name: name?.trim(), date, icon, color, active, order },
+      { name: name?.trim(), date, icon, color, active, order, studentRsvpEnabled },
       { new: true, runValidators: true }
     );
     if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện.' });
@@ -87,6 +92,40 @@ exports.cancelRsvp = async (req, res, next) => {
     );
     if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
     res.json({ success: true, message: 'Đã hủy đăng ký' });
+  } catch (err) { next(err); }
+};
+
+// POST /api/events/:id/student-rsvp — giaoly toggle đăng ký cho học sinh
+exports.toggleStudentRsvp = async (req, res, next) => {
+  try {
+    const { studentId } = req.body;
+    if (!studentId) return res.status(400).json({ success: false, message: 'Thiếu studentId' });
+
+    // Kiểm tra huynh trưởng có phụ trách lớp của học sinh này không
+    const student = await Student.findById(studentId).lean();
+    if (!student) return res.status(404).json({ success: false, message: 'Không tìm thấy học sinh' });
+
+    const lop = await Class.findOne({
+      _id: student.lop,
+      $or: [{ huynhTruong: req.user._id }, { duTruong: req.user._id }],
+    });
+    if (!lop && req.user.vaiTro !== 'admin')
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách lớp này' });
+
+    const ev = await CountdownEvent.findById(req.params.id);
+    if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
+
+    const idx = ev.studentRsvps.findIndex(r => r.student.toString() === studentId.toString());
+    if (idx >= 0) {
+      ev.studentRsvps.splice(idx, 1); // bỏ đăng ký
+    } else {
+      ev.studentRsvps.push({ student: studentId, lop: student.lop, addedBy: req.user._id });
+    }
+    await ev.save();
+
+    // populate để trả về tên
+    await ev.populate('studentRsvps.student', 'hoTen');
+    res.json({ success: true, data: ev.studentRsvps });
   } catch (err) { next(err); }
 };
 
