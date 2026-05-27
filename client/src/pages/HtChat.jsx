@@ -291,7 +291,7 @@ export default function HtChatWidget() {
       >
         {open
           ? <X size={22} className="text-white" />
-          : <HuynhTruongLogo symbol="flame" size={32} animated compact={false} title="Chat Huynh Trưởng" />
+          : <HuynhTruongLogo symbol="flame" size={38} animated compact={false} title="Chat Huynh Trưởng" />
         }
         {!open && totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-amber-400 text-red-900 text-[10px] font-black flex items-center justify-center leading-none">
