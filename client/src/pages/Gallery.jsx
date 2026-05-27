@@ -552,9 +552,11 @@ const UploadModal = ({ onClose, onUploaded, defaultEvent, defaultYear }) => {
 
           {/* Metadata */}
           <div className="space-y-3">
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-              placeholder={lang === 'vi' ? 'Tiêu đề album' : 'Album title'}
-              className="input rounded-xl" disabled={isUploading} />
+            {!defaultEvent && (
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                placeholder={lang === 'vi' ? 'Tiêu đề album' : 'Album title'}
+                className="input rounded-xl" disabled={isUploading} />
+            )}
             <div className="grid grid-cols-2 gap-3">
               <select value={event} onChange={e => setEvent(e.target.value)} className="input rounded-xl" disabled={isUploading}>
                 {EVENTS.filter(ev => ev.value !== 'all').map(ev => (
