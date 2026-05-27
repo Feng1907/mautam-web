@@ -45,7 +45,7 @@ const NhanVat = lazy(() => import('./pages/NhanVat'));
 const QrScanPage = lazy(() => import('./pages/QrScanPage'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const Events = lazy(() => import('./pages/Events'));
-const HtChat = lazy(() => import('./pages/HtChat'));
+import HtChatWidget from './pages/HtChat';
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -111,7 +111,6 @@ const AnimatedRoutes = () => {
             />
             <Route path="/nhan-vat" element={withErrorBoundary(<NhanVat />, 'NhanVat')} />
             <Route path="/su-kien" element={withErrorBoundary(<Events />, 'Events')} />
-            <Route path="/ht-chat" element={withErrorBoundary(<RouteGuard><HtChat /></RouteGuard>, 'HtChat')} />
             <Route path="/diem-danh-qr" element={withErrorBoundary(<QrScanPage />, 'QrScanPage')} />
             <Route
               path="/hoc-sinh/:lopId/:id"
@@ -171,6 +170,7 @@ const App = () => (
             <PushNotificationManager />
             <RealtimeToasts />
             <ChatWidget />
+            <HtChatWidget />
             <Navbar />
             <NavbarOffset />
             <UrgentBanner />
