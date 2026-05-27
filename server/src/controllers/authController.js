@@ -2,11 +2,36 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
 const sendEmail = require('../utils/sendEmail');
 const { logAction } = require('../utils/auditLog');
 
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Access token ngắn hạn (15 phút)
 const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+const REFRESH_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: REFRESH_TTL_MS,
+  path: '/api/auth',
+};
+
+const issueRefreshToken = async (userId, req) => {
+  const raw  = crypto.randomBytes(40).toString('hex');
+  const hash = await bcrypt.hash(raw, 10);
+  await RefreshToken.create({
+    user:      userId,
+    tokenHash: hash,
+    expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+    ip:        req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+  return raw;
+};
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_MS   = 15 * 60 * 1000; // 15 phút
@@ -60,6 +85,8 @@ exports.login = async (req, res, next) => {
     logAction(req, 'login', 'user', user.hoTen);
 
     const token = signToken(user._id);
+    const refreshRaw = await issueRefreshToken(user._id, req);
+    res.cookie('refreshToken', refreshRaw, REFRESH_COOKIE_OPTS);
     user.matKhau = undefined;
     res.json({ success: true, token, user });
   } catch (err) {
@@ -269,4 +296,52 @@ exports.forgotPassword = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+// POST /api/auth/refresh — đổi refresh token lấy access token mới (token rotation)
+exports.refreshToken = async (req, res, next) => {
+  try {
+    const raw = req.cookies?.refreshToken;
+    if (!raw)
+      return res.status(401).json({ success: false, message: 'Không có refresh token' });
+
+    // Tìm tất cả refresh token còn hạn của user (chưa biết user là ai → scan)
+    // Dùng brute-force tìm kiếm qua bcrypt.compare — giới hạn bằng TTL index
+    const tokens = await RefreshToken.find({ expiresAt: { $gt: new Date() } }).limit(200);
+    let matched = null;
+    for (const t of tokens) {
+      if (await bcrypt.compare(raw, t.tokenHash)) { matched = t; break; }
+    }
+
+    if (!matched)
+      return res.status(401).json({ success: false, message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+
+    // Token rotation: xóa cái cũ, tạo cái mới
+    await RefreshToken.deleteOne({ _id: matched._id });
+    const newRaw = await issueRefreshToken(matched.user, req);
+    res.cookie('refreshToken', newRaw, REFRESH_COOKIE_OPTS);
+
+    const accessToken = signToken(matched.user);
+    res.json({ success: true, token: accessToken });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/auth/logout — xóa refresh token, clear cookie
+exports.logoutHandler = async (req, res) => {
+  const raw = req.cookies?.refreshToken;
+  if (raw) {
+    try {
+      const tokens = await RefreshToken.find({ expiresAt: { $gt: new Date() } }).limit(200);
+      for (const t of tokens) {
+        if (await bcrypt.compare(raw, t.tokenHash)) {
+          await RefreshToken.deleteOne({ _id: t._id });
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  res.clearCookie('refreshToken', { ...REFRESH_COOKIE_OPTS, maxAge: 0 });
+  res.json({ success: true });
 };

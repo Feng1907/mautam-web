@@ -9,6 +9,8 @@ const {
   changePassword,
   forgotPassword,
   getLoginHistory,
+  refreshToken,
+  logoutHandler,
 } = require('../controllers/authController');
 const { checkAuth, requireAdmin } = require('../middlewares/checkAuth');
 
@@ -21,5 +23,7 @@ router.put('/change-password',  checkAuth, changePassword);
 router.post('/forgot-password',    forgotPassword);
 router.post('/admin-reset-password', checkAuth, requireAdmin, adminResetPassword);
 router.get('/login-history',     checkAuth, getLoginHistory);
+router.post('/refresh',          refreshToken);
+router.post('/logout',           logoutHandler);
 
 module.exports = router;
