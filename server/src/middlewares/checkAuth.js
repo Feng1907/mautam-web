@@ -21,4 +21,10 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = { checkAuth, requireAdmin };
+const requireGiaoly = (req, res, next) => {
+  if (!['admin', 'giaoly'].includes(req.user?.vaiTro))
+    return res.status(403).json({ success: false, message: 'Chỉ Huynh trưởng mới có quyền này' });
+  next();
+};
+
+module.exports = { checkAuth, requireAdmin, requireGiaoly };

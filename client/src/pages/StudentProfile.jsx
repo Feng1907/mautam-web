@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
-import { ChevronLeft, User, BookOpen, CalendarCheck } from 'lucide-react';
+import { ChevronLeft, User, BookOpen, CalendarCheck, Cross, Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { SkeletonLine } from '../components/Skeleton';
+import { useAuth } from '../store/AuthContext';
 
 const SERIF = '"Playfair Display", "EB Garamond", Georgia, serif';
 const SANS  = '"Be Vietnam Pro", "Inter", system-ui, sans-serif';
@@ -104,16 +105,51 @@ const tabV = {
 };
 
 const TABS = [
-  { key: 'info',    label: 'Thông tin', Icon: User          },
-  { key: 'grades',  label: 'Điểm',      Icon: BookOpen      },
-  { key: 'attend',  label: 'Chuyên cần',Icon: CalendarCheck  },
+  { key: 'info',       label: 'Thông tin',  Icon: User          },
+  { key: 'grades',     label: 'Điểm',       Icon: BookOpen      },
+  { key: 'attend',     label: 'Chuyên cần', Icon: CalendarCheck  },
+  { key: 'milestones', label: 'Cột mốc',    Icon: Cross         },
 ];
+
+const MILESTONE_CONFIG = {
+  ruatoi:   { label: 'Rửa tội',           color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',     dot: '#0ea5e9' },
+  ruocle:   { label: 'Rước lễ lần đầu',   color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', dot: '#f59e0b' },
+  themsucc: { label: 'Thêm sức',          color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', dot: '#a855f7' },
+  giaivai:  { label: 'Giải vạ',           color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', dot: '#22c55e' },
+  khac:     { label: 'Khác',              color: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',   dot: '#9ca3af' },
+};
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 const StudentProfile = () => {
   const { lopId, id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const [tab, setTab] = useState('info');
+  const isGiaoly = user && ['admin', 'giaoly'].includes(user.vaiTro);
+
+  const [milestoneForm, setMilestoneForm] = useState({ loai: 'ruocle', ngay: '', ghiChu: '' });
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+
+  const milestonesQ = useQuery({
+    queryKey: ['milestones', id],
+    queryFn: () => api.get(`/milestones/${id}`).then(r => r.data.data),
+    enabled: tab === 'milestones',
+  });
+
+  const addMilestone = useMutation({
+    mutationFn: (data) => api.post('/milestones', { ...data, studentId: id }),
+    onSuccess: () => {
+      qc.invalidateQueries(['milestones', id]);
+      setShowMilestoneForm(false);
+      setMilestoneForm({ loai: 'ruocle', ngay: '', ghiChu: '' });
+    },
+  });
+
+  const deleteMilestone = useMutation({
+    mutationFn: (mid) => api.delete(`/milestones/${mid}`),
+    onSuccess: () => qc.invalidateQueries(['milestones', id]),
+  });
 
   const [studentQ, lichSuQ] = useQueries({
     queries: [
@@ -339,6 +375,103 @@ const StudentProfile = () => {
                 </div>
               </div>
             )
+          )}
+
+          {/* ── Cột mốc ── */}
+          {tab === 'milestones' && (
+            <div className="space-y-4">
+              {isGiaoly && (
+                <div className="flex justify-end">
+                  <button onClick={() => setShowMilestoneForm(s => !s)}
+                    className="flex items-center gap-1.5 text-sm font-semibold text-[#8B0000] hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded-lg transition">
+                    <Plus size={15} /> Thêm cột mốc
+                  </button>
+                </div>
+              )}
+
+              {showMilestoneForm && isGiaoly && (
+                <div className="rounded-xl border-2 border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Loại cột mốc</label>
+                      <select className="input" value={milestoneForm.loai}
+                        onChange={e => setMilestoneForm(f => ({ ...f, loai: e.target.value }))}>
+                        {Object.entries(MILESTONE_CONFIG).map(([k, v]) => (
+                          <option key={k} value={k}>{v.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Ngày <span className="text-red-500">*</span></label>
+                      <input type="date" className="input" value={milestoneForm.ngay}
+                        onChange={e => setMilestoneForm(f => ({ ...f, ngay: e.target.value }))} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Ghi chú</label>
+                      <input className="input" placeholder="VD: Nhà thờ Giáo xứ Mẫu Tâm" maxLength={300}
+                        value={milestoneForm.ghiChu}
+                        onChange={e => setMilestoneForm(f => ({ ...f, ghiChu: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button disabled={!milestoneForm.ngay || addMilestone.isPending}
+                      onClick={() => addMilestone.mutate(milestoneForm)}
+                      className="flex items-center gap-1.5 btn-primary text-sm px-4 py-1.5 rounded-lg disabled:opacity-50">
+                      {addMilestone.isPending ? '...' : 'Lưu'}
+                    </button>
+                    <button onClick={() => setShowMilestoneForm(false)}
+                      className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+                      Hủy
+                    </button>
+                  </div>
+                  {addMilestone.isError && (
+                    <p className="text-xs text-red-500">{addMilestone.error?.response?.data?.message || 'Lỗi thêm cột mốc'}</p>
+                  )}
+                </div>
+              )}
+
+              {milestonesQ.isLoading ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse" />)}
+                </div>
+              ) : !milestonesQ.data?.length ? (
+                <EmptyState text="Chưa có cột mốc thiêng liêng nào được ghi nhận" />
+              ) : (
+                <div className="relative pl-6">
+                  {/* vertical line */}
+                  <div className="absolute left-2.5 top-3 bottom-3 w-px bg-[#e5d5b5] dark:bg-slate-700" />
+                  <div className="space-y-4">
+                    {milestonesQ.data.map(m => {
+                      const cfg = MILESTONE_CONFIG[m.loai] || MILESTONE_CONFIG.khac;
+                      return (
+                        <div key={m._id} className="relative flex items-start gap-3">
+                          <div className="absolute -left-6 mt-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 shrink-0"
+                            style={{ background: cfg.dot }} />
+                          <div className="flex-1 rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>{cfg.label}</span>
+                                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                                  {new Date(m.ngay).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  {m.ghiBoi?.hoTen && ` · ghi bởi ${m.ghiBoi.hoTen}`}
+                                </p>
+                                {m.ghiChu && <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{m.ghiChu}</p>}
+                              </div>
+                              {isGiaoly && (
+                                <button onClick={() => deleteMilestone.mutate(m._id)}
+                                  className="p-1 text-gray-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition shrink-0">
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
         </motion.div>
