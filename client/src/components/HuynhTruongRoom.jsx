@@ -19,10 +19,9 @@ import HuynhTruongLogo from './HuynhTruongLogo';
 export default function HuynhTruongRoom({
   active = false,
   onClick,
-  online = 0,
-  members = 0,
+  members = [],   // array of { hoTen } objects
   unread = 0,
-  density = 'detailed',  // 'detailed' | 'compact'
+  _density = 'detailed',  // 'detailed' | 'compact'
   className = '',
   _name = null,  // override tên hiển thị (vd: tên lớp)
 }) {
@@ -77,22 +76,20 @@ export default function HuynhTruongRoom({
             }}>✦ ADMIN</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-            {online > 0 && (
-              <span style={{ position: 'relative', display: 'inline-flex', width: 6, height: 6 }}>
-                <span style={{
-                  position: 'absolute', inset: 0, borderRadius: '50%',
-                  background: '#34D399', opacity: 0.6,
-                  animation: 'ht-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite',
-                }} />
-                <span style={{
-                  position: 'relative', width: 6, height: 6, borderRadius: '50%', background: '#34D399',
-                }} />
-              </span>
-            )}
-            <span style={{ fontSize: 11, color: t.subtle, lineHeight: 1.2 }}>
-              {density === 'compact'
-                ? `${online} online`
-                : `${online} đang trực tuyến · ${members} thành viên`}
+            <span style={{ position: 'relative', display: 'inline-flex', width: 6, height: 6 }}>
+              <span style={{
+                position: 'absolute', inset: 0, borderRadius: '50%',
+                background: '#34D399', opacity: 0.6,
+                animation: 'ht-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite',
+              }} />
+              <span style={{
+                position: 'relative', width: 6, height: 6, borderRadius: '50%', background: '#34D399',
+              }} />
+            </span>
+            <span style={{ fontSize: 11, color: t.subtle, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {members.length === 0
+                ? 'Chưa có thành viên'
+                : members.map(m => m.hoTen || m).join(' · ')}
             </span>
           </div>
         </div>

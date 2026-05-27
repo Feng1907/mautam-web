@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Clock, Users, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Users, ChevronDown, UserCheck } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
@@ -52,26 +52,43 @@ export default function Events() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const isGiaoly = user && ['admin', 'giaoly'].includes(user.vaiTro);
+  const isParent = user?.vaiTro === 'PARENT';
   const [expanded, setExpanded] = useState(null);
+  const [studentPanelOpen, setStudentPanelOpen] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['events-all'],
     queryFn: () => api.get('/events').then(r => r.data.data),
   });
 
+  // Fetch students in huynh trưởng's class
+  const { data: myStudents = [] } = useQuery({
+    queryKey: ['my-students', user?.lopPhuTrach],
+    queryFn: () => api.get(`/students/${user.lopPhuTrach}`).then(r => r.data.data || r.data),
+    enabled: isGiaoly && !!user?.lopPhuTrach,
+  });
+
   const rsvpMutation = useMutation({
     mutationFn: ({ eventId, status }) => api.post(`/events/${eventId}/rsvp`, { status }),
-    onSuccess: () => qc.invalidateQueries(['events-all']),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['events-all'] }),
   });
 
   const cancelMutation = useMutation({
     mutationFn: (eventId) => api.delete(`/events/${eventId}/rsvp`),
-    onSuccess: () => qc.invalidateQueries(['events-all']),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['events-all'] }),
+  });
+
+  const studentRsvpMutation = useMutation({
+    mutationFn: ({ eventId, studentId }) => api.post(`/events/${eventId}/student-rsvp`, { studentId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['events-all'] }),
   });
 
   const getMyRsvp = (ev) => ev.rsvpList?.find(r =>
     (r.user?._id || r.user)?.toString() === user?._id?.toString()
   );
+
+  const isStudentRegistered = (ev, studentId) =>
+    ev.studentRsvps?.some(r => (r.student?._id || r.student)?.toString() === studentId?.toString());
 
   const events = data || [];
   const upcoming = events.filter(e => !isPast(e.date));
@@ -86,7 +103,7 @@ export default function Events() {
         </h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
           Các sự kiện sắp tới của xứ đoàn
-          {isGiaoly && ' · Huynh trưởng có thể đăng ký tham dự'}
+          {isGiaoly && !isParent && ' · Huynh trưởng có thể đăng ký tham dự'}
         </p>
       </div>
 
@@ -104,13 +121,38 @@ export default function Events() {
           {upcoming.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Sắp tới</h2>
-              {upcoming.map(ev => <EventCard key={ev._id} ev={ev} isGiaoly={isGiaoly} myRsvp={getMyRsvp(ev)} rsvpMutation={rsvpMutation} cancelMutation={cancelMutation} expanded={expanded} setExpanded={setExpanded} />)}
+              {upcoming.map(ev => (
+                <EventCard
+                  key={ev._id} ev={ev} isGiaoly={isGiaoly} isParent={isParent}
+                  myRsvp={getMyRsvp(ev)}
+                  myStudents={myStudents}
+                  isStudentRegistered={(sid) => isStudentRegistered(ev, sid)}
+                  onStudentToggle={(sid) => studentRsvpMutation.mutate({ eventId: ev._id, studentId: sid })}
+                  studentRsvpLoading={studentRsvpMutation.isPending}
+                  rsvpMutation={rsvpMutation} cancelMutation={cancelMutation}
+                  expanded={expanded} setExpanded={setExpanded}
+                  studentPanelOpen={studentPanelOpen} setStudentPanelOpen={setStudentPanelOpen}
+                />
+              ))}
             </section>
           )}
           {past.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Đã qua</h2>
-              {past.map(ev => <EventCard key={ev._id} ev={ev} isGiaoly={false} myRsvp={getMyRsvp(ev)} rsvpMutation={rsvpMutation} cancelMutation={cancelMutation} expanded={expanded} setExpanded={setExpanded} isPast />)}
+              {past.map(ev => (
+                <EventCard
+                  key={ev._id} ev={ev} isGiaoly={false} isParent={isParent}
+                  myRsvp={getMyRsvp(ev)}
+                  myStudents={[]}
+                  isStudentRegistered={(sid) => isStudentRegistered(ev, sid)}
+                  onStudentToggle={() => {}}
+                  studentRsvpLoading={false}
+                  rsvpMutation={rsvpMutation} cancelMutation={cancelMutation}
+                  expanded={expanded} setExpanded={setExpanded}
+                  studentPanelOpen={studentPanelOpen} setStudentPanelOpen={setStudentPanelOpen}
+                  isPast
+                />
+              ))}
             </section>
           )}
         </>
@@ -119,11 +161,17 @@ export default function Events() {
   );
 }
 
-function EventCard({ ev, isGiaoly, myRsvp, rsvpMutation, cancelMutation, expanded, setExpanded, isPast: past }) {
+function EventCard({
+  ev, isGiaoly, isParent, myRsvp, myStudents, isStudentRegistered, onStudentToggle, studentRsvpLoading,
+  rsvpMutation, cancelMutation, expanded, setExpanded, studentPanelOpen, setStudentPanelOpen, isPast: past
+}) {
   const confirmed = ev.rsvpList?.filter(r => r.status === 'confirmed').length || 0;
+  const registeredStudents = ev.studentRsvps?.length || 0;
   const isExpanded = expanded === ev._id;
+  const isStudentPanelOpen = studentPanelOpen === ev._id;
   const loading = rsvpMutation.isPending || cancelMutation.isPending;
   const deadlinePassed = ev.rsvpDeadline && new Date() > new Date(ev.rsvpDeadline);
+  const canRsvp = isGiaoly && !isParent && ev.rsvpEnabled && !past && !deadlinePassed;
 
   return (
     <div className={`card transition-all ${past ? 'opacity-60' : ''}`}>
@@ -148,6 +196,9 @@ function EventCard({ ev, isGiaoly, myRsvp, rsvpMutation, cancelMutation, expande
             {ev.rsvpEnabled && confirmed > 0 && (
               <span className="flex items-center gap-1"><Users size={11} /> {confirmed} xác nhận</span>
             )}
+            {registeredStudents > 0 && (
+              <span className="flex items-center gap-1"><UserCheck size={11} /> {registeredStudents} thiếu nhi</span>
+            )}
             {ev.rsvpEnabled && ev.rsvpDeadline && (
               <span className={`flex items-center gap-1 ${deadlinePassed ? 'text-red-400' : ''}`}>
                 <Calendar size={11} /> Hạn ĐK: {new Date(ev.rsvpDeadline).toLocaleDateString('vi-VN')}
@@ -155,8 +206,8 @@ function EventCard({ ev, isGiaoly, myRsvp, rsvpMutation, cancelMutation, expande
             )}
           </div>
 
-          {/* RSVP buttons */}
-          {isGiaoly && ev.rsvpEnabled && !past && !deadlinePassed && (
+          {/* RSVP buttons for huynh truong */}
+          {canRsvp && (
             <div className="mt-3">
               <RsvpButtons
                 myRsvp={myRsvp}
@@ -166,12 +217,24 @@ function EventCard({ ev, isGiaoly, myRsvp, rsvpMutation, cancelMutation, expande
               />
             </div>
           )}
-          {isGiaoly && ev.rsvpEnabled && deadlinePassed && !myRsvp && (
+          {isGiaoly && !isParent && ev.rsvpEnabled && deadlinePassed && !myRsvp && (
             <p className="mt-2 text-xs text-red-400">Đã hết hạn đăng ký</p>
+          )}
+
+          {/* Student RSVP toggle button — chỉ hiện với sự kiện trại (studentRsvpEnabled) */}
+          {isGiaoly && !past && ev.studentRsvpEnabled && myStudents.length > 0 && (
+            <button
+              onClick={() => setStudentPanelOpen(isStudentPanelOpen ? null : ev._id)}
+              className="mt-3 flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:underline"
+            >
+              <UserCheck size={13} />
+              Đăng ký thiếu nhi ({ev.studentRsvps?.length || 0}/{myStudents.length})
+              <ChevronDown size={12} className={`transition-transform ${isStudentPanelOpen ? 'rotate-180' : ''}`} />
+            </button>
           )}
         </div>
 
-        {isGiaoly && ev.rsvpEnabled && (
+        {isGiaoly && !isParent && ev.rsvpEnabled && (
           <button onClick={() => setExpanded(isExpanded ? null : ev._id)}
             className="shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition">
             <ChevronDown size={16} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -179,7 +242,36 @@ function EventCard({ ev, isGiaoly, myRsvp, rsvpMutation, cancelMutation, expande
         )}
       </div>
 
-      {/* Expanded RSVP list (giaoly xem người khác đã đăng ký) */}
+      {/* Student checklist panel */}
+      {isStudentPanelOpen && ev.studentRsvpEnabled && myStudents.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+            Đăng ký thiếu nhi tham dự
+          </p>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            {myStudents.map(s => {
+              const checked = isStudentRegistered(s._id);
+              return (
+                <button
+                  key={s._id}
+                  disabled={studentRsvpLoading}
+                  onClick={() => onStudentToggle(s._id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition ${
+                    checked
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
+                      : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-400'
+                  }`}
+                >
+                  <span className="text-[10px]">{checked ? '✅' : '⬜'}</span>
+                  <span className="truncate">{s.hoTen}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Expanded RSVP list */}
       {isExpanded && ev.rsvpList?.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 space-y-2">
           <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Danh sách đăng ký</p>

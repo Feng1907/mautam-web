@@ -46,7 +46,7 @@ function Avatar({ name, avatar, size = 8 }) {
 }
 
 function RoomName({ room, myId }) {
-  if (room.isGroup) return room.name || 'Nhóm';
+  if (room.isGroup) return formatClassName(room.classRef?.tenLop || room.name || 'Nhóm');
   const other = room.members?.find(m => (m._id || m) !== myId);
   return other?.hoTen || 'Chat';
 }
@@ -357,12 +357,10 @@ export default function HtChatWidget() {
                           key={room._id}
                           active={room._id === activeRoom}
                           onClick={() => handleSelectRoom(room._id)}
-                          online={room.members?.length || 0}
-                          members={room.members?.length || 0}
+                          members={room.members || []}
                           unread={room.unread || 0}
                           density="compact"
                           className="rounded-xl!"
-                          // Override name to class name
                           _name={formatClassName(room.classRef?.tenLop || room.name)}
                         />
                       ))}
