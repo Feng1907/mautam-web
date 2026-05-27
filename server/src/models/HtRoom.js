@@ -5,10 +5,12 @@ const htRoomSchema = new mongoose.Schema({
   members:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isGroup:   { type: Boolean, default: false },
+  classRef:  { type: mongoose.Schema.Types.ObjectId, ref: 'Class', default: null },
   lastMsg:   { type: String, default: null },
   lastMsgAt: { type: Date,   default: null },
 }, { timestamps: true });
 
 htRoomSchema.index({ members: 1 });
+htRoomSchema.index({ classRef: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('HtRoom', htRoomSchema);

@@ -24,6 +24,7 @@ export default function HuynhTruongRoom({
   density = 'detailed',  // 'detailed' | 'compact'
   theme = 'dark',
   className = '',
+  _name = null,  // override tên hiển thị (vd: tên lớp)
 }) {
   const dark = theme === 'dark';
   const t = dark ? darkTokens : lightTokens;
@@ -69,7 +70,7 @@ export default function HuynhTruongRoom({
               fontFamily: '"Playfair Display", "EB Garamond", Georgia, serif',
               fontWeight: 700, fontSize: 15, lineHeight: 1.1,
               color: t.fg,
-            }}>Huynh Trưởng</span>
+            }}>{_name || 'Huynh Trưởng'}</span>
             <span style={{
               fontSize: 8, fontWeight: 700, textTransform: 'uppercase',
               letterSpacing: '0.18em', color: t.adminBadge,

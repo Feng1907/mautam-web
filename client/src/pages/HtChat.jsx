@@ -5,6 +5,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip, FileText, MessageCircle } from 'lucide-react';
 import HuynhTruongLogo from '../components/HuynhTruongLogo';
+import HuynhTruongRoom from '../components/HuynhTruongRoom';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
@@ -276,6 +277,8 @@ export default function HtChatWidget() {
 
   const activeRoomData = rooms.find(r => r._id === activeRoom);
   const totalUnread = rooms.reduce((s, r) => s + (r.unread || 0), 0);
+  const classRooms = rooms.filter(r => r.classRef);
+  const dmRooms    = rooms.filter(r => !r.classRef);
   const showTyping = typingUser && typingUser.roomId === activeRoom;
 
   if (!isGiaoly) return null;
@@ -343,35 +346,65 @@ export default function HtChatWidget() {
                   </button>
                 </div>
               ) : (
-                <div className="p-2 space-y-0.5">
-                  {rooms.map(room => {
-                    const other = !room.isGroup && room.members?.find(m => m._id !== user._id);
-                    return (
-                      <button key={room._id} onClick={() => handleSelectRoom(room._id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition text-left">
-                        {room.isGroup
-                          ? <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                              <Users size={15} className="text-purple-600 dark:text-purple-400" />
+                <div className="p-2 space-y-3">
+                  {/* Lớp của tôi */}
+                  {classRooms.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">Lớp của tôi</p>
+                      {classRooms.map(room => (
+                        <HuynhTruongRoom
+                          key={room._id}
+                          active={room._id === activeRoom}
+                          onClick={() => handleSelectRoom(room._id)}
+                          online={room.members?.length || 0}
+                          members={room.members?.length || 0}
+                          unread={room.unread || 0}
+                          density="compact"
+                          theme="dark"
+                          className="rounded-xl!"
+                          // Override name to class name
+                          _name={room.classRef?.tenLop || room.name}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* DM & nhóm tự tạo */}
+                  {dmRooms.length > 0 && (
+                    <div className="space-y-0.5">
+                      {classRooms.length > 0 && (
+                        <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">Tin nhắn riêng</p>
+                      )}
+                      {dmRooms.map(room => {
+                        const other = !room.isGroup && room.members?.find(m => m._id !== user._id);
+                        return (
+                          <button key={room._id} onClick={() => handleSelectRoom(room._id)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition text-left">
+                            {room.isGroup
+                              ? <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                                  <Users size={15} className="text-purple-600 dark:text-purple-400" />
+                                </div>
+                              : <Avatar name={other?.hoTen} avatar={other?.avatar} size={9} />
+                            }
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">
+                                  {room.isGroup ? (room.name || 'Nhóm') : (other?.hoTen || 'Chat')}
+                                </p>
+                                <span className="text-[10px] text-gray-400 shrink-0 ml-1">{fmtTime(room.lastMsgAt)}</span>
+                              </div>
+                              <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{room.lastMsg || 'Bắt đầu trò chuyện'}</p>
                             </div>
-                          : <Avatar name={other?.hoTen} avatar={other?.avatar} size={9} />
-                        }
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">
-                              {room.isGroup ? (room.name || 'Nhóm') : (other?.hoTen || 'Chat')}
-                            </p>
-                            <span className="text-[10px] text-gray-400 shrink-0 ml-1">{fmtTime(room.lastMsgAt)}</span>
-                          </div>
-                          <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{room.lastMsg || 'Bắt đầu trò chuyện'}</p>
-                        </div>
-                        {room.unread > 0 && (
-                          <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                            {room.unread > 9 ? '9+' : room.unread}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                            {room.unread > 0 && (
+                              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                                {room.unread > 9 ? '9+' : room.unread}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
