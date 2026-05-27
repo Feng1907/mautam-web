@@ -776,7 +776,7 @@ const Gallery = () => {
             </div>
           )}
 
-          {isAdmin && (
+          {isAdmin && !selectedAlbum && (
             <button onClick={() => setShowUpload(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition shrink-0"
               style={{ background: 'linear-gradient(135deg, #8B0000, #c0392b)' }}>
