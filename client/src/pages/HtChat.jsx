@@ -84,7 +84,7 @@ export default function HtChatWidget() {
   const { data: rooms = [], isLoading: roomsLoading } = useQuery({
     queryKey: ['ht-rooms'],
     queryFn: () => api.get('/ht-chat/rooms').then(r => r.data.data),
-    enabled: isGiaoly,
+    enabled: !!isGiaoly,
     refetchInterval: open ? 30000 : false,
   });
 
