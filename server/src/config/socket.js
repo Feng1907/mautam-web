@@ -41,6 +41,9 @@ function initSocket(httpServer) {
     socket.on('leave:htchat', (roomId) => {
       socket.leave(`htchat:${roomId}`);
     });
+    socket.on('htchat:typing', ({ roomId, hoTen }) => {
+      socket.to(`htchat:${roomId}`).emit('htchat:typing', { roomId, hoTen });
+    });
 
     socket.on('disconnect', () => {
       logger.info(`[Socket] disconnected: ${socket.id}`);
