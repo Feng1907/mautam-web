@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import api from '../services/api';
+import { DashboardSkeleton } from '../components/PageSkeleton';
 import {
   getNotificationSettingsHint,
   getPushPermissionState,
@@ -842,14 +843,7 @@ const ParentDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <main className="page-container max-w-6xl py-10">
-        <div className="flex items-center justify-center py-20 text-gray-400">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Đang tải dashboard...
-        </div>
-      </main>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

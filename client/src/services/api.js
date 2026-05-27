@@ -4,18 +4,25 @@ import 'nprogress/nprogress.css';
 
 NProgress.configure({ showSpinner: false, trickleSpeed: 200, minimum: 0.08 });
 
-// Production: VITE_API_URL=https://your-app.onrender.com/api
-// Development: Vite proxy /api → localhost:5000
+const BASE = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: BASE,
   withCredentials: true,
 });
 
-// Đếm request đang chạy để tránh done() quá sớm khi có nhiều request song song
 let activeRequests = 0;
 
+// Getter/setter để AuthContext inject token vào mà không tạo circular import
+let _getToken = () => null;
+export const setTokenGetter = (fn) => { _getToken = fn; };
+
+// Cho phép AuthContext đặt hàm refresh từ ngoài
+let _refreshFn = null;
+export const setRefreshFn = (fn) => { _refreshFn = fn; };
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = _getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   if (activeRequests === 0) NProgress.start();
   activeRequests += 1;
@@ -28,20 +35,29 @@ api.interceptors.response.use(
     if (activeRequests === 0) NProgress.done();
     return res;
   },
-  (err) => {
+  async (err) => {
     activeRequests = Math.max(0, activeRequests - 1);
     if (activeRequests === 0) NProgress.done();
 
-    // Chỉ redirect khi 401 xảy ra ở route được bảo vệ (token hết hạn),
-    // KHÔNG redirect khi đang thực hiện chính request login/signup —
-    // vì backend trả 401 cho sai mật khẩu, interceptor sẽ gây GET /login → 304.
-    const url = err.config?.url || '';
-    const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/signup');
-    if (err.response?.status === 401 && !isAuthRequest) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    const url     = err.config?.url || '';
+    const isAuth  = url.includes('/auth/login') || url.includes('/auth/signup') ||
+                    url.includes('/auth/refresh') || url.includes('/auth/logout');
+    const is401   = err.response?.status === 401;
+
+    // Silent refresh: nếu 401 và không phải request auth, thử lấy access token mới
+    if (is401 && !isAuth && !err.config._retry && _refreshFn) {
+      err.config._retry = true;
+      const newToken = await _refreshFn();
+      if (newToken) {
+        err.config.headers.Authorization = `Bearer ${newToken}`;
+        return api(err.config);
+      }
+      // Refresh thất bại → redirect login
+      window.location.href = '/login';
+    } else if (is401 && !isAuth && !_refreshFn) {
       window.location.href = '/login';
     }
+
     return Promise.reject(err);
   }
 );

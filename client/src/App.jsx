@@ -21,7 +21,7 @@ import Footer from './components/Footer';
 import RouteGuard from './components/RouteGuard';
 import UrgentBanner from './components/UrgentBanner';
 import ErrorBoundary from './components/ErrorBoundary';
-import LoadingSpinner from './components/LoadingSpinner';
+import PageSkeleton from './components/PageSkeleton';
 import PushNotificationManager from './components/PushNotificationManager';
 import ChatWidget from './components/ChatWidget';
 import PageTransition from './components/PageTransition';
@@ -89,7 +89,7 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <PageTransition key={location.pathname}>
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<PageSkeleton />}>
           <Routes location={location}>
             <Route path="/" element={withErrorBoundary(<Home />, 'Home')} />
             <Route path="/login" element={withErrorBoundary(<Login />, 'Login')} />

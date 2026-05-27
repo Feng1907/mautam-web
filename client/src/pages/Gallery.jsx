@@ -11,7 +11,7 @@ import {
   Search,
 } from 'lucide-react';
 import { fetchPhotos, uploadPhoto, deletePhoto, formatBytes } from '../services/galleryService';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { CardGridSkeleton } from '../components/PageSkeleton';
 
 // ── Fonts / design tokens ─────────────────────────────────────────────────────
 const SERIF = '"Playfair Display", "EB Garamond", Lora, Georgia, serif';
@@ -720,7 +720,7 @@ const Gallery = () => {
     setLightbox({ open: true, index: Math.max(0, idx) });
   }, [albumPhotos]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <div className="page-container py-8"><CardGridSkeleton count={8} ratio="4/3" /></div>;
 
   const eventLabel = selectedAlbum
     ? (EVENTS.find(e => e.value === selectedAlbum.event)?.label[lang] || selectedAlbum.event)
