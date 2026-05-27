@@ -28,7 +28,7 @@ const COLOR_PRESETS = [
   { label: 'Trắng bạc',   v: '#e2e8f0' },
 ];
 
-const EMPTY_FORM = { name: '', date: '', icon: '📅', color: '#F8D444', active: true, order: 0 };
+const EMPTY_FORM = { name: '', date: '', icon: '📅', color: '#F8D444', active: true, order: 0, rsvpEnabled: false, rsvpDeadline: '' };
 
 // Chuyển datetime-local value → YYYY-MM-DD (date only) hoặc YYYY-MM-DDTHH:MM
 const normDate = (v) => v ? v.slice(0, 16) : '';
@@ -56,7 +56,7 @@ export default function AdminEvents() {
 
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setEditId(null); setShowForm(true); setError(''); };
   const openEdit   = (ev) => {
-    setForm({ name: ev.name, date: normDate(ev.date), icon: ev.icon, color: ev.color, active: ev.active, order: ev.order ?? 0 });
+    setForm({ name: ev.name, date: normDate(ev.date), icon: ev.icon, color: ev.color, active: ev.active, order: ev.order ?? 0, rsvpEnabled: ev.rsvpEnabled ?? false, rsvpDeadline: ev.rsvpDeadline ? ev.rsvpDeadline.slice(0, 10) : '' });
     setEditId(ev._id);
     setShowForm(true);
     setError('');
@@ -225,6 +225,26 @@ export default function AdminEvents() {
                 : <ToggleLeft  size={22} className="text-gray-400" />}
               <span className="text-sm text-gray-700 dark:text-slate-300">Kích hoạt sự kiện</span>
             </label>
+
+            {/* RSVP toggle + deadline */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer w-fit">
+                <input type="checkbox" className="sr-only" checked={form.rsvpEnabled}
+                  onChange={e => setForm(f => ({ ...f, rsvpEnabled: e.target.checked }))} />
+                {form.rsvpEnabled
+                  ? <ToggleRight size={22} className="text-blue-500" />
+                  : <ToggleLeft  size={22} className="text-gray-400" />}
+                <span className="text-sm text-gray-700 dark:text-slate-300">Cho phép Huynh trưởng đăng ký tham dự</span>
+              </label>
+              {form.rsvpEnabled && (
+                <div className="ml-7">
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Hạn đăng ký (tuỳ chọn)</label>
+                  <input type="date" className="input max-w-45"
+                    value={form.rsvpDeadline}
+                    onChange={e => setForm(f => ({ ...f, rsvpDeadline: e.target.value }))} />
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-2 pt-1">
               <button type="submit" disabled={saving}

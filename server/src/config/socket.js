@@ -34,6 +34,14 @@ function initSocket(httpServer) {
       socket.join('admin');
     });
 
+    // HT Chat rooms
+    socket.on('join:htchat', (roomId) => {
+      socket.join(`htchat:${roomId}`);
+    });
+    socket.on('leave:htchat', (roomId) => {
+      socket.leave(`htchat:${roomId}`);
+    });
+
     socket.on('disconnect', () => {
       logger.info(`[Socket] disconnected: ${socket.id}`);
     });
