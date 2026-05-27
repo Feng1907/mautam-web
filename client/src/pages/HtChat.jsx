@@ -157,7 +157,7 @@ export default function HtChatWidget() {
       {/* ── Floating button ── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="no-print fixed bottom-20 right-4 md:bottom-6 z-40 w-13 h-13 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+        className="no-print fixed bottom-20 left-4 md:bottom-6 z-40 w-13 h-13 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
         style={{ background: '#8B0000' }}
         aria-label="Chat Huynh Trưởng"
       >
@@ -174,7 +174,7 @@ export default function HtChatWidget() {
 
       {/* ── Chat panel ── */}
       {open && (
-        <div className="no-print fixed bottom-36 right-4 md:bottom-22 z-40 w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col overflow-hidden"
+        <div className="no-print fixed bottom-36 left-4 md:bottom-22 z-40 w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col overflow-hidden"
           style={{ height: '480px' }}>
 
           {/* Header */}
