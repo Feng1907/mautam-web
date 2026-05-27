@@ -12,10 +12,15 @@ export function useAttendanceSocket(lopId) {
   const [connected, setConnected] = useState(false);
   const [recentCheckins, setRecentCheckins] = useState([]); // tối đa 10 em gần nhất
   const [latestCheckin, setLatestCheckin] = useState(null);  // dùng cho Toast
+  const [latestUpdate, setLatestUpdate]   = useState(null);  // khi HT cập nhật thủ công
 
   const handleCheckin = useCallback((payload) => {
     setLatestCheckin({ ...payload, id: Date.now() });
     setRecentCheckins(prev => [payload, ...prev].slice(0, 10));
+  }, []);
+
+  const handleUpdate = useCallback((payload) => {
+    setLatestUpdate({ ...payload, _id: Date.now() });
   }, []);
 
   useEffect(() => {
@@ -43,12 +48,13 @@ export function useAttendanceSocket(lopId) {
     });
 
     socket.on('attendance:checked', handleCheckin);
+    socket.on('attendance:updated', handleUpdate);
 
     return () => {
       socket.emit('leave:lop', lopId);
       socket.disconnect();
     };
-  }, [lopId, handleCheckin]);
+  }, [lopId, handleCheckin, handleUpdate]);
 
-  return { connected, recentCheckins, latestCheckin };
+  return { connected, recentCheckins, latestCheckin, latestUpdate };
 }

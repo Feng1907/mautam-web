@@ -21,10 +21,12 @@ const REFRESH_COOKIE_OPTS = {
 };
 
 const issueRefreshToken = async (userId, req) => {
-  const raw  = crypto.randomBytes(40).toString('hex');
-  const hash = await bcrypt.hash(raw, 10);
+  const raw      = crypto.randomBytes(40).toString('hex');
+  const selector = raw.slice(0, 16);
+  const hash     = await bcrypt.hash(raw, 10);
   await RefreshToken.create({
     user:      userId,
+    selector,
     tokenHash: hash,
     expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
     ip:        req.ip,
@@ -305,15 +307,10 @@ exports.refreshToken = async (req, res, next) => {
     if (!raw)
       return res.status(401).json({ success: false, message: 'Không có refresh token' });
 
-    // Tìm tất cả refresh token còn hạn của user (chưa biết user là ai → scan)
-    // Dùng brute-force tìm kiếm qua bcrypt.compare — giới hạn bằng TTL index
-    const tokens = await RefreshToken.find({ expiresAt: { $gt: new Date() } }).limit(200);
-    let matched = null;
-    for (const t of tokens) {
-      if (await bcrypt.compare(raw, t.tokenHash)) { matched = t; break; }
-    }
+    const selector = raw.slice(0, 16);
+    const matched  = await RefreshToken.findOne({ selector, expiresAt: { $gt: new Date() } });
 
-    if (!matched)
+    if (!matched || !(await bcrypt.compare(raw, matched.tokenHash)))
       return res.status(401).json({ success: false, message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
 
     // Token rotation: xóa cái cũ, tạo cái mới
@@ -333,12 +330,10 @@ exports.logoutHandler = async (req, res) => {
   const raw = req.cookies?.refreshToken;
   if (raw) {
     try {
-      const tokens = await RefreshToken.find({ expiresAt: { $gt: new Date() } }).limit(200);
-      for (const t of tokens) {
-        if (await bcrypt.compare(raw, t.tokenHash)) {
-          await RefreshToken.deleteOne({ _id: t._id });
-          break;
-        }
+      const selector = raw.slice(0, 16);
+      const t = await RefreshToken.findOne({ selector });
+      if (t && await bcrypt.compare(raw, t.tokenHash)) {
+        await RefreshToken.deleteOne({ _id: t._id });
       }
     } catch { /* ignore */ }
   }

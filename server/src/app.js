@@ -113,6 +113,17 @@ const postValidators = {
   ]),
 };
 
+// Rate limiter theo userId — chống abuse sau khi đã đăng nhập
+const userLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 phút
+  limit: 120,
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+  skip: (req) => !req.user || req.user.vaiTro === 'admin',
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { success: false, message: 'Bạn thao tác quá nhanh. Vui lòng thử lại.' },
+});
+
 const notifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -165,6 +176,7 @@ app.use(cookieParser());
 
 // Rate limiting
 app.use('/api', globalLimiter);
+app.use('/api', userLimiter);
 app.post('/api/auth/login',           loginLimiter);
 app.post('/api/auth/signup',          loginLimiter);
 app.post('/api/auth/forgot-password', loginLimiter);
