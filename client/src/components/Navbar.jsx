@@ -6,6 +6,7 @@ import { CalendarDays, Home, Images, LayoutDashboard, Newspaper, UserRound, User
 import { useAuth } from '../store/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 const AVATAR_COLORS = [
   'bg-red-400','bg-blue-400','bg-green-500','bg-yellow-400',
@@ -133,6 +134,7 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-1.5 justify-end">
           <ThemeToggle />
           <LanguageSwitcher />
+          <NotificationBell />
 
           {/* Divider mỏng */}
           <div className="w-px h-5 bg-white/15 mx-0.5" />
