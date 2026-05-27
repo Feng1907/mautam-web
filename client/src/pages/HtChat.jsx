@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
-import { MessageCircle, Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip, FileText } from 'lucide-react';
+import { Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip, FileText, MessageCircle } from 'lucide-react';
+import HuynhTruongLogo from '../components/HuynhTruongLogo';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
@@ -288,7 +289,10 @@ export default function HtChatWidget() {
         style={{ background: '#8B0000' }}
         aria-label="Chat Huynh Trưởng"
       >
-        {open ? <X size={22} className="text-white" /> : <MessageCircle size={22} className="text-white" />}
+        {open
+          ? <X size={22} className="text-white" />
+          : <HuynhTruongLogo symbol="flame" size={32} animated compact={false} title="Chat Huynh Trưởng" />
+        }
         {!open && totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-amber-400 text-red-900 text-[10px] font-black flex items-center justify-center leading-none">
             {totalUnread > 9 ? '9+' : totalUnread}
@@ -309,7 +313,7 @@ export default function HtChatWidget() {
                   <ChevronLeft size={18} />
                 </button>
               )}
-              <MessageCircle size={16} className="text-white/80" />
+              <HuynhTruongLogo symbol="flame" size={18} animated={false} compact title="Chat Huynh Trưởng" />
               <span className="text-sm font-semibold text-white truncate max-w-40">
                 {activeRoom && activeRoomData
                   ? <RoomName room={activeRoomData} myId={user._id} />
