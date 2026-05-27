@@ -165,15 +165,21 @@ exports.upsert = async (req, res, next) => {
         .catch((err) => logger.warn('Gui push diem danh muon that bai', { error: err.message }));
     }
 
-    // Notify admin room khi điểm danh thủ công
+    // Notify admin room + class room khi điểm danh thủ công
     try {
       const lop = await Class.findById(lopId).select('tenLop').lean();
-      getIO().to('admin').emit('attendance:saved', {
+      const io = getIO();
+      io.to('admin').emit('attendance:saved', {
         lopId,
         lopName: lop?.tenLop || lopId,
         date,
         teacherName: req.user?.hoTen || 'Huynh trưởng',
         present,
+      });
+      io.to(`lop:${lopId}`).emit('attendance:updated', {
+        studentId, present,
+        updatedBy: req.user?.hoTen || 'Huynh trưởng',
+        updatedAt: new Date().toISOString(),
       });
     } catch { /* không làm crash response */ }
 
