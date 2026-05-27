@@ -13,6 +13,7 @@
 //     theme="dark"         // 'dark' | 'light'
 //   />
 
+import { useTheme } from '../store/ThemeContext';
 import HuynhTruongLogo from './HuynhTruongLogo';
 
 export default function HuynhTruongRoom({
@@ -22,12 +23,11 @@ export default function HuynhTruongRoom({
   members = 0,
   unread = 0,
   density = 'detailed',  // 'detailed' | 'compact'
-  theme = 'dark',
   className = '',
   _name = null,  // override tên hiển thị (vd: tên lớp)
 }) {
-  const dark = theme === 'dark';
-  const t = dark ? darkTokens : lightTokens;
+  const { isDark } = useTheme();
+  const t = isDark ? darkTokens : lightTokens;
 
   return (
     <button
