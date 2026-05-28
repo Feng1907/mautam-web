@@ -119,6 +119,162 @@ const AttendanceChart = ({ summary }) => {
   );
 };
 
+const MONTH_VI = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const DAY_VI   = ['CN','T2','T3','T4','T5','T6','T7'];
+
+const AttendanceCalendar = ({ records = [] }) => {
+  const byDate = useMemo(() => {
+    const m = {};
+    records.forEach(r => { m[r.date] = r.present; });
+    return m;
+  }, [records]);
+
+  const allDates = Object.keys(byDate).sort();
+  const defaultMonth = allDates.length
+    ? new Date(allDates[allDates.length - 1] + 'T00:00:00')
+    : new Date();
+  const [viewDate, setViewDate] = useState(defaultMonth);
+
+  const year  = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  // Build calendar grid: 6 rows × 7 cols, starting Monday=0
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // Shift so Monday is first column (0=Mon … 6=Sun)
+  const startOffset = (firstDay + 6) % 7;
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateKey = (d) => `${year}-${pad(month + 1)}-${pad(d)}`;
+   
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+  const canNext   = new Date(year, month + 1, 1) <= new Date();
+
+  return (
+    <div className="mt-5">
+      {/* Month nav */}
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 transition">
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-sm font-bold text-gray-700">{MONTH_VI[month]} {year}</span>
+        <button onClick={nextMonth} disabled={!canNext}
+          className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 transition disabled:opacity-30">
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAY_VI.map(d => (
+          <div key={d} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={`e${i}`} />;
+          const key = dateKey(d);
+          const status = byDate[key]; // true=present, false=absent, undefined=no data
+          const isToday = key === today;
+          return (
+            <div key={key} className={`aspect-square flex items-center justify-center rounded-lg text-xs font-semibold transition
+              ${isToday ? 'ring-2 ring-offset-1 ring-emerald-400' : ''}
+              ${status === true  ? 'bg-emerald-100 text-emerald-700'
+              : status === false ? 'bg-red-100 text-red-600'
+              : 'bg-gray-50 text-gray-400'}`}>
+              {d}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-500">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-100 inline-block" />Có mặt</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" />Vắng</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-50 border border-gray-200 inline-block" />Chưa có dữ liệu</span>
+      </div>
+    </div>
+  );
+};
+
+const AssignmentSection = ({ sheets }) => {
+  const [expandedId, setExpandedId] = useState(null);
+  const [detail, setDetail] = useState({});
+
+  const loadDetail = async (id) => {
+    if (detail[id]) { setExpandedId(expandedId === id ? null : id); return; }
+    try {
+      const res = await api.get(`/assignments/${id}`);
+      setDetail(d => ({ ...d, [id]: res.data.data }));
+      setExpandedId(id);
+    } catch (_e) { /* ignore */ }
+  };
+
+  if (!sheets.length) return (
+    <p className="py-6 text-center text-sm text-gray-400">Chưa có phân công nào được đăng.</p>
+  );
+
+  return (
+    <div className="space-y-2">
+      {sheets.slice(0, 5).map(sheet => {
+        const isOpen = expandedId === sheet._id;
+        const d = detail[sheet._id];
+        return (
+          <div key={sheet._id} className="rounded-xl border border-gray-100 overflow-hidden">
+            <button
+              onClick={() => loadDetail(sheet._id)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{sheet.title}</p>
+                {sheet.description && (
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{sheet.description}</p>
+                )}
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {sheet.notifiedAt
+                    ? `Đăng ${new Date(sheet.notifiedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                    : `Tạo ${new Date(sheet.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`}
+                  {sheet.createdBy?.hoTen && ` · ${sheet.createdBy.hoTen}`}
+                </p>
+              </div>
+              <ChevronRight className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+            </button>
+            {isOpen && d && (
+              <div className="border-t border-gray-100 px-4 pb-4 pt-3 space-y-3">
+                {(d.sessions || []).map((sess, si) => (
+                  <div key={si}>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                      {sess.label}{sess.date ? ` · ${sess.date}` : ''}
+                    </p>
+                    <div className="grid gap-1.5">
+                      {(sess.tasks || []).map((task, ti) => (
+                        <div key={ti} className="flex items-start gap-2 text-sm">
+                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded shrink-0">{task.type}</span>
+                          <span className="text-gray-700">
+                            {(task.assignees || []).map(a => a.name).join(', ') || '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const LatestGrades = ({ grades }) => {
   const latest = useMemo(
     () => [...grades].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8),
@@ -743,7 +899,7 @@ const ParentDashboard = () => {
   const [selectedId, setSelectedId] = useState('');
 
   // ── Query 1: dữ liệu khởi tạo — students, posts, events ──────────────────
-  const [studentsQ, postsQ, eventsQ] = useQueries({
+  const [studentsQ, postsQ, eventsQ, assignmentsQ] = useQueries({
     queries: [
       {
         queryKey: ['parentStudents'],
@@ -763,12 +919,19 @@ const ParentDashboard = () => {
         staleTime: 10 * 60 * 1000,
         retry: 3,
       },
+      {
+        queryKey: ['assignments-published'],
+        queryFn: () => api.get('/assignments').then(r => (r.data.data || []).filter(a => a.isPublished)),
+        staleTime: 10 * 60 * 1000,
+        retry: 2,
+      },
     ],
   });
 
-  const students = Array.isArray(studentsQ.data) ? studentsQ.data : [];
-  const posts    = Array.isArray(postsQ.data)    ? postsQ.data    : [];
-  const events   = Array.isArray(eventsQ.data)   ? eventsQ.data   : [];
+  const students    = Array.isArray(studentsQ.data)    ? studentsQ.data    : [];
+  const posts       = Array.isArray(postsQ.data)       ? postsQ.data       : [];
+  const events      = Array.isArray(eventsQ.data)      ? eventsQ.data      : [];
+  const assignments = Array.isArray(assignmentsQ.data) ? assignmentsQ.data : [];
   const loading  = studentsQ.isLoading || postsQ.isLoading || eventsQ.isLoading;
   const error    = studentsQ.error?.message || postsQ.error?.message || eventsQ.error?.message || '';
 
@@ -890,19 +1053,7 @@ const ParentDashboard = () => {
           >
             {detailLoading && <Loader2 className="mb-3 h-4 w-4 animate-spin text-gray-400" />}
             <AttendanceChart summary={attendance?.summary} />
-            <div className="mt-5 grid gap-2 md:grid-cols-2">
-              {(attendance?.records || []).slice(-4).reverse().map((record) => (
-                <div key={record._id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm">
-                  <span className="font-medium text-gray-700">
-                    {new Date(record.date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
-                  </span>
-                  <span className={`inline-flex items-center gap-1.5 font-semibold ${record.present ? 'text-emerald-700' : 'text-red-700'}`}>
-                    {record.present ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                    {record.present ? 'Có mặt' : 'Vắng'}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <AttendanceCalendar records={attendance?.records || []} />
           </SectionCard>
 
           <SectionCard
@@ -961,6 +1112,17 @@ const ParentDashboard = () => {
 
           <SectionCard icon={Bell} title="Tin tức" accent="blue" subtitle="Thông báo mới từ xứ đoàn">
             <RecentPosts posts={posts} />
+          </SectionCard>
+
+          {/* Phân công sinh hoạt */}
+          <SectionCard
+            icon={ClipboardList}
+            title="Phân công sinh hoạt"
+            accent="amber"
+            subtitle="Danh sách phân công nhiệm vụ của các Huynh trưởng"
+            className="lg:col-span-3"
+          >
+            <AssignmentSection sheets={assignments} />
           </SectionCard>
         </div>
       )}
