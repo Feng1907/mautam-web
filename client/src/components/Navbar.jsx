@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarDays, Home, Images, LayoutDashboard, Newspaper, UserRound, UsersRound } from 'lucide-react';
+import { CalendarDays, ClipboardList, Home, Images, LayoutDashboard, Newspaper, UserRound, UsersRound } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
@@ -78,7 +78,8 @@ const Navbar = () => {
     { to: '/thu-vien',     label: t('nav.gallery'), Icon: Images },
     { to: '/lich-su-cuu-do', label: 'Lịch Sử', Icon: LayoutDashboard },
     { to: '/lop-hoc',      label: t('nav.classes'), Icon: UsersRound, authRequired: true  },
-    { to: '/su-kien',      label: 'Sự kiện',  Icon: CalendarDays,   giaolyOnly: true  },
+    { to: '/su-kien',      label: 'Sự kiện',  Icon: CalendarDays },
+    { to: '/quiz',         label: 'Kiểm tra', Icon: ClipboardList, authRequired: true },
     { to: '/phu-huynh',    label: 'Phụ Huynh', Icon: UserRound, parentOnly:   true  },
     { to: '/admin',        label: t('nav.admin'), Icon: LayoutDashboard, adminOnly:    true  },
   ];

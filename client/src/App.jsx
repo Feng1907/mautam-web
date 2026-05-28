@@ -62,6 +62,12 @@ const AdminBackup = lazy(() => import('./pages/admin/AdminBackup'));
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
 const AdminParentLink = lazy(() => import('./pages/admin/AdminParentLink'));
 const AdminAssignments = lazy(() => import('./pages/admin/AdminAssignments'));
+const AdminQuiz = lazy(() => import('./pages/admin/AdminQuiz'));
+const QuizPage = lazy(() => import('./pages/Quiz'));
+const QuizTake = lazy(() => import('./pages/QuizTake'));
+const QuizMonitor = lazy(() => import('./pages/QuizMonitor'));
+const QuizGrade = lazy(() => import('./pages/QuizGrade'));
+const QuizLeaderboard = lazy(() => import('./pages/QuizLeaderboard'));
 
 const ConditionalFooter = () => {
   const { pathname } = useLocation();
@@ -152,7 +158,14 @@ const AnimatedRoutes = () => {
               <Route path="su-kien" element={withErrorBoundary(<AdminEvents />, 'AdminEvents')} />
               <Route path="phu-huynh" element={withErrorBoundary(<AdminParentLink />, 'AdminParentLink')} />
               <Route path="phan-cong" element={withErrorBoundary(<AdminAssignments />, 'AdminAssignments')} />
+              <Route path="quiz" element={withErrorBoundary(<AdminQuiz />, 'AdminQuiz')} />
             </Route>
+
+            <Route path="/quiz" element={withErrorBoundary(<RouteGuard><QuizPage /></RouteGuard>, 'QuizPage')} />
+            <Route path="/quiz/:id/take" element={withErrorBoundary(<RouteGuard><QuizTake /></RouteGuard>, 'QuizTake')} />
+            <Route path="/quiz/:id/monitor" element={withErrorBoundary(<RouteGuard><QuizMonitor /></RouteGuard>, 'QuizMonitor')} />
+            <Route path="/quiz/:id/grade" element={withErrorBoundary(<RouteGuard><QuizGrade /></RouteGuard>, 'QuizGrade')} />
+            <Route path="/quiz/:id/leaderboard" element={withErrorBoundary(<RouteGuard><QuizLeaderboard /></RouteGuard>, 'QuizLeaderboard')} />
           </Routes>
         </Suspense>
       </PageTransition>
