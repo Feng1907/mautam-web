@@ -45,6 +45,14 @@ function initSocket(httpServer) {
       socket.to(`htchat:${roomId}`).emit('htchat:typing', { roomId, hoTen });
     });
 
+    // Quiz monitor rooms
+    socket.on('join:quiz', (quizId) => {
+      socket.join(`quiz:${quizId}`);
+    });
+    socket.on('leave:quiz', (quizId) => {
+      socket.leave(`quiz:${quizId}`);
+    });
+
     socket.on('disconnect', () => {
       logger.info(`[Socket] disconnected: ${socket.id}`);
     });
