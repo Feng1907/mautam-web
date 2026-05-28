@@ -226,6 +226,7 @@ app.use('/api/audit-logs',   require('./routes/auditLogs'));
 app.use('/api/assignments',  require('./routes/assignments'));
 app.use('/api/milestones',   require('./routes/milestones'));
 app.use('/api/ht-chat',      require('./routes/htChat'));
+app.use('/api/quizzes',      require('./routes/quiz'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });

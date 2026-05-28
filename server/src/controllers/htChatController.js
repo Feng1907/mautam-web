@@ -15,10 +15,16 @@ async function seedClassRooms(userId) {
     $or: [{ huynhTruong: userId }, { duTruong: userId }],
   }).lean();
 
+  // Chỉ lấy user giaoly làm member — loại admin ra khỏi room lớp
+  const giaolyIds = (await User.find({ vaiTro: 'giaoly' }).select('_id').lean())
+    .map(u => u._id.toString());
+
   for (const lop of classes) {
     const memberIds = [lop.huynhTruong, ...(lop.duTruong || [])]
       .filter(Boolean)
-      .map(id => id.toString());
+      .map(id => id.toString())
+      .filter(id => giaolyIds.includes(id));  // chỉ giaoly
+    if (!memberIds.length) continue;
     const uniqueMembers = [...new Set(memberIds)];
 
     const existing = await HtRoom.findOne({ classRef: lop._id });
@@ -56,7 +62,15 @@ exports.getUsers = async (req, res, next) => {
 // GET /api/ht-chat/rooms — seed class rooms rồi trả danh sách, kèm số tin chưa đọc
 exports.getRooms = async (req, res, next) => {
   try {
-    await seedClassRooms(req.user._id);
+    if (req.user.vaiTro === 'giaoly') {
+      await seedClassRooms(req.user._id);
+    } else if (req.user.vaiTro === 'admin') {
+      // Loại admin ra khỏi tất cả class rooms (classRef != null)
+      await HtRoom.updateMany(
+        { classRef: { $ne: null }, members: req.user._id },
+        { $pull: { members: req.user._id } }
+      );
+    }
 
     const rooms = await HtRoom.find({ members: req.user._id })
       .populate('members', 'hoTen avatar vaiTro')

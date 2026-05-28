@@ -6,7 +6,7 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
-import { ChevronLeft, User, BookOpen, CalendarCheck, Cross, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, User, BookOpen, CalendarCheck, Cross, Plus, Trash2, ClipboardList } from 'lucide-react';
 import api from '../services/api';
 import { SkeletonLine } from '../components/Skeleton';
 import { useAuth } from '../store/AuthContext';
@@ -109,6 +109,7 @@ const TABS = [
   { key: 'grades',     label: 'Điểm',       Icon: BookOpen      },
   { key: 'attend',     label: 'Chuyên cần', Icon: CalendarCheck  },
   { key: 'milestones', label: 'Cột mốc',    Icon: Cross         },
+  { key: 'quizzes',    label: 'Kiểm tra',   Icon: ClipboardList  },
 ];
 
 const MILESTONE_CONFIG = {
@@ -135,6 +136,12 @@ const StudentProfile = () => {
     queryKey: ['milestones', id],
     queryFn: () => api.get(`/milestones/${id}`).then(r => r.data.data),
     enabled: tab === 'milestones',
+  });
+
+  const quizzesQ = useQuery({
+    queryKey: ['student-quizzes', id],
+    queryFn: () => api.get(`/quizzes/student/${id}`).then(r => r.data.data),
+    enabled: tab === 'quizzes',
   });
 
   const addMilestone = useMutation({
@@ -472,6 +479,47 @@ const StudentProfile = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── Kiểm tra ── */}
+          {tab === 'quizzes' && (
+            quizzesQ.isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse" />)}
+              </div>
+            ) : !quizzesQ.data?.length ? (
+              <EmptyState text="Chưa có bài kiểm tra nào được hoàn thành" />
+            ) : (
+              <div className="space-y-2">
+                {quizzesQ.data.map(a => {
+                  const pct = a.tongDiem ? Math.round(a.diem / a.tongDiem * 100) : null;
+                  const color = pct == null ? 'text-gray-400' : pct >= 80 ? 'text-emerald-700' : pct >= 50 ? 'text-amber-600' : 'text-red-600';
+                  return (
+                    <div key={a._id} className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">{a.quiz?.tieuDe || 'Bài kiểm tra'}</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                          {a.nopLuc ? new Date(a.nopLuc).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {a.soViPham > 0 && (
+                            <span className={`ml-2 ${a.biFlagged ? 'text-red-500' : 'text-amber-500'}`}>
+                              · {a.soViPham} vi phạm {a.biFlagged && '🚨'}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {a.diem != null ? (
+                          <p className={`text-base font-bold ${color}`}>{a.diem}/{a.tongDiem}</p>
+                        ) : (
+                          <p className="text-xs text-gray-400 dark:text-slate-500">Chờ chấm</p>
+                        )}
+                        {pct != null && <p className="text-[10px] text-gray-400 dark:text-slate-500">{pct}%</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
           )}
 
         </motion.div>

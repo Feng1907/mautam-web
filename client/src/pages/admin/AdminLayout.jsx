@@ -23,6 +23,7 @@ const NAV_GROUPS = [
       { to: '/admin/lop-hoc',    label: 'Lớp học',     Icon: BookOpen   },
       { to: '/admin/phu-huynh',  label: 'Phụ huynh',   Icon: Link2      },
       { to: '/admin/phan-cong',  label: 'Phân công',   Icon: ClipboardList },
+      { to: '/admin/quiz',       label: 'Kiểm tra',    Icon: ClipboardList },
     ],
   },
   {
