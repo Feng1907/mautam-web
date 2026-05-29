@@ -65,7 +65,7 @@ export default function QuizPage() {
           </p>
         </div>
         {isGiaoly && (
-          <Link to="/admin/quiz"
+          <Link to="/quiz/manage"
             className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition shrink-0">
             <Settings size={14} /> Quản lý
           </Link>
