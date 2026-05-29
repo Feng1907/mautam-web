@@ -68,6 +68,14 @@ export default function HtChatWidget() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen]               = useState(false);
+
+  // Khi mở HT Chat → đóng Trợ lý AI; khi Trợ lý AI mở → đóng HT Chat
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener('ht-chat:close', close);
+    return () => window.removeEventListener('ht-chat:close', close);
+  }, []);
+
   const [activeRoom, setActiveRoom]   = useState(null);
   const [text, setText]               = useState('');
   const [showNewRoom, setShowNewRoom] = useState(false);
@@ -288,7 +296,10 @@ export default function HtChatWidget() {
     <>
       {/* ── Floating button ── */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen(o => {
+          if (!o) window.dispatchEvent(new Event('ai-chat:close'));
+          return !o;
+        })}
         className="no-print fixed bottom-20 right-6 z-40 w-13 h-13 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
         style={{ background: '#8B0000' }}
         aria-label="Chat Huynh Trưởng"
