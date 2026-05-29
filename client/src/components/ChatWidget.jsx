@@ -832,10 +832,10 @@ export default function ChatWidget() {
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white text-[8px] font-black text-white flex items-center justify-center">!</span>
           )}
           {!open && (
-            <motion.div className="absolute bottom-16 right-0 bg-white border border-[#e5d5b5] rounded-xl px-3 py-2 shadow-md whitespace-nowrap pointer-events-none"
-              initial={{ opacity: 0, y: 8, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 2.5, duration: 0.3 }}>
+            <motion.div className="absolute right-16 top-1/2 -translate-y-1/2 bg-white border border-[#e5d5b5] rounded-xl px-3 py-2 shadow-md whitespace-nowrap pointer-events-none"
+              initial={{ opacity: 0, x: 8, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ delay: 2.5, duration: 0.3 }}>
               <p className="text-[11px] font-semibold text-[#3d1515]">Trợ lý Xứ Đoàn có thể giúp gì?</p>
-              <div className="absolute -bottom-1.5 right-5 w-3 h-3 bg-white border-r border-b border-[#e5d5b5] rotate-45" />
+              <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-r border-t border-[#e5d5b5] rotate-45" />
             </motion.div>
           )}
         </motion.button>
