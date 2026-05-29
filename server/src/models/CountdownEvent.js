@@ -24,6 +24,18 @@ const countdownEventSchema = new mongoose.Schema(
       addedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
       addedAt:  { type: Date, default: Date.now },
     }],
+    dangKyLopEnabled: { type: Boolean, default: false },
+    dangKyLopMo:      { type: Date, default: null },
+    dangKyLopDong:    { type: Date, default: null },
+    dangKyLop: [{
+      lop:       { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
+      dangKyBoi: { type: mongoose.Schema.Types.ObjectId, ref: 'User',  required: true },
+      soLuong:   { type: Number, default: 0 },
+      daChot:    { type: Boolean, default: false },
+      ghiChu:    { type: String, maxlength: 300, default: '' },
+      dangKyLuc: { type: Date, default: Date.now },
+      chotLuc:   { type: Date },
+    }],
   },
   { timestamps: true }
 );

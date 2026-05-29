@@ -1,6 +1,7 @@
 const CountdownEvent = require('../models/CountdownEvent');
 const Class   = require('../models/Class');
 const Student = require('../models/Student');
+const User    = require('../models/User');
 
 // GET /api/events — public, trả về sự kiện active sắp theo ngày
 exports.list = async (req, res, next) => {
@@ -8,6 +9,8 @@ exports.list = async (req, res, next) => {
     const events = await CountdownEvent.find({ active: true })
       .populate('rsvpList.user', 'hoTen avatar')
       .populate('studentRsvps.student', 'hoTen')
+      .populate('dangKyLop.lop', 'tenLop nganh')
+      .populate('dangKyLop.dangKyBoi', 'hoTen')
       .sort({ date: 1 }).lean();
     res.json({ success: true, data: events });
   } catch (err) { next(err); }
@@ -16,7 +19,10 @@ exports.list = async (req, res, next) => {
 // GET /api/events/all — admin, trả về tất cả kể cả inactive
 exports.listAll = async (req, res, next) => {
   try {
-    const events = await CountdownEvent.find().sort({ date: 1 }).lean();
+    const events = await CountdownEvent.find()
+      .populate('dangKyLop.lop', 'tenLop nganh')
+      .populate('dangKyLop.dangKyBoi', 'hoTen')
+      .sort({ date: 1 }).lean();
     res.json({ success: true, data: events });
   } catch (err) { next(err); }
 };
@@ -24,11 +30,18 @@ exports.listAll = async (req, res, next) => {
 // POST /api/events
 exports.create = async (req, res, next) => {
   try {
-    const { name, date, icon, color, active, order, studentRsvpEnabled } = req.body;
+    const { name, date, icon, color, active, order, studentRsvpEnabled,
+            rsvpEnabled, rsvpDeadline,
+            dangKyLopEnabled, dangKyLopMo, dangKyLopDong } = req.body;
     if (!name?.trim() || !date) {
       return res.status(400).json({ success: false, message: 'Tên và ngày là bắt buộc.' });
     }
-    const ev = await CountdownEvent.create({ name: name.trim(), date, icon, color, active, order, studentRsvpEnabled, reminderPushSentAt: null });
+    const ev = await CountdownEvent.create({
+      name: name.trim(), date, icon, color, active, order, studentRsvpEnabled,
+      rsvpEnabled, rsvpDeadline: rsvpDeadline || null,
+      dangKyLopEnabled, dangKyLopMo: dangKyLopMo || null, dangKyLopDong: dangKyLopDong || null,
+      reminderPushSentAt: null,
+    });
     res.status(201).json({ success: true, data: ev });
   } catch (err) { next(err); }
 };
@@ -36,10 +49,16 @@ exports.create = async (req, res, next) => {
 // PUT /api/events/:id
 exports.update = async (req, res, next) => {
   try {
-    const { name, date, icon, color, active, order, studentRsvpEnabled } = req.body;
+    const { name, date, icon, color, active, order, studentRsvpEnabled,
+            rsvpEnabled, rsvpDeadline,
+            dangKyLopEnabled, dangKyLopMo, dangKyLopDong } = req.body;
     const ev = await CountdownEvent.findByIdAndUpdate(
       req.params.id,
-      { name: name?.trim(), date, icon, color, active, order, studentRsvpEnabled },
+      {
+        name: name?.trim(), date, icon, color, active, order, studentRsvpEnabled,
+        rsvpEnabled, rsvpDeadline: rsvpDeadline || null,
+        dangKyLopEnabled, dangKyLopMo: dangKyLopMo || null, dangKyLopDong: dangKyLopDong || null,
+      },
       { new: true, runValidators: true }
     );
     if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện.' });
@@ -101,7 +120,6 @@ exports.toggleStudentRsvp = async (req, res, next) => {
     const { studentId } = req.body;
     if (!studentId) return res.status(400).json({ success: false, message: 'Thiếu studentId' });
 
-    // Kiểm tra huynh trưởng có phụ trách lớp của học sinh này không
     const student = await Student.findById(studentId).lean();
     if (!student) return res.status(404).json({ success: false, message: 'Không tìm thấy học sinh' });
 
@@ -117,13 +135,11 @@ exports.toggleStudentRsvp = async (req, res, next) => {
 
     const idx = ev.studentRsvps.findIndex(r => r.student.toString() === studentId.toString());
     if (idx >= 0) {
-      ev.studentRsvps.splice(idx, 1); // bỏ đăng ký
+      ev.studentRsvps.splice(idx, 1);
     } else {
       ev.studentRsvps.push({ student: studentId, lop: student.lop, addedBy: req.user._id });
     }
     await ev.save();
-
-    // populate để trả về tên
     await ev.populate('studentRsvps.student', 'hoTen');
     res.json({ success: true, data: ev.studentRsvps });
   } catch (err) { next(err); }
@@ -141,5 +157,111 @@ exports.getRsvpList = async (req, res, next) => {
       declined:  ev.rsvpList.filter(r => r.status === 'declined').length,
     };
     res.json({ success: true, data: ev.rsvpList, summary });
+  } catch (err) { next(err); }
+};
+
+// ── Đăng ký lớp (dangKyLop) ──────────────────────────────────────────────────
+
+// POST /api/events/:id/lop-rsvp — giaoly đăng ký / cập nhật lớp mình
+exports.lopRsvp = async (req, res, next) => {
+  try {
+    const { lopId, soLuong, ghiChu } = req.body;
+    if (!lopId) return res.status(400).json({ success: false, message: 'Thiếu lopId' });
+
+    const ev = await CountdownEvent.findById(req.params.id);
+    if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
+
+    if (req.user.vaiTro !== 'admin') {
+      if (!ev.dangKyLopEnabled)
+        return res.status(400).json({ success: false, message: 'Sự kiện chưa mở đăng ký theo lớp' });
+      const now = new Date();
+      if (ev.dangKyLopMo && now < ev.dangKyLopMo)
+        return res.status(400).json({ success: false, message: 'Chưa đến thời gian đăng ký' });
+      if (ev.dangKyLopDong && now > ev.dangKyLopDong)
+        return res.status(400).json({ success: false, message: 'Đã hết thời gian đăng ký' });
+
+      // Giaoly chỉ được đăng ký lớp trong lopPhuTrach
+      const me = await User.findById(req.user._id).select('lopPhuTrach').lean();
+      const lopIds = (me?.lopPhuTrach || []).map(id => id.toString());
+      if (!lopIds.includes(lopId.toString()))
+        return res.status(403).json({ success: false, message: 'Bạn không phụ trách lớp này' });
+    }
+
+    const idx = ev.dangKyLop.findIndex(r => r.lop.toString() === lopId.toString());
+    if (idx >= 0) {
+      ev.dangKyLop[idx].soLuong  = soLuong ?? ev.dangKyLop[idx].soLuong;
+      ev.dangKyLop[idx].ghiChu   = ghiChu  ?? ev.dangKyLop[idx].ghiChu;
+    } else {
+      ev.dangKyLop.push({ lop: lopId, dangKyBoi: req.user._id, soLuong: soLuong || 0, ghiChu: ghiChu || '' });
+    }
+    await ev.save();
+    await ev.populate('dangKyLop.lop', 'tenLop nganh');
+    await ev.populate('dangKyLop.dangKyBoi', 'hoTen');
+    res.json({ success: true, data: ev.dangKyLop });
+  } catch (err) { next(err); }
+};
+
+// POST /api/events/:id/lop-rsvp/chot — toggle chốt đăng ký lớp
+exports.chotLopRsvp = async (req, res, next) => {
+  try {
+    const { lopId } = req.body;
+    if (!lopId) return res.status(400).json({ success: false, message: 'Thiếu lopId' });
+
+    const ev = await CountdownEvent.findById(req.params.id);
+    if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
+
+    const idx = ev.dangKyLop.findIndex(r => r.lop.toString() === lopId.toString());
+    if (idx < 0) return res.status(400).json({ success: false, message: 'Lớp chưa đăng ký sự kiện này' });
+
+    // Giaoly chỉ chốt được lớp của mình
+    if (req.user.vaiTro !== 'admin') {
+      const me = await User.findById(req.user._id).select('lopPhuTrach').lean();
+      const lopIds = (me?.lopPhuTrach || []).map(id => id.toString());
+      if (!lopIds.includes(lopId.toString()))
+        return res.status(403).json({ success: false, message: 'Bạn không phụ trách lớp này' });
+    }
+
+    ev.dangKyLop[idx].daChot  = !ev.dangKyLop[idx].daChot;
+    ev.dangKyLop[idx].chotLuc = ev.dangKyLop[idx].daChot ? new Date() : undefined;
+    await ev.save();
+    await ev.populate('dangKyLop.lop', 'tenLop nganh');
+    await ev.populate('dangKyLop.dangKyBoi', 'hoTen');
+    res.json({ success: true, data: ev.dangKyLop });
+  } catch (err) { next(err); }
+};
+
+// DELETE /api/events/:id/lop-rsvp — hủy đăng ký lớp
+exports.cancelLopRsvp = async (req, res, next) => {
+  try {
+    const { lopId } = req.body;
+    if (!lopId) return res.status(400).json({ success: false, message: 'Thiếu lopId' });
+
+    const ev = await CountdownEvent.findById(req.params.id);
+    if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
+
+    const entry = ev.dangKyLop.find(r => r.lop.toString() === lopId.toString());
+    if (!entry) return res.status(400).json({ success: false, message: 'Lớp chưa đăng ký' });
+    if (entry.daChot && req.user.vaiTro !== 'admin')
+      return res.status(400).json({ success: false, message: 'Đã chốt, không thể hủy. Liên hệ admin.' });
+
+    ev.dangKyLop = ev.dangKyLop.filter(r => r.lop.toString() !== lopId.toString());
+    await ev.save();
+    res.json({ success: true, message: 'Đã hủy đăng ký lớp' });
+  } catch (err) { next(err); }
+};
+
+// GET /api/events/:id/lop-rsvp — admin xem danh sách đăng ký lớp
+exports.getLopRsvpList = async (req, res, next) => {
+  try {
+    const ev = await CountdownEvent.findById(req.params.id)
+      .populate('dangKyLop.lop', 'tenLop nganh')
+      .populate('dangKyLop.dangKyBoi', 'hoTen').lean();
+    if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
+    const summary = {
+      tongLop:     ev.dangKyLop.length,
+      tongSoLuong: ev.dangKyLop.reduce((s, r) => s + (r.soLuong || 0), 0),
+      daChot:      ev.dangKyLop.filter(r => r.daChot).length,
+    };
+    res.json({ success: true, data: ev.dangKyLop, summary });
   } catch (err) { next(err); }
 };
