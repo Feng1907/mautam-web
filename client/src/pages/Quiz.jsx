@@ -74,11 +74,11 @@ export default function QuizPage() {
 
       {/* Phụ huynh: chọn con */}
       {user?.vaiTro === 'PARENT' && linkedStudents.length > 0 && (
-        <div className="card">
-          <label className="label text-sm">Chọn thiếu nhi</label>
+        <div className="card flex items-center gap-3">
+          <label className="label text-sm mb-0 shrink-0">Xem bài kiểm tra của:</label>
           <select className="input max-w-64" value={selectedStudent}
             onChange={e => setSelectedStudent(e.target.value)}>
-            <option value="">-- Chọn con --</option>
+            <option value="">-- Chọn thiếu nhi --</option>
             {linkedStudents.map(s => (
               <option key={s._id} value={s._id}>{s.hoTen}</option>
             ))}
