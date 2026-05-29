@@ -310,6 +310,13 @@ export default function ChatWidget() {
 
   const [open,        setOpen]        = useState(false);
   const [minimized,   setMinimized]   = useState(false);
+
+  // Khi HT Chat mở → đóng Trợ lý AI; khi Trợ lý AI mở → đóng HT Chat
+  useEffect(() => {
+    const close = () => { setOpen(false); setMinimized(false); };
+    window.addEventListener('ai-chat:close', close);
+    return () => window.removeEventListener('ai-chat:close', close);
+  }, []);
   const [messages,    setMessages]    = useState([]);
   const [input,       setInput]       = useState('');
   const [loading,     setLoading]     = useState(false);
@@ -812,7 +819,16 @@ export default function ChatWidget() {
       {/* Floating bubble */}
       <div className="fixed bottom-24 right-4 sm:bottom-5 sm:right-6 z-50">
         <motion.button
-          onClick={() => { if (minimized) { setMinimized(false); setOpen(true); } else setOpen(o => !o); }}
+          onClick={() => {
+            if (minimized) {
+              setMinimized(false); setOpen(true);
+              window.dispatchEvent(new Event('ht-chat:close'));
+            } else {
+              const next = !open;
+              setOpen(next);
+              if (next) window.dispatchEvent(new Event('ht-chat:close'));
+            }
+          }}
           className={`relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center ${open && !minimized ? 'text-white' : 'bg-white text-[#8B0000] ring-1 ring-[#D4AF37]/45'}`}
           style={{ background: (open && !minimized) ? 'linear-gradient(135deg, #5a1010, #3d0808)' : undefined }}
           whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}>
