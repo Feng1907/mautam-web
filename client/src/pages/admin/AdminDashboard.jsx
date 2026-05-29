@@ -75,39 +75,49 @@ const SvgBarChart = ({ data }) => {
     return () => obs.disconnect();
   }, []);
   const dark = useDark();
-  const gridColor = dark ? '#334155' : '#f1f5f9';
-  const tickColor = dark ? '#64748b' : '#cbd5e1';
-  const W = 340, H = 140, PAD = { top: 10, right: 8, bottom: 28, left: 28 };
+  const gridColor = dark ? '#334155' : '#F3E8D0';
+  const tickColor = dark ? '#64748b' : '#B8A88A';
+
+  const W = 460, H = 180, PAD = { top: 18, right: 12, bottom: 34, left: 34 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
-  const max   = Math.max(...data.map(d => d.value), 1);
-  const barW  = Math.floor(innerW / data.length * 0.55);
-  const gap   = innerW / data.length;
+  const max     = Math.max(...data.map(d => d.value), 1);
+  const niceMax = Math.ceil(max / 10) * 10;
+  const barW    = Math.floor(innerW / data.length * 0.5);
+  const gap     = innerW / data.length;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
-      {[0, 0.5, 1].map(t => {
+      <defs>
+        {data.map((d, i) => (
+          <linearGradient key={i} id={`bar-grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={d.color} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={d.color} stopOpacity="0.55" />
+          </linearGradient>
+        ))}
+      </defs>
+      {[0, 0.25, 0.5, 0.75, 1].map(t => {
         const y = PAD.top + innerH * (1 - t);
         return (
           <g key={t}>
             <line x1={PAD.left} x2={W - PAD.right} y1={y} y2={y} stroke={gridColor} strokeWidth={1} />
-            <text x={PAD.left - 4} y={y + 4} textAnchor="end" fontSize={9} fill={tickColor}>{Math.round(max * t)}</text>
+            <text x={PAD.left - 7} y={y + 3.5} textAnchor="end" fontSize={9.5} fill={tickColor}>
+              {Math.round(niceMax * t)}
+            </text>
           </g>
         );
       })}
       {data.map((d, i) => {
-        const barH = Math.max((d.value / max) * innerH, 2);
+        const barH = Math.max((d.value / niceMax) * innerH, 2);
         const x = PAD.left + gap * i + (gap - barW) / 2;
         const y = PAD.top + innerH - barH;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={barW} height={barH} fill={d.color} rx={3} opacity={0.85} />
-            <text x={x + barW / 2} y={PAD.top + innerH + 14} textAnchor="middle" fontSize={9} fill={tickColor}>
-              {d.label.length > 5 ? d.label.slice(0, 4) + '…' : d.label}
+            <rect x={x} y={y} width={barW} height={barH} fill={`url(#bar-grad-${i})`} rx={5} />
+            <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize={11} fill={d.color} fontWeight="800">{d.value}</text>
+            <text x={x + barW / 2} y={PAD.top + innerH + 18} textAnchor="middle" fontSize={9.5} fill={tickColor}>
+              {d.label.length > 6 ? d.label.slice(0, 5) + '…' : d.label}
             </text>
-            {d.value > 0 && (
-              <text x={x + barW / 2} y={y - 3} textAnchor="middle" fontSize={9} fill={d.color} fontWeight="700">{d.value}</text>
-            )}
           </g>
         );
       })}
@@ -117,7 +127,8 @@ const SvgBarChart = ({ data }) => {
 
 // ── SVG Donut Chart ────────────────────────────────────────────────────────────
 const SvgDonutChart = ({ data }) => {
-  const R = 48, r = 30, cx = 70, cy = 65;
+  const size = 150, cx = size / 2, cy = size / 2;
+  const R = size / 2 - 6, r = R - 22;
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
   let angle = -Math.PI / 2;
   const slices = data.map(d => {
@@ -130,19 +141,27 @@ const SvgDonutChart = ({ data }) => {
     const xi2 = cx + r * Math.cos(angle), yi2 = cy + r * Math.sin(angle);
     angle += sweep;
     const large = sweep > Math.PI ? 1 : 0;
-    return { path: `M${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi1},${yi1} A${r},${r} 0 ${large},0 ${xi2},${yi2} Z`, color: d.color };
+    return { path: `M${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi1},${yi1} A${r},${r} 0 ${large},0 ${xi2},${yi2} Z`, color: d.color, value: d.value };
   });
+  const top = data.reduce((a, b) => b.value > a.value ? b : a, data[0]);
+
   return (
-    <svg viewBox="0 0 200 130" className="w-full" style={{ height: 130 }}>
-      {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} opacity={0.88} />)}
-      {data.map((d, i) => (
-        <g key={i} transform={`translate(130, ${18 + i * 30})`}>
-          <rect width={10} height={10} rx={3} fill={d.color} />
-          <text x={14} y={9} fontSize={10} fill="#64748b">{d.label}</text>
-          <text x={14} y={21} fontSize={9} fill="#94a3b8">{Math.round(d.value / (data.reduce((s,d)=>s+d.value,0)||1) * 100)}%</text>
-        </g>
-      ))}
-    </svg>
+    <div className="flex items-center gap-5">
+      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: size, height: size, flexShrink: 0 }}>
+        {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} opacity={0.9} />)}
+        <text x={cx} y={cy - 4} textAnchor="middle" fontSize={22} fontWeight="900" fill="#3d1515">{Math.round((top.value / total) * 100)}%</text>
+        <text x={cx} y={cy + 13} textAnchor="middle" fontSize={9} fill="#9ca3af">Đúng giờ</text>
+      </svg>
+      <div className="flex flex-col gap-2.5 flex-1">
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.color }} />
+            <span className="text-xs text-gray-600 dark:text-slate-300 flex-1">{d.label}</span>
+            <span className="text-xs font-bold text-gray-700 dark:text-slate-200">{Math.round(d.value / total * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
