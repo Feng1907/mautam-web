@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, ClipboardList, Eye, PenLine } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth } from '../../store/AuthContext';
 
 
 const LOAI_LABELS = { trac_nghiem: 'Trắc nghiệm', dien_khuyet: 'Điền khuyết', tu_luan: 'Tự luận' };
@@ -27,6 +28,8 @@ const EMPTY_CAU_HOI = {
 };
 
 export default function AdminQuiz() {
+  const { user } = useAuth();
+  const isGiaoly = user?.vaiTro === 'giaoly';
   const qc = useQueryClient();
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(EMPTY_QUIZ);
@@ -34,10 +37,16 @@ export default function AdminQuiz() {
   const [saving, setSaving] = useState(false);
   const [filterLop, setFilterLop] = useState('');
 
-  const { data: classes = [] } = useQuery({
+  const { data: allClasses = [] } = useQuery({
     queryKey: ['classes-quiz'],
     queryFn: () => api.get('/classes').then(r => r.data.data || r.data),
   });
+
+  // Giaoly chỉ thấy lớp mình phụ trách
+  const lopPhuTrach = user?.lopPhuTrach || [];
+  const classes = isGiaoly
+    ? allClasses.filter(c => lopPhuTrach.some(id => id === c._id || id?._id === c._id || id?.toString() === c._id))
+    : allClasses;
 
   const { data: quizzes = [], isLoading } = useQuery({
     queryKey: ['quizzes-admin', filterLop],
@@ -68,7 +77,13 @@ export default function AdminQuiz() {
     setExpandedQ(null);
   };
 
-  const resetForm = () => { setEditId(null); setForm(EMPTY_QUIZ); setExpandedQ(null); };
+  const resetForm = () => {
+    setEditId(null);
+    // Giaoly có 1 lớp → tự điền sẵn
+    const defaultLop = isGiaoly && classes.length === 1 ? classes[0]._id : '';
+    setForm({ ...EMPTY_QUIZ, lop: defaultLop });
+    setExpandedQ(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
