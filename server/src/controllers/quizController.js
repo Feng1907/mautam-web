@@ -57,6 +57,15 @@ exports.create = async (req, res, next) => {
     if (!tieuDe?.trim() || !lop)
       return res.status(400).json({ success: false, message: 'Tiêu đề và lớp là bắt buộc' });
 
+    // Giaoly chỉ được tạo quiz cho lớp mình phụ trách
+    if (req.user.vaiTro === 'giaoly') {
+      const User = require('../models/User');
+      const u = await User.findById(req.user._id).select('lopPhuTrach').lean();
+      const lopIds = (u?.lopPhuTrach || []).map(id => id.toString());
+      if (!lopIds.includes(lop.toString()))
+        return res.status(403).json({ success: false, message: 'Bạn không phụ trách lớp này' });
+    }
+
     const namHoc = await NamHoc.findOne({ dangHoatDong: true }).lean();
     const quiz = await Quiz.create({
       tieuDe: tieuDe.trim(), moTa, lop, namHoc: namHoc?._id,
@@ -89,9 +98,26 @@ exports.getOne = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Kiểm tra giaoly có quyền với quiz này không
+async function checkGiaolyOwnsQuiz(userId, vaiTro, quizId) {
+  if (vaiTro === 'admin') return null; // admin luôn được phép
+  const User = require('../models/User');
+  const [quiz, u] = await Promise.all([
+    Quiz.findById(quizId).select('lop').lean(),
+    User.findById(userId).select('lopPhuTrach').lean(),
+  ]);
+  if (!quiz) return 'Không tìm thấy quiz';
+  const lopIds = (u?.lopPhuTrach || []).map(id => id.toString());
+  if (!lopIds.includes(quiz.lop.toString())) return 'Bạn không phụ trách lớp này';
+  return null;
+}
+
 // PUT /api/quizzes/:id
 exports.update = async (req, res, next) => {
   try {
+    const err = await checkGiaolyOwnsQuiz(req.user._id, req.user.vaiTro, req.params.id);
+    if (err) return res.status(403).json({ success: false, message: err });
+
     const { tieuDe, moTa, thoiGianLam, batDauTu, ketThucLuc, active, cauHoi } = req.body;
     const quiz = await Quiz.findByIdAndUpdate(
       req.params.id,
@@ -106,6 +132,9 @@ exports.update = async (req, res, next) => {
 // DELETE /api/quizzes/:id
 exports.remove = async (req, res, next) => {
   try {
+    const errMsg = await checkGiaolyOwnsQuiz(req.user._id, req.user.vaiTro, req.params.id);
+    if (errMsg) return res.status(403).json({ success: false, message: errMsg });
+
     const quiz = await Quiz.findByIdAndDelete(req.params.id);
     if (!quiz) return res.status(404).json({ success: false, message: 'Không tìm thấy quiz' });
     await QuizAttempt.deleteMany({ quiz: req.params.id });
