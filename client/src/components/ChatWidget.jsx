@@ -849,7 +849,9 @@ export default function ChatWidget() {
           )}
           {!open && (
             <motion.div className="absolute right-16 top-1/2 -translate-y-1/2 bg-white border border-[#e5d5b5] rounded-xl px-3 py-2 shadow-md whitespace-nowrap pointer-events-none"
-              initial={{ opacity: 0, x: 8, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ delay: 2.5, duration: 0.3 }}>
+              initial={{ opacity: 0, x: 8, scale: 0.9 }}
+              animate={{ opacity: [0, 1, 1, 0], x: [8, 0, 0, 0], scale: [0.9, 1, 1, 1] }}
+              transition={{ delay: 2.5, duration: 5, times: [0, 0.06, 0.8, 1], ease: 'easeInOut' }}>
               <p className="text-[11px] font-semibold text-[#3d1515]">Trợ lý Xứ Đoàn có thể giúp gì?</p>
               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-r border-t border-[#e5d5b5] rotate-45" />
             </motion.div>
