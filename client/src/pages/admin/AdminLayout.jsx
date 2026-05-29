@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BarChart3, FileText, Users, BookOpen,
   Link2, Calendar, GraduationCap, Download, Shield,
-  History, HardDrive, Timer, ChevronRight, MoreHorizontal, X, ClipboardList,
+  History, HardDrive, CalendarDays, ChevronRight, MoreHorizontal, X,
+  ListTodo, ClipboardCheck,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -22,8 +23,9 @@ const NAV_GROUPS = [
       { to: '/admin/nguoi-dung', label: 'Người dùng',  Icon: Users      },
       { to: '/admin/lop-hoc',    label: 'Lớp học',     Icon: BookOpen   },
       { to: '/admin/phu-huynh',  label: 'Phụ huynh',   Icon: Link2      },
-      { to: '/admin/phan-cong',  label: 'Phân công',   Icon: ClipboardList },
-      { to: '/admin/quiz',       label: 'Kiểm tra',    Icon: ClipboardList },
+      { to: '/admin/phan-cong',  label: 'Phân công',   Icon: ListTodo       },
+      { to: '/admin/quiz',       label: 'Kiểm tra',    Icon: ClipboardCheck },
+      { to: '/admin/su-kien',    label: 'Sự kiện',     Icon: CalendarDays   },
     ],
   },
   {
@@ -40,7 +42,6 @@ const NAV_GROUPS = [
       { to: '/admin/phan-quyen', label: 'Phân quyền',  Icon: Shield    },
       { to: '/admin/lich-su',    label: 'Audit Logs',  Icon: History   },
       { to: '/admin/sao-luu',    label: 'Sao lưu',     Icon: HardDrive },
-      { to: '/admin/su-kien',    label: 'Đếm ngược',   Icon: Timer     },
     ],
   },
 ];
