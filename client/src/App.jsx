@@ -166,6 +166,7 @@ const AnimatedRoutes = () => {
             <Route path="/quiz/:id/monitor" element={withErrorBoundary(<RouteGuard><QuizMonitor /></RouteGuard>, 'QuizMonitor')} />
             <Route path="/quiz/:id/grade" element={withErrorBoundary(<RouteGuard><QuizGrade /></RouteGuard>, 'QuizGrade')} />
             <Route path="/quiz/:id/leaderboard" element={withErrorBoundary(<RouteGuard><QuizLeaderboard /></RouteGuard>, 'QuizLeaderboard')} />
+            <Route path="/quiz/manage" element={withErrorBoundary(<RouteGuard roles={['admin','giaoly']}><AdminQuiz /></RouteGuard>, 'QuizManage')} />
           </Routes>
         </Suspense>
       </PageTransition>
