@@ -4,7 +4,8 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   Users, CheckSquare, GraduationCap,
   FileText, LayoutGrid, Search, X, UserPlus, Bell, StickyNote as NoteIcon,
-  CalendarCheck, TrendingUp, ChevronRight, ArrowRight,
+  CalendarCheck, ChevronRight, ArrowRight, CalendarDays, ListTodo,
+  ClipboardCheck, BarChart3,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
@@ -47,11 +48,11 @@ const getLiturgicalColor = (key = '') => {
 };
 
 const MAU_AO_CARD = {
-  trang: { bg: 'bg-gradient-to-br from-slate-50 to-gray-100 border border-gray-200', text: 'text-gray-700',    accent: 'text-gray-500',   dot: 'bg-gray-300',    label: 'Màu Trắng' },
-  do:    { bg: 'bg-gradient-to-br from-red-50 to-rose-100 border border-red-200',    text: 'text-red-800',     accent: 'text-red-500',    dot: 'bg-red-500',     label: 'Màu Đỏ'   },
-  tim:   { bg: 'bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200', text: 'text-purple-800', accent: 'text-purple-500', dot: 'bg-purple-500', label: 'Màu Tím'  },
-  xanh:  { bg: 'bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200', text: 'text-green-800',  accent: 'text-green-500',  dot: 'bg-green-500',  label: 'Màu Xanh' },
-  hong:  { bg: 'bg-gradient-to-br from-pink-50 to-rose-100 border border-pink-200',  text: 'text-pink-800',    accent: 'text-pink-500',   dot: 'bg-pink-400',   label: 'Màu Hồng' },
+  trang: { bg: 'bg-linear-to-br from-slate-50 to-gray-100 border border-gray-200', text: 'text-gray-700',    accent: 'text-gray-500',   dot: 'bg-gray-300',    label: 'Màu Trắng' },
+  do:    { bg: 'bg-linear-to-br from-red-50 to-rose-100 border border-red-200',    text: 'text-red-800',     accent: 'text-red-500',    dot: 'bg-red-500',     label: 'Màu Đỏ'   },
+  tim:   { bg: 'bg-linear-to-br from-purple-50 to-violet-100 border border-purple-200', text: 'text-purple-800', accent: 'text-purple-500', dot: 'bg-purple-500', label: 'Màu Tím'  },
+  xanh:  { bg: 'bg-linear-to-br from-green-50 to-emerald-100 border border-green-200', text: 'text-green-800',  accent: 'text-green-500',  dot: 'bg-green-500',  label: 'Màu Xanh' },
+  hong:  { bg: 'bg-linear-to-br from-pink-50 to-rose-100 border border-pink-200',  text: 'text-pink-800',    accent: 'text-pink-500',   dot: 'bg-pink-400',   label: 'Màu Hồng' },
 };
 
 const GRADIENTS = [
@@ -260,12 +261,16 @@ const GlobalSearch = ({ users, classes }) => {
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 const SkeletonDashboard = () => (
   <div className="flex flex-col gap-5 animate-pulse">
-    <div className="h-16 rounded-2xl bg-gray-100 dark:bg-slate-700" />
-    <div className="grid grid-cols-5 gap-3">
+    <div className="h-20 rounded-2xl bg-gray-100 dark:bg-slate-700" />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       {[...Array(5)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-gray-100 dark:bg-slate-700" />)}
     </div>
-    <div className="grid grid-cols-2 gap-5">
-      {[...Array(2)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-gray-100 dark:bg-slate-700" />)}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-gray-100 dark:bg-slate-700" />)}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+      <div className="lg:col-span-3 h-48 rounded-2xl bg-gray-100 dark:bg-slate-700" />
+      <div className="lg:col-span-2 h-48 rounded-2xl bg-gray-100 dark:bg-slate-700" />
     </div>
   </div>
 );
@@ -278,23 +283,25 @@ const AdminDashboard = () => {
   const [showNote,       setShowNote]       = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
 
-  const [usersQ, classesQ, postsQ] = useQueries({
+  const [usersQ, classesQ, postsQ, postsTotalQ] = useQueries({
     queries: [
-      { queryKey: ['admin-users'],   queryFn: () => api.get('/users').then(r => r.data.data),                           staleTime: 2 * 60 * 1000, retry: 3 },
-      { queryKey: ['admin-classes'], queryFn: () => api.get('/classes').then(r => r.data.data),                         staleTime: 2 * 60 * 1000, retry: 3 },
-      { queryKey: ['admin-posts'],   queryFn: () => api.get('/posts', { params: { limit: 5 } }).then(r => r.data.data), staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-users'],        queryFn: () => api.get('/users').then(r => r.data.data),                              staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-classes'],      queryFn: () => api.get('/classes').then(r => r.data.data),                            staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-posts'],        queryFn: () => api.get('/posts', { params: { limit: 5 } }).then(r => r.data.data),    staleTime: 2 * 60 * 1000, retry: 3 },
+      { queryKey: ['admin-posts-total'],  queryFn: () => api.get('/posts', { params: { limit: 1 } }).then(r => r.data.total ?? r.data.data?.length ?? 0), staleTime: 2 * 60 * 1000, retry: 3 },
     ],
   });
 
-  const users   = Array.isArray(usersQ.data)   ? usersQ.data   : [];
-  const classes = Array.isArray(classesQ.data) ? classesQ.data : [];
-  const posts   = Array.isArray(postsQ.data)   ? postsQ.data   : [];
-  const loading = usersQ.isLoading || classesQ.isLoading || postsQ.isLoading;
+  const users      = Array.isArray(usersQ.data)   ? usersQ.data   : [];
+  const classes    = Array.isArray(classesQ.data) ? classesQ.data : [];
+  const posts      = Array.isArray(postsQ.data)   ? postsQ.data   : [];
+  const postsTotal = postsTotalQ.data ?? posts.length;
+  const loading    = usersQ.isLoading || classesQ.isLoading || postsQ.isLoading;
 
   const stats = {
     lopHoc:      classes.length,
     giaoly:      users.filter(x => x.vaiTro === 'giaoly').length,
-    baiviet:     posts.length,
+    baiviet:     postsTotal,
     doanSinh:    classes.reduce((sum, c) => sum + (c.siSo ?? 0), 0),
     lopCoNhanSu: classes.filter(c => c.huynhTruong || c.duTruong?.length > 0).length,
   };
@@ -360,7 +367,7 @@ const AdminDashboard = () => {
               <CalendarCheck className="w-3.5 h-3.5" /> Điểm danh
             </button>
             <button onClick={() => setShowNotify(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-gradient-to-br from-red-700 to-red-900 text-white shadow-sm hover:opacity-90 transition">
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-linear-to-br from-red-700 to-red-900 text-white shadow-sm hover:opacity-90 transition">
               <Bell className="w-3.5 h-3.5" /> Thông báo khẩn
             </button>
             <ExportDropdown classes={classes} users={users} />
@@ -382,12 +389,9 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {STAT_CARDS.map(({ icon: Icon, label, value, to, accentBg, accentTxt }) => (
           <Link key={to + label} to={to}
-            className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm group">
-            <div className="flex items-center justify-between">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accentBg}`}>
-                <Icon className={`w-4.5 h-4.5 ${accentTxt}`} size={18} />
-              </div>
-              <TrendingUp size={13} className="text-emerald-400 opacity-60" />
+            className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accentBg}`}>
+              <Icon className={accentTxt} size={18} />
             </div>
             <div>
               <p className={`text-2xl font-black leading-none ${accentTxt}`}>{value ?? '—'}</p>
@@ -397,23 +401,45 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* ── Charts row ───────────────────────────────────────────────────── */}
-      {barData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <div className="lg:col-span-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-black text-gray-700 dark:text-slate-200">Đoàn sinh theo Ngành</p>
-              <Link to="/admin/thong-ke" className="text-xs text-red-600 hover:underline font-medium flex items-center gap-1">Chi tiết <ArrowRight size={11} /></Link>
+      {/* ── Truy cập nhanh ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { to: '/admin/quiz',      Icon: ClipboardCheck, label: 'Kiểm tra',  sub: 'Quản lý bài quiz',       cls: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400' },
+          { to: '/admin/su-kien',   Icon: CalendarDays,   label: 'Sự kiện',   sub: 'Đăng ký & đếm ngược',    cls: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400'         },
+          { to: '/admin/phan-cong', Icon: ListTodo,       label: 'Phân công', sub: 'Phân công huynh trưởng', cls: 'text-teal-600 bg-teal-50 dark:bg-teal-900/20 dark:text-teal-400'         },
+          { to: '/admin/thong-ke',  Icon: BarChart3,      label: 'Thống kê',  sub: 'Báo cáo & biểu đồ',      cls: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400'    },
+        ].map(({ to, Icon, label, sub, cls }) => (
+          <Link key={to} to={to}
+            className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${cls}`}>
+              <Icon size={18} />
             </div>
-            <SvgBarChart data={barData} />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-800 dark:text-slate-100 truncate">{label}</p>
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{sub}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Charts row ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-black text-gray-700 dark:text-slate-200">Đoàn sinh theo Ngành</p>
+            <Link to="/admin/thong-ke" className="text-xs text-red-600 hover:underline font-medium flex items-center gap-1">Chi tiết <ArrowRight size={11} /></Link>
           </div>
-          <div className="lg:col-span-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm font-black text-gray-700 dark:text-slate-200 mb-1">Tỉ lệ Chuyên cần</p>
-            <p className="text-[10px] text-gray-300 dark:text-slate-600 italic mb-3">Dữ liệu mẫu · kết nối API để cập nhật</p>
-            <SvgDonutChart data={pieData} />
-          </div>
+          {barData.length > 0
+            ? <SvgBarChart data={barData} />
+            : <p className="text-sm text-gray-400 italic text-center py-10">Chưa có dữ liệu lớp học.</p>
+          }
         </div>
-      )}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          <p className="text-sm font-black text-gray-700 dark:text-slate-200 mb-1">Tỉ lệ Chuyên cần</p>
+          <p className="text-[10px] text-gray-300 dark:text-slate-600 italic mb-3">Dữ liệu mẫu · kết nối API để cập nhật</p>
+          <SvgDonutChart data={pieData} />
+        </div>
+      </div>
 
       {/* ── Content row: classes + users/liturgy ─────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
@@ -440,8 +466,7 @@ const AdminDashboard = () => {
                     <div className={`grid gap-2 ${lops.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                       {lops.map(lop => (
                         <div key={lop._id}
-                          className="border border-slate-100 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-800/50 hover:border-current hover:shadow-sm transition group"
-                          style={{ '--tw-border-opacity': 1 }}>
+                          className="border border-slate-100 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-800/50 hover:shadow-sm transition">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>{cfg.label}</span>
                           <p className="font-bold text-gray-800 dark:text-slate-100 text-sm mt-2 leading-tight">{formatClassName(lop.tenLop)}</p>
                           <p className="text-xs text-gray-500 mt-0.5">Sĩ số: <span className="text-emerald-600 font-bold">{lop.siSo ?? 0}</span></p>
@@ -479,13 +504,14 @@ const AdminDashboard = () => {
                 return (
                   <div key={u._id} className="flex items-center gap-2.5">
                     {u.avatar
-                      ? <img src={u.avatar} alt={u.hoTen} className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm" onError={e => { e.currentTarget.style.display='none'; e.currentTarget.nextSibling.style.display='flex'; }} />
+                      ? <img src={u.avatar} alt={u.hoTen} className="w-8 h-8 rounded-full object-cover shrink-0 ring-2 ring-white dark:ring-slate-700 shadow-sm" onError={e => { e.currentTarget.style.display='none'; e.currentTarget.nextSibling.style.display='flex'; }} />
                       : null}
-                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${grad} text-white font-bold text-sm items-center justify-center shrink-0 ring-2 ring-white shadow-sm`} style={{ display: u.avatar ? 'none' : 'flex' }}>
+                    <div className={`w-8 h-8 rounded-full bg-linear-to-br ${grad} text-white font-bold text-sm items-center justify-center shrink-0 ring-2 ring-white dark:ring-slate-700 shadow-sm`} style={{ display: u.avatar ? 'none' : 'flex' }}>
                       {u.hoTen?.charAt(0)?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 dark:text-slate-100 text-xs truncate">{u.hoTen}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{u.email}</p>
                       <div className="flex gap-1 mt-0.5 flex-wrap">
                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${vt.cls}`}>{vt.label}</span>
                         {cv && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cv.cls}`}>{cv.label}</span>}
