@@ -3,11 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PenLine, CheckCircle2, ChevronDown, ChevronUp, Save, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
-import toast from 'react-hot-toast';
+import { useToast } from '../components/Toast';
 
 export default function QuizGrade() {
   const { id } = useParams();
   const qc = useQueryClient();
+  const toast = useToast();
   const [expanded, setExpanded] = useState(null);
   const [grades, setGrades] = useState({}); // { attemptId_cauHoiIndex: { diem, nhanXet } }
 
@@ -26,10 +27,10 @@ export default function QuizGrade() {
     mutationFn: ({ attemptId, cauHoiIndex, diemDat, nhanXet }) =>
       api.post(`/quizzes/${id}/attempts/${attemptId}/grade`, { cauHoiIndex, diemDat, nhanXet }),
     onSuccess: () => {
-      toast.success('Đã lưu điểm');
+      toast('Đã lưu điểm', 'success');
       qc.invalidateQueries({ queryKey: ['quiz-grade-attempts', id] });
     },
-    onError: () => toast.error('Lưu điểm thất bại'),
+    onError: () => toast('Lưu điểm thất bại', 'error'),
   });
 
   const tuLuanQuestions = (quiz?.cauHoi || [])
