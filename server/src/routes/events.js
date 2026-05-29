@@ -16,4 +16,10 @@ router.get('/:id/rsvp',           checkAuth, requireAdmin,  ctrl.getRsvpList);
 // Student RSVP — giaoly đăng ký cho học sinh lớp mình
 router.post('/:id/student-rsvp',  checkAuth, requireGiaoly, ctrl.toggleStudentRsvp);
 
+// Đăng ký lớp (dangKyLop) — giaoly đăng ký / chốt số lượng lớp mình
+router.post('/:id/lop-rsvp/chot', checkAuth, requireGiaoly, ctrl.chotLopRsvp);
+router.post('/:id/lop-rsvp',      checkAuth, requireGiaoly, ctrl.lopRsvp);
+router.delete('/:id/lop-rsvp',    checkAuth, requireGiaoly, ctrl.cancelLopRsvp);
+router.get('/:id/lop-rsvp',       checkAuth, requireAdmin,  ctrl.getLopRsvpList);
+
 module.exports = router;
