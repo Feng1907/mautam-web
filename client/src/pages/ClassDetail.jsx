@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueries } from '@tanstack/react-query';
-import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck, Printer } from 'lucide-react';
+import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck, Printer, ClipboardList, ClipboardCheck, BarChart2 } from 'lucide-react';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
 import { useAuth } from '../store/AuthContext';
-import StudentList         from '../components/StudentList';
-import AttendanceTable     from '../components/AttendanceTable';
-import GradeForm           from '../components/GradeForm';
-import QrAttendanceGenerator from '../components/QrAttendanceGenerator';
-import ErrorBoundary       from '../components/ErrorBoundary';
+import StudentList              from '../components/StudentList';
+import AttendanceTable          from '../components/AttendanceTable';
+import GradeForm                from '../components/GradeForm';
+import QrAttendanceGenerator    from '../components/QrAttendanceGenerator';
+import ErrorBoundary            from '../components/ErrorBoundary';
+import AbsenceRequestManager    from '../components/AbsenceRequestManager';
+import ClassQuizPanel           from '../components/ClassQuizPanel';
+import ClassStatsPanel          from '../components/ClassStatsPanel';
 
 // ── Ngành config (label + pill + accent for header/tabs) ─────────────────────
 const NGANH_CFG = {
@@ -21,10 +24,16 @@ const NGANH_CFG = {
   HiepSi:   { label: 'Hiệp Sĩ',   icon: '⚔️', accent: '#f97316', pill: 'bg-orange-50 border-orange-200 text-orange-700' },
 };
 
-const TABS = [
+const TABS_BASE = [
   { key: 'danhsach',  label: 'Danh sách', Icon: Users         },
   { key: 'diemdanh', label: 'Điểm danh', Icon: CalendarCheck  },
   { key: 'bangdiem', label: 'Bảng điểm', Icon: BookOpen       },
+];
+const TABS_EDIT = [
+  ...TABS_BASE,
+  { key: 'donnghi',  label: 'Đơn xin phép', Icon: ClipboardList  },
+  { key: 'kiemtra',  label: 'Kiểm tra',      Icon: ClipboardCheck },
+  { key: 'thongke',  label: 'Thống kê',      Icon: BarChart2      },
 ];
 
 const tabVariants = {
@@ -204,7 +213,7 @@ const ClassDetail = () => {
         className="no-print relative flex gap-1 mb-4 p-1 rounded-2xl border border-[#e5d5b5]"
         style={{ background: '#fffcf9' }}
       >
-        {TABS.map(t => {
+        {(canEdit ? TABS_EDIT : TABS_BASE).map(t => {
           const active = tab === t.key;
           return (
             <button
@@ -279,6 +288,15 @@ const ClassDetail = () => {
             <ErrorBoundary module title="Bảng điểm lỗi" description="Không thể hiển thị bảng điểm. Vui lòng tải lại.">
               <GradeForm lopId={id} students={students} canEdit={canEdit} />
             </ErrorBoundary>
+          )}
+          {tab === 'donnghi' && canEdit && (
+            <AbsenceRequestManager lopId={id} canEdit={canEdit} />
+          )}
+          {tab === 'kiemtra' && canEdit && (
+            <ClassQuizPanel lopId={id} canEdit={canEdit} />
+          )}
+          {tab === 'thongke' && canEdit && (
+            <ClassStatsPanel lopId={id} />
           )}
         </motion.div>
       </AnimatePresence>

@@ -2,6 +2,9 @@ const Class = require('../models/Class');
 const NamHoc = require('../models/NamHoc');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const Attendance = require('../models/Attendance');
+const Grade = require('../models/Grade');
+const ChuyenCan = require('../models/ChuyenCan');
 const { sendPushToUsers } = require('../utils/pushNotifier');
 const sendEmail = require('../utils/sendEmail');
 const logger = require('../utils/logger');
@@ -204,3 +207,101 @@ exports.assign = async (req, res, next) => {
     next(err);
   }
 };
+
+// GET /api/classes/:id/stats
+exports.getClassStats = async (req, res, next) => {
+  try {
+    const lopId = req.params.id;
+
+    if (req.user.vaiTro !== 'admin') {
+      const owns = req.user.lopPhuTrach?.some(l => (l._id || l).toString() === lopId);
+      if (!owns) return res.status(403).json({ success: false, message: 'Không có quyền xem lớp này' });
+    }
+
+    const namHoc = await NamHoc.findOne({ dangHoatDong: true }).lean();
+    if (!namHoc) return res.status(404).json({ success: false, message: 'Chưa có năm học đang hoạt động' });
+
+    const [students, attendances, grades, chuyenCans] = await Promise.all([
+      Student.find({ lop: lopId, trangThai: 'active' }).select('hoTen tenThanh gioiTinh').lean(),
+      Attendance.find({ lop: lopId, namHoc: namHoc._id }).lean(),
+      Grade.find({ lop: lopId, namHoc: namHoc._id }).lean(),
+      ChuyenCan.find({ lop: lopId, namHoc: namHoc._id }).lean(),
+    ]);
+
+    // Gender split
+    const soNam = students.filter(s => s.gioiTinh === 'Nam').length;
+    const soNu  = students.filter(s => s.gioiTinh === 'Nu').length;
+
+    // Attendance stats
+    const allDates = [...new Set(attendances.map(a => a.date))];
+    const totalSessions = allDates.length;
+    const totalPresent  = attendances.filter(a => a.present).length;
+    const attendanceRate = totalSessions > 0 && students.length > 0
+      ? Math.round((totalPresent / (totalSessions * students.length)) * 100)
+      : 0;
+
+    // Per-student attendance rate
+    const studentAttMap = {};
+    attendances.forEach(a => {
+      const sid = a.student.toString();
+      if (!studentAttMap[sid]) studentAttMap[sid] = { total: 0, present: 0 };
+      studentAttMap[sid].total++;
+      if (a.present) studentAttMap[sid].present++;
+    });
+    const lowAttendance = students.filter(s => {
+      const sid = s._id.toString();
+      const att = studentAttMap[sid];
+      if (!att || att.total === 0) return totalSessions > 0;
+      return (att.present / att.total) < 0.7;
+    }).map(s => ({
+      _id: s._id,
+      hoTen: s.hoTen,
+      tenThanh: s.tenThanh,
+      rate: studentAttMap[s._id.toString()]
+        ? Math.round((studentAttMap[s._id.toString()].present / studentAttMap[s._id.toString()].total) * 100)
+        : 0,
+    }));
+
+    // Grade distribution by loaiDiem + hocKy
+    const bands = (diem) => {
+      if (diem >= 8) return '8-10';
+      if (diem >= 6) return '6-7';
+      if (diem >= 4) return '4-5';
+      return '0-3';
+    };
+    const gradeStats = {};
+    grades.forEach(g => {
+      const key = `${g.loaiDiem}_hk${g.hocKy}`;
+      if (!gradeStats[key]) gradeStats[key] = { loaiDiem: g.loaiDiem, hocKy: g.hocKy, count: 0, sum: 0, dist: { '0-3': 0, '4-5': 0, '6-7': 0, '8-10': 0 } };
+      gradeStats[key].count++;
+      gradeStats[key].sum += g.diem;
+      gradeStats[key].dist[bands(g.diem)]++;
+    });
+    const gradeList = Object.values(gradeStats).map(g => ({ ...g, avg: g.count ? +(g.sum / g.count).toFixed(2) : null }));
+
+    // ChuyenCan averages
+    const ccHK = { 1: { sum: 0, count: 0 }, 2: { sum: 0, count: 0 } };
+    chuyenCans.forEach(c => {
+      if (ccHK[c.hocKy]) { ccHK[c.hocKy].sum += c.diem; ccHK[c.hocKy].count++; }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        soHocSinh: students.length,
+        soNam, soNu,
+        totalSessions,
+        attendanceRate,
+        lowAttendance,
+        gradeList,
+        chuyenCan: {
+          hk1Avg: ccHK[1].count ? +(ccHK[1].sum / ccHK[1].count).toFixed(2) : null,
+          hk2Avg: ccHK[2].count ? +(ccHK[2].sum / ccHK[2].count).toFixed(2) : null,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
