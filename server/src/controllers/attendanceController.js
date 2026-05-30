@@ -189,6 +189,51 @@ exports.upsert = async (req, res, next) => {
   }
 };
 
+// POST /api/attendance/import  { lopId, rows: [{ studentId, date, present, ghiChu }] }
+exports.importBulk = async (req, res, next) => {
+  try {
+    const { lopId, rows } = req.body;
+    if (!lopId || !Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ success: false, message: 'Thiếu lopId hoặc rows' });
+    }
+
+    const namHoc = await NamHoc.findOne({ dangHoatDong: true });
+    if (!namHoc) return res.status(404).json({ success: false, message: 'Chưa có năm học đang hoạt động' });
+
+    const errors = [];
+    const ops = [];
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+
+    rows.forEach((row, i) => {
+      if (!row.studentId) { errors.push({ row: i + 1, msg: 'Thiếu studentId' }); return; }
+      if (!row.date || !dateRe.test(row.date)) { errors.push({ row: i + 1, msg: `Ngày không hợp lệ: ${row.date}` }); return; }
+
+      const present = row.present === true || row.present === 1 || row.present === '1'
+        || String(row.present).toLowerCase() === 'có' || String(row.present).toLowerCase() === 'co';
+
+      ops.push({
+        updateOne: {
+          filter: { student: row.studentId, lop: lopId, date: row.date },
+          update: { $set: { present, ghiChu: row.ghiChu || '', diemDanhBoi: req.user._id, namHoc: namHoc._id } },
+          upsert: true,
+        },
+      });
+    });
+
+    let result = { upsertedCount: 0, modifiedCount: 0 };
+    if (ops.length) result = await Attendance.bulkWrite(ops);
+
+    res.json({
+      success: true,
+      inserted: result.upsertedCount,
+      updated: result.modifiedCount,
+      errors,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // GET /api/attendance/sundays?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 // Tự sinh danh sách tất cả ngày Chúa Nhật trong khoảng thời gian
 exports.getSundays = async (req, res, next) => {

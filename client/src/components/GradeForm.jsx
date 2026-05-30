@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, CalendarCheck, Trash2, Mail, X, Loader2 } from 'lucide-react';
+import { Search, CalendarCheck, Trash2, Mail, X, Loader2, Upload } from 'lucide-react';
 import api from '../services/api';
 import ExportButton from './ExportButton';
+import ExcelImportModal from './ExcelImportModal';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const Highlight = ({ text = '', query = '' }) => {
@@ -380,6 +381,7 @@ const GradeForm = ({ lopId, students, canEdit }) => {
   const [bdHocKySend, setBdHocKySend] = useState(1); // học kỳ chọn trong modal
   const [bdSending,  setBdSending]  = useState(false);
   const [bdResult,   setBdResult]   = useState(null);
+  const [importModal, setImportModal] = useState(false);
 
   const countWithEmail = useMemo(
     () => students.filter(s => s.phuHuynh?.email).length,
@@ -582,6 +584,14 @@ const GradeForm = ({ lopId, students, canEdit }) => {
             fileName={`BangDiem_HK${hocKy}.xlsx`}
             label="Xuất Excel"
           />
+          {canEdit && (
+            <button
+              onClick={() => setImportModal(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl border border-[#8B0000]/30 text-[#8B0000] hover:bg-[#8B0000] hover:text-white transition"
+            >
+              <Upload className="w-3.5 h-3.5" /> Nhập Excel
+            </button>
+          )}
         </div>
       </div>
 
@@ -961,6 +971,18 @@ const GradeForm = ({ lopId, students, canEdit }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {importModal && (
+        <ExcelImportModal
+          type="grades"
+          lopId={lopId}
+          onSuccess={() => {
+            // Reload grades
+            api.get(`/grades/${lopId}`, { params: { hocKy } }).then(r => setGrades(r.data.data || []));
+          }}
+          onClose={() => setImportModal(false)}
+        />
       )}
     </div>
   );

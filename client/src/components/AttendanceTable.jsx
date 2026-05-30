@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { CheckCircle2, Minus, Loader2, Search, Mail, X, Radio } from 'lucide-react';
+import { CheckCircle2, Minus, Loader2, Search, Mail, X, Radio, Upload } from 'lucide-react';
+import ExcelImportModal from './ExcelImportModal';
 import api from '../services/api';
 import ExportButton from './ExportButton';
 
@@ -201,6 +202,7 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
   const [notifyModal, setNotifyModal] = useState(null); // null | { date, countEmail }
   const [notifySending, setNotifySending] = useState(false);
   const [notifyResult, setNotifyResult]   = useState(null); // { sent, skipped, errors }
+  const [importModal,  setImportModal]    = useState(false);
 
   // Đếm số phụ huynh có email để hiện trong modal xác nhận
   const countWithEmail = useMemo(
@@ -320,6 +322,15 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
               fileName={`ChuyenCan_${lopId}_${selNamHoc.ten}.xlsx`}
               label="Xuất Excel"
             />
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setImportModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all
+                         border border-[#8B0000]/30 text-[#8B0000] hover:bg-[#8B0000] hover:text-white"
+            >
+              <Upload className="w-3.5 h-3.5" /> Nhập Excel
+            </button>
           )}
         </div>
       </div>
@@ -580,6 +591,24 @@ const AttendanceTable = ({ lopId, students, canEdit }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {importModal && (
+        <ExcelImportModal
+          type="attendance"
+          lopId={lopId}
+          onSuccess={() => {
+            // Reload attendance by re-triggering the effect
+            setRecords([]);
+            setLoading(true);
+            if (selNamHoc) {
+              api.get(`/attendance/${lopId}`, { params: { namHocId: selNamHoc._id } })
+                .then(r => setRecords(r.data.data || []))
+                .finally(() => setLoading(false));
+            }
+          }}
+          onClose={() => setImportModal(false)}
+        />
       )}
     </div>
   );
