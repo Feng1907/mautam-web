@@ -53,6 +53,7 @@ export default function AdminQuiz() {
   const [expandedQ, setExpandedQ] = useState(null);
   const [saving, setSaving] = useState(false);
   const [filterLop, setFilterLop] = useState('');
+  const [previewQuiz, setPreviewQuiz] = useState(null);
 
   const { data: allClasses = [] } = useQuery({
     queryKey: ['classes-quiz'],
@@ -452,6 +453,67 @@ export default function AdminQuiz() {
         </div>
       )}
 
+      {/* ── Preview modal ── */}
+      {previewQuiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setPreviewQuiz(null)} />
+          <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-start justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 shrink-0">
+              <div>
+                <h2 className="font-bold text-gray-800 dark:text-slate-100">{previewQuiz.tieuDe}</h2>
+                {previewQuiz.moTa && <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{previewQuiz.moTa}</p>}
+                <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 dark:text-slate-500">
+                  <span className="flex items-center gap-1"><BookOpen size={10} />{previewQuiz.lop?.tenLop || '—'}</span>
+                  <span className="flex items-center gap-1"><Clock size={10} />{previewQuiz.thoiGianLam} phút</span>
+                  <span>{previewQuiz.cauHoi?.length || 0} câu hỏi</span>
+                </div>
+              </div>
+              <button onClick={() => setPreviewQuiz(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {(previewQuiz.cauHoi || []).length === 0 ? (
+                <p className="text-center text-sm text-gray-400 py-8">Chưa có câu hỏi nào.</p>
+              ) : (previewQuiz.cauHoi || []).map((cau, idx) => (
+                <div key={idx} className="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 p-4">
+                  <div className="flex items-start gap-2 mb-3">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 flex items-center justify-center text-xs font-bold">{idx + 1}</span>
+                    <div className="flex-1">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full mr-2 ${LOAI_COLORS[cau.loai]}`}>{LOAI_LABELS[cau.loai]}</span>
+                      <span className="text-[10px] text-gray-400">{cau.diem} điểm</span>
+                      <p className="mt-1 text-sm font-medium text-gray-800 dark:text-slate-200">{cau.noiDung}</p>
+                    </div>
+                  </div>
+                  {cau.loai === 'trac_nghiem' && (
+                    <div className="grid grid-cols-2 gap-2 ml-8">
+                      {(cau.dapAn || []).map((d) => (
+                        <div key={d.chu} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                          d.dungKhong
+                            ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-semibold'
+                            : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300'
+                        }`}>
+                          <span className="font-bold text-xs">{d.chu}.</span>
+                          <span className="truncate">{d.noiDung || <span className="italic text-gray-300">Trống</span>}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {cau.loai === 'dien_khuyet' && (
+                    <div className="ml-8 text-xs text-gray-500 dark:text-slate-400">
+                      Đáp án: {(cau.dapAnDung || []).filter(Boolean).join(' / ') || '—'}
+                    </div>
+                  )}
+                  {cau.loai === 'tu_luan' && cau.goiY && (
+                    <div className="ml-8 text-xs text-gray-500 dark:text-slate-400 italic">Gợi ý: {cau.goiY}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Bộ lọc ── */}
       <div className="flex items-center gap-3">
         <select className="input max-w-48 text-sm" value={filterLop} onChange={e => setFilterLop(e.target.value)}>
@@ -535,6 +597,12 @@ export default function AdminQuiz() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => setPreviewQuiz(quiz)}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition"
+                      title="Xem trước nội dung">
+                      <Eye size={13} />
+                      <span className="hidden sm:inline">Xem trước</span>
+                    </button>
                     <Link to={`/quiz/${quiz._id}/monitor`}
                       className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 transition"
                       title="Giám sát">

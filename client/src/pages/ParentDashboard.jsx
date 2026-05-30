@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   BellRing,
@@ -351,7 +351,7 @@ const RecentPosts = ({ posts }) => {
   );
 };
 
-const SemesterReport = ({ report, onExportPdf }) => {
+const SemesterReport = ({ report, onExportPdf, hocKy, setHocKy }) => {
   const grades = report?.grades || [];
   const chuyenCan = report?.chuyenCan;
   const avg = report?.gradeAverage;
@@ -360,7 +360,23 @@ const SemesterReport = ({ report, onExportPdf }) => {
     <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-4 py-3">
-          <p className="text-sm font-bold text-gray-800">Báo cáo học kỳ {report?.hocKy || 1}</p>
+          <p className="text-sm font-bold text-gray-800">Báo cáo học kỳ {hocKy}</p>
+          <div className="flex gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+            {[1, 2].map((hk) => (
+              <button
+                key={hk}
+                type="button"
+                onClick={() => setHocKy(hk)}
+                className={`rounded-md px-3 py-1 text-xs font-bold transition ${
+                  hocKy === hk
+                    ? 'bg-red-700 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                HK{hk}
+              </button>
+            ))}
+          </div>
         </div>
         {grades.length ? (
           <table className="w-full text-sm">
@@ -566,10 +582,25 @@ const MonthCalendar = ({ events }) => {
   );
 };
 
+const ABSENCE_STATUS_CFG = {
+  pending:  { label: 'Chờ duyệt', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Đã duyệt',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: 'Từ chối',   cls: 'bg-red-50 text-red-700 border-red-200' },
+};
+
 const AbsenceRequestCard = ({ selectedStudent, onSubmit }) => {
   const [form, setForm] = useState({ date: '', reason: '' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const queryClient = useQueryClient();
+
+  const historyQ = useQuery({
+    queryKey: ['absenceRequests', selectedStudent?._id],
+    queryFn: () => api.get(`/parent/students/${selectedStudent._id}/absence-requests`).then(r => r.data.data || []),
+    enabled: !!selectedStudent?._id,
+    staleTime: 2 * 60 * 1000,
+  });
+  const history = historyQ.data || [];
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -580,6 +611,7 @@ const AbsenceRequestCard = ({ selectedStudent, onSubmit }) => {
       await onSubmit(form);
       setForm({ date: '', reason: '' });
       setMessage({ ok: true, text: 'Đã gửi xin phép nghỉ đến Huynh trưởng lớp.' });
+      queryClient.invalidateQueries({ queryKey: ['absenceRequests', selectedStudent._id] });
     } catch (err) {
       setMessage({ ok: false, text: err.response?.data?.message || 'Chưa gửi được xin phép nghỉ. Vui lòng thử lại.' });
     } finally {
@@ -588,66 +620,97 @@ const AbsenceRequestCard = ({ selectedStudent, onSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      {/* Ngày nghỉ */}
-      <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
-          <CalendarCheck className="h-3.5 w-3.5 text-red-400" />
-          Ngày nghỉ
-        </label>
-        <input
-          type="date"
-          className="input"
-          value={form.date}
-          onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-          required
-        />
-      </div>
-
-      {/* Lý do */}
-      <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
-          <ClipboardList className="h-3.5 w-3.5 text-red-400" />
-          Lý do xin nghỉ
-        </label>
-        <textarea
-          className="input resize-none leading-relaxed"
-          rows={4}
-          value={form.reason}
-          onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
-          placeholder="Mô tả lý do xin nghỉ học buổi này..."
-          maxLength={500}
-          required
-        />
-        <p className="text-right text-[11px] text-gray-400">{form.reason.length}/500</p>
-      </div>
-
-      {/* Thông báo kết quả */}
-      {message && (
-        <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium ${
-          message.ok
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
-          {message.ok
-            ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
-            : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
-          {message.text}
+    <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        {/* Ngày nghỉ */}
+        <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+            <CalendarCheck className="h-3.5 w-3.5 text-red-400" />
+            Ngày nghỉ
+          </label>
+          <input
+            type="date"
+            className="input"
+            value={form.date}
+            onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+            required
+          />
         </div>
-      )}
 
-      {/* Nút gửi */}
-      <button
-        type="submit"
-        disabled={saving || !selectedStudent}
-        className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition
-          bg-linear-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700
-          disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
-      >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {saving ? 'Đang gửi...' : 'Gửi xin phép nghỉ đến Huynh trưởng'}
-      </button>
-    </form>
+        {/* Lý do */}
+        <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+            <ClipboardList className="h-3.5 w-3.5 text-red-400" />
+            Lý do xin nghỉ
+          </label>
+          <textarea
+            className="input resize-none leading-relaxed"
+            rows={4}
+            value={form.reason}
+            onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
+            placeholder="Mô tả lý do xin nghỉ học buổi này..."
+            maxLength={500}
+            required
+          />
+          <p className="text-right text-[11px] text-gray-400">{form.reason.length}/500</p>
+        </div>
+
+        {/* Thông báo kết quả */}
+        {message && (
+          <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium ${
+            message.ok
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}>
+            {message.ok
+              ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
+            {message.text}
+          </div>
+        )}
+
+        {/* Nút gửi */}
+        <button
+          type="submit"
+          disabled={saving || !selectedStudent}
+          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition
+            bg-linear-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700
+            disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {saving ? 'Đang gửi...' : 'Gửi xin phép nghỉ đến Huynh trưởng'}
+        </button>
+      </form>
+
+      {/* Lịch sử xin phép */}
+      <div className="border-t border-gray-100 pt-4">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">Lịch sử xin phép</p>
+        {historyQ.isLoading ? (
+          <div className="flex items-center gap-2 py-3 text-sm text-gray-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải...
+          </div>
+        ) : history.length === 0 ? (
+          <p className="py-4 text-center text-sm text-gray-400">Chưa có đơn xin phép nào.</p>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {history.map((req) => {
+              const cfg = ABSENCE_STATUS_CFG[req.status] || ABSENCE_STATUS_CFG.pending;
+              return (
+                <div key={req._id} className="flex items-start justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">{req.date}</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{req.reason}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cfg.cls}`}>
+                    {cfg.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -783,7 +846,31 @@ const LinkRequestSection = ({ onLinked: _onLinked }) => {
   };
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="flex flex-col gap-5">
+      {/* Hướng dẫn 3 bước */}
+      <div className="rounded-xl border border-blue-100 bg-blue-50 px-5 py-4">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-blue-600">Hướng dẫn liên kết</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { step: 1, icon: Search, label: 'Tìm đoàn sinh', desc: 'Nhập tên thánh hoặc họ tên của con em trong ô tìm kiếm.' },
+            { step: 2, icon: Send,   label: 'Gửi yêu cầu',   desc: 'Chọn quan hệ và gửi yêu cầu liên kết đến Admin xét duyệt.' },
+            { step: 3, icon: CheckCircle2, label: 'Chờ duyệt', desc: 'Admin sẽ xác minh và phê duyệt trong thời gian sớm nhất.' },
+          ].map(({ step, icon: Icon, label, desc }) => (
+            <div key={step} className="flex items-start gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">{step}</span>
+              <div>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Icon className="h-3.5 w-3.5 text-blue-600" />
+                  <p className="text-sm font-bold text-gray-800">{label}</p>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
       {/* Form gửi yêu cầu */}
       <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
@@ -891,12 +978,14 @@ const LinkRequestSection = ({ onLinked: _onLinked }) => {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };
 
 const ParentDashboard = () => {
   const [selectedId, setSelectedId] = useState('');
+  const [hocKy, setHocKy] = useState(1);
 
   // ── Query 1: dữ liệu khởi tạo — students, posts, events ──────────────────
   const [studentsQ, postsQ, eventsQ, assignmentsQ] = useQueries({
@@ -958,8 +1047,8 @@ const ParentDashboard = () => {
         retry: 3,
       },
       {
-        queryKey: ['studentSemesterReport', selectedId],
-        queryFn: () => api.get(`/parent/students/${selectedId}/semester-report`, { params: { hocKy: 1 } }).then(r => r.data.data || null),
+        queryKey: ['studentSemesterReport', selectedId, hocKy],
+        queryFn: () => api.get(`/parent/students/${selectedId}/semester-report`, { params: { hocKy } }).then(r => r.data.data || null),
         enabled: !!selectedId,
         staleTime: 5 * 60 * 1000,
         retry: 3,
@@ -1095,7 +1184,7 @@ const ParentDashboard = () => {
                 <Loader2 className="h-4 w-4 animate-spin" /> Đang tải báo cáo...
               </div>
             ) : (
-              <SemesterReport report={semesterReport} onExportPdf={handleExportPdf} />
+              <SemesterReport report={semesterReport} onExportPdf={handleExportPdf} hocKy={hocKy} setHocKy={setHocKy} />
             )}
           </SectionCard>
 

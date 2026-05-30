@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Trash2, UserCheck, X, CheckSquare, Square } from 'lucide-react';
 import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -35,6 +36,62 @@ const PasswordModal = ({ hoTen, email, matKhau, emailSent, onClose }) => {
   );
 };
 
+// ── Modal đổi vai trò / chức vụ hàng loạt ────────────────────────────────────
+const BulkRoleModal = ({ count, onConfirm, onClose }) => {
+  const [vaiTro, setVaiTro] = useState('giaoly');
+  const [chucVu, setChucVu] = useState('huynhtruong');
+  const [saving, setSaving] = useState(false);
+
+  const handleConfirm = async () => {
+    setSaving(true);
+    await onConfirm({
+      vaiTro,
+      chucVu: vaiTro === 'giaoly' ? chucVu || null : null,
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-800">Đổi vai trò hàng loạt</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Áp dụng cho <strong>{count}</strong> người dùng đã chọn.
+        </p>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Vai trò hệ thống</label>
+            <select className="input" value={vaiTro} onChange={e => setVaiTro(e.target.value)}>
+              <option value="giaoly">Giáo lý viên</option>
+              <option value="admin">Admin</option>
+              <option value="user">Phụ huynh / User</option>
+            </select>
+          </div>
+          {vaiTro === 'giaoly' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Chức vụ</label>
+              <select className="input" value={chucVu} onChange={e => setChucVu(e.target.value)}>
+                <option value="huynhtruong">Huynh trưởng</option>
+                <option value="dutruong">Dự trưởng</option>
+                <option value="">Chưa xác định</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2 mt-5">
+          <button onClick={handleConfirm} disabled={saving} className="btn-primary flex-1">
+            {saving ? 'Đang cập nhật...' : 'Xác nhận'}
+          </button>
+          <button onClick={onClose} className="btn-ghost flex-1">Huỷ</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Cấu hình nhãn & màu ─────────────────────────────────────────────────────
 const VAI_TRO_LABEL = {
   admin:  { label: 'Admin',        cls: 'badge-red'  },
@@ -47,7 +104,6 @@ const CHUC_VU_LABEL = {
   dutruong:    { label: 'Dự trưởng',    cls: 'bg-sky-100   text-sky-800   inline-block text-xs font-semibold px-2 py-0.5 rounded-full' },
 };
 
-// Các tab lọc
 const TABS = [
   { key: '',             label: 'Tất cả' },
   { key: 'admin',        label: 'Admin',        vaiTro: 'admin'  },
@@ -79,7 +135,6 @@ const UserForm = ({ initial, onSave, onCancel }) => {
     try {
       const payload = {
         ...form,
-        // chucVu chỉ có nghĩa với giaoly, reset về null nếu không phải
         chucVu: form.vaiTro === 'giaoly' ? (form.chucVu || null) : null,
       };
       const res = isEdit
@@ -134,7 +189,6 @@ const UserForm = ({ initial, onSave, onCancel }) => {
               onChange={e => set('soDienThoai', e.target.value)} />
           </div>
 
-          {/* Vai trò hệ thống */}
           <div>
             <label className="admin-field-label">Vai trò hệ thống</label>
             <select className="admin-form-control" value={form.vaiTro}
@@ -145,7 +199,6 @@ const UserForm = ({ initial, onSave, onCancel }) => {
             </select>
           </div>
 
-          {/* Chức vụ — chỉ hiện khi là giaoly */}
           {form.vaiTro === 'giaoly' && (
             <div className="sm:col-span-2">
               <label className="admin-field-label">Chức vụ</label>
@@ -173,31 +226,32 @@ const UserForm = ({ initial, onSave, onCancel }) => {
 
 // ── Trang chính ───────────────────────────────────────────────────────────────
 const AdminUsers = () => {
-  const [users,     setUsers]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [form,      setForm]      = useState(null);
-  const [activeTab, setActiveTab] = useState('');
-  const [deleting,  setDeleting]  = useState(null);
-  const [pwModal,   setPwModal]   = useState(null); // { hoTen, email, matKhau, emailSent }
-  const [resetting, setResetting] = useState(null);
+  const [users,       setUsers]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [form,        setForm]        = useState(null);
+  const [activeTab,   setActiveTab]   = useState('');
+  const [deleting,    setDeleting]    = useState(null);
+  const [pwModal,     setPwModal]     = useState(null);
+  const [resetting,   setResetting]   = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkRole,    setBulkRole]    = useState(false);
+  const [bulkWorking, setBulkWorking] = useState(false);
 
-  // Xây params từ tab
   const tabParams = () => {
     const t = TABS.find(t => t.key === activeTab);
     if (!t) return {};
     const p = {};
     if (t.vaiTro) p.vaiTro = t.vaiTro;
-    // Tab "GLV khác": giaoly nhưng KHÔNG có chucVu cụ thể (lọc phía FE)
     if (t.chucVu)  p.chucVu = t.chucVu;
     return p;
   };
 
   const load = useCallback(() => {
     setLoading(true);
+    setSelectedIds(new Set());
     api.get('/users', { params: tabParams() })
       .then(r => {
         let data = r.data.data;
-        // Tab "GLV khác": lọc ra những người giaoly chưa có chucVu
         if (activeTab === 'giaoly_other')
           data = data.filter(u => !u.chucVu);
         setUsers(data);
@@ -207,6 +261,24 @@ const AdminUsers = () => {
   }, [activeTab]); // eslint-disable-line
 
   useEffect(() => { load(); }, [load]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === users.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(users.map(u => u._id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
 
   const handleSave = (saved, matKhauTam, emailSent) => {
     setUsers(prev => {
@@ -235,12 +307,12 @@ const AdminUsers = () => {
     try {
       await api.delete(`/users/${id}`);
       setUsers(prev => prev.filter(u => u._id !== id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
     } catch (err) {
       alert(err.response?.data?.message || 'Xoá thất bại.');
     } finally { setDeleting(null); }
   };
 
-  // Đổi chức vụ nhanh không cần mở form
   const handleChucVu = async (user, newChucVu) => {
     try {
       const res = await api.put(`/users/${user._id}`, { chucVu: newChucVu });
@@ -248,8 +320,45 @@ const AdminUsers = () => {
     } catch { alert('Cập nhật thất bại.'); }
   };
 
+  // ── Bulk actions ──────────────────────────────────────────────────────────
+  const handleBulkDelete = async () => {
+    const ids = [...selectedIds];
+    if (!window.confirm(`Xoá ${ids.length} tài khoản đã chọn? Hành động này không thể hoàn tác.`)) return;
+    setBulkWorking(true);
+    const results = await Promise.allSettled(ids.map(id => api.delete(`/users/${id}`)));
+    const deleted = ids.filter((_, i) => results[i].status === 'fulfilled');
+    const failed  = ids.length - deleted.length;
+    setUsers(prev => prev.filter(u => !deleted.includes(u._id)));
+    setSelectedIds(new Set());
+    setBulkWorking(false);
+    if (failed > 0) alert(`Đã xoá ${deleted.length} tài khoản. ${failed} tài khoản không thể xoá.`);
+  };
+
+  const handleBulkRole = async ({ vaiTro, chucVu }) => {
+    const ids = [...selectedIds];
+    setBulkWorking(true);
+    const results = await Promise.allSettled(
+      ids.map(id => api.put(`/users/${id}`, { vaiTro, chucVu }))
+    );
+    const updated = results
+      .map(r => r.status === 'fulfilled' ? r.value.data.data : null)
+      .filter(Boolean);
+    setUsers(prev => prev.map(u => {
+      const upd = updated.find(x => x._id === u._id);
+      return upd || u;
+    }));
+    setSelectedIds(new Set());
+    setBulkRole(false);
+    setBulkWorking(false);
+    const failed = ids.length - updated.length;
+    if (failed > 0) alert(`Đã cập nhật ${updated.length}. ${failed} thất bại.`);
+  };
+
+  const allSelected = users.length > 0 && selectedIds.size === users.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+
   return (
-    <div>
+    <div className="pb-24">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h2 className="admin-title text-2xl">Quản lý Người dùng</h2>
         <button onClick={() => setForm({})} className="btn-primary">+ Tạo tài khoản</button>
@@ -275,14 +384,51 @@ const AdminUsers = () => {
             <p className="text-center text-gray-400 py-12">Không có người dùng nào.</p>
           )}
 
+          {/* Select-all header */}
+          {users.length > 0 && (
+            <div className="flex items-center gap-2 px-1 mb-1">
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition"
+              >
+                {allSelected
+                  ? <CheckSquare size={15} className="text-red-700" />
+                  : someSelected
+                    ? <CheckSquare size={15} className="text-gray-400" />
+                    : <Square size={15} className="text-gray-400" />
+                }
+                {allSelected ? 'Bỏ chọn tất cả' : `Chọn tất cả (${users.length})`}
+              </button>
+              {selectedIds.size > 0 && (
+                <span className="text-xs text-gray-400">· {selectedIds.size} đã chọn</span>
+              )}
+            </div>
+          )}
+
           {users.map(u => {
             const vt = VAI_TRO_LABEL[u.vaiTro] || VAI_TRO_LABEL.user;
             const cv = u.chucVu ? CHUC_VU_LABEL[u.chucVu] : null;
+            const isSelected = selectedIds.has(u._id);
 
             return (
-              <div key={u._id} className="card flex items-center justify-between gap-4 flex-wrap py-3">
-                {/* Avatar + thông tin */}
+              <div
+                key={u._id}
+                className={`card flex items-center justify-between gap-4 flex-wrap py-3 transition-all ${
+                  isSelected ? 'ring-2 ring-red-400 bg-red-50/40' : ''
+                }`}
+              >
+                {/* Checkbox + Avatar + info */}
                 <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={() => toggleSelect(u._id)}
+                    className="shrink-0 text-gray-400 hover:text-red-700 transition"
+                  >
+                    {isSelected
+                      ? <CheckSquare size={17} className="text-red-700" />
+                      : <Square size={17} />
+                    }
+                  </button>
+
                   {u.avatar ? (
                     <img
                       src={u.avatar}
@@ -298,7 +444,6 @@ const AdminUsers = () => {
                     {u.hoTen?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    {/* Tên + badges */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-semibold text-gray-800 text-sm">{u.hoTen}</span>
                       <span className={vt.cls}>{vt.label}</span>
@@ -310,20 +455,17 @@ const AdminUsers = () => {
                       )}
                     </div>
 
-                    {/* Email + SĐT */}
                     <p className="text-xs text-gray-500 mt-0.5">
                       {u.email}
                       {u.soDienThoai && <span className="ml-2 text-gray-400">· {u.soDienThoai}</span>}
                     </p>
 
-                    {/* Lớp phụ trách */}
                     {u.lopPhuTrach?.length > 0 && (
                       <p className="text-xs text-blue-600 mt-0.5">
                         📚 {u.lopPhuTrach.map(l => l?.tenLop ? formatClassName(l.tenLop) : null).filter(Boolean).join(', ') || '(lớp không còn tồn tại)'}
                       </p>
                     )}
 
-                    {/* Dropdown đổi chức vụ nhanh — chỉ với giaoly */}
                     {u.vaiTro === 'giaoly' && (
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="text-xs text-gray-400">Chức vụ:</span>
@@ -376,11 +518,52 @@ const AdminUsers = () => {
         </div>
       )}
 
+      {/* ── Bulk action bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-gray-900 px-5 py-3 shadow-2xl text-white text-sm font-medium animate-in slide-in-from-bottom-4 duration-200">
+          <span className="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
+            {selectedIds.size}
+          </span>
+          <span className="text-gray-300">đã chọn</span>
+          <div className="w-px h-5 bg-gray-700 mx-1" />
+          <button
+            onClick={() => setBulkRole(true)}
+            disabled={bulkWorking}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 text-xs font-semibold"
+          >
+            <UserCheck size={14} /> Đổi vai trò
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkWorking}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 transition disabled:opacity-50 text-xs font-semibold"
+          >
+            <Trash2 size={14} /> Xoá
+          </button>
+          <button
+            onClick={clearSelection}
+            disabled={bulkWorking}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition"
+            title="Bỏ chọn"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {form !== null && (
         <UserForm
           initial={form._id ? form : null}
           onSave={handleSave}
           onCancel={() => setForm(null)}
+        />
+      )}
+
+      {bulkRole && (
+        <BulkRoleModal
+          count={selectedIds.size}
+          onConfirm={handleBulkRole}
+          onClose={() => setBulkRole(false)}
         />
       )}
 

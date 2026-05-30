@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
-import { Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip, FileText, MessageCircle } from 'lucide-react';
+import {
+  Plus, Send, Users, X, Check, ChevronLeft, Trash2, Paperclip,
+  FileText, MessageCircle, Pin, Copy, CornerUpLeft,
+} from 'lucide-react';
 import HuynhTruongLogo from '../components/HuynhTruongLogo';
 import HuynhTruongRoom from '../components/HuynhTruongRoom';
 import { formatClassName } from '../utils/formatClassName';
@@ -27,11 +30,28 @@ const fmtTime = (d) => {
   return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 };
 
+const fmtMsgTime = (d) => {
+  if (!d) return '';
+  return new Date(d).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+};
+
 const fmtFileSize = (bytes) => {
   if (!bytes) return '';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const isSameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+
+const fmtDateSep = (date) => {
+  const d = new Date(date);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (isSameDay(d, today)) return 'Hôm nay';
+  if (isSameDay(d, yesterday)) return 'Hôm qua';
+  return d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
 function Avatar({ name, avatar, size = 8 }) {
@@ -51,9 +71,21 @@ function RoomName({ room, myId }) {
   return other?.hoTen || 'Chat';
 }
 
-function ReactionBar({ onReact }) {
+function DateSeparator({ date }) {
   return (
-    <div className="absolute bottom-full mb-1 left-0 flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-lg z-10">
+    <div className="flex items-center gap-2 my-2">
+      <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium px-2 capitalize">
+        {fmtDateSep(date)}
+      </span>
+      <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+    </div>
+  );
+}
+
+function EmojiBar({ onReact }) {
+  return (
+    <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-lg z-10">
       {QUICK_EMOJIS.map(e => (
         <button key={e} onClick={() => onReact(e)}
           className="text-base hover:scale-125 transition-transform leading-none p-0.5">
@@ -64,29 +96,55 @@ function ReactionBar({ onReact }) {
   );
 }
 
+function ContextMenu({ isMe, isAdmin, isPinned, onPin, onCopy, onDelete, onClose }) {
+  return (
+    <div className="absolute z-20 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm">
+      <button onClick={() => { onPin(); onClose(); }}
+        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+        <Pin size={12} className="text-amber-500 shrink-0" />
+        {isPinned ? 'Bỏ ghim' : 'Ghim'}
+      </button>
+      <button onClick={() => { onCopy(); onClose(); }}
+        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+        <Copy size={12} className="text-blue-500 shrink-0" />
+        Sao chép
+      </button>
+      {(isMe || isAdmin) && (
+        <button onClick={() => { onDelete(); onClose(); }}
+          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left text-red-500">
+          <Trash2 size={12} className="shrink-0" />
+          Xóa
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function HtChatWidget() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen]               = useState(false);
 
-  // Khi mở HT Chat → đóng Trợ lý AI; khi Trợ lý AI mở → đóng HT Chat
   useEffect(() => {
     const close = () => setOpen(false);
     window.addEventListener('ht-chat:close', close);
     return () => window.removeEventListener('ht-chat:close', close);
   }, []);
 
-  const [activeRoom, setActiveRoom]   = useState(null);
-  const [text, setText]               = useState('');
-  const [showNewRoom, setShowNewRoom] = useState(false);
+  const [activeRoom, setActiveRoom]       = useState(null);
+  const [text, setText]                   = useState('');
+  const [showNewRoom, setShowNewRoom]     = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [groupName, setGroupName]     = useState('');
-  const [isGroup, setIsGroup]         = useState(false);
-  const [typingUser, setTypingUser]   = useState(null);
-  const [hoveredMsg, setHoveredMsg]   = useState(null);
+  const [groupName, setGroupName]         = useState('');
+  const [isGroup, setIsGroup]             = useState(false);
+  const [typingUser, setTypingUser]       = useState(null);
+  const [hoveredMsg, setHoveredMsg]       = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [pendingFile, setPendingFile] = useState(null);   // { file, preview, uploading }
-  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [pendingFile, setPendingFile]     = useState(null);
+  const [lightboxUrl, setLightboxUrl]     = useState(null);
+  const [replyingTo, setReplyingTo]       = useState(null); // { _id, text, senderName }
+  const [actionMenu, setActionMenu]       = useState(null); // msgId
+  const [reactionPicker, setReactionPicker] = useState(null); // msgId
 
   const messagesEndRef = useRef(null);
   const socketRef      = useRef(null);
@@ -96,6 +154,13 @@ export default function HtChatWidget() {
   const typingTimerRef = useRef(null);
 
   const isGiaoly = user && ['admin', 'giaoly'].includes(user.vaiTro);
+  const isAdmin  = user?.vaiTro === 'admin';
+
+  // close menus on outside click
+  const closeMenus = useCallback(() => {
+    setActionMenu(null);
+    setReactionPicker(null);
+  }, []);
 
   // Socket setup
   useEffect(() => {
@@ -109,18 +174,27 @@ export default function HtChatWidget() {
     socketRef.current = socket;
 
     socket.on('htchat:message', (msg) => {
-      qc.setQueryData(['ht-messages', msg.room], old => old ? [...old, msg] : [msg]);
-      qc.invalidateQueries(['ht-rooms']);
+      qc.setQueryData(['ht-messages', msg.room], old => {
+        if (!old) return [msg];
+        if (old.some(m => m._id === msg._id)) return old;
+        return [...old, msg];
+      });
+      qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     });
     socket.on('htchat:message:deleted', ({ _id, room }) => {
       qc.setQueryData(['ht-messages', room], old =>
         old?.map(m => m._id === _id ? { ...m, deleted: true, text: '', attachments: [] } : m)
       );
+      qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     });
     socket.on('htchat:reaction', ({ msgId, reactions }) => {
-      // update all loaded message caches
       qc.setQueriesData({ queryKey: ['ht-messages'] }, old =>
         old?.map(m => m._id === msgId ? { ...m, reactions } : m)
+      );
+    });
+    socket.on('htchat:pin', ({ roomId, pinnedMessage }) => {
+      qc.setQueryData(['ht-rooms'], old =>
+        old?.map(r => r._id === roomId ? { ...r, pinnedMessage } : r)
       );
     });
     socket.on('htchat:typing', ({ roomId, hoTen }) => {
@@ -163,7 +237,7 @@ export default function HtChatWidget() {
   const createRoom = useMutation({
     mutationFn: (data) => api.post('/ht-chat/rooms', data).then(r => r.data.data),
     onSuccess: (room) => {
-      qc.invalidateQueries(['ht-rooms']);
+      qc.invalidateQueries({ queryKey: ['ht-rooms'] });
       setActiveRoom(room._id);
       setShowNewRoom(false);
       setSelectedUsers([]); setGroupName(''); setIsGroup(false);
@@ -171,9 +245,9 @@ export default function HtChatWidget() {
   });
 
   const sendMsg = useMutation({
-    mutationFn: ({ text: t, attachments }) =>
-      api.post(`/ht-chat/rooms/${activeRoom}/messages`, { text: t, attachments }),
-    onMutate: ({ text: t, attachments }) => {
+    mutationFn: ({ text: t, attachments, replyTo }) =>
+      api.post(`/ht-chat/rooms/${activeRoom}/messages`, { text: t, attachments, replyTo }),
+    onMutate: ({ text: t, attachments, replyTo: replyToId }) => {
       const opt = {
         _id: `opt-${Date.now()}`,
         room: activeRoom,
@@ -181,18 +255,25 @@ export default function HtChatWidget() {
         text: t,
         attachments: attachments || [],
         reactions: [],
+        readBy: [user._id],
+        replyTo: replyToId ? {
+          _id: replyToId,
+          text: replyingTo?.text,
+          sender: { hoTen: replyingTo?.senderName },
+        } : null,
         createdAt: new Date().toISOString(),
         _optimistic: true,
       };
       qc.setQueryData(['ht-messages', activeRoom], old => [...(old || []), opt]);
       setText('');
       setPendingFile(null);
+      setReplyingTo(null);
     },
     onSuccess: (res) => {
       qc.setQueryData(['ht-messages', activeRoom], old =>
         old?.map(m => m._optimistic ? res.data.data : m) || []
       );
-      qc.invalidateQueries(['ht-rooms']);
+      qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     },
     onError: () => {
       qc.setQueryData(['ht-messages', activeRoom], old => old?.filter(m => !m._optimistic) || []);
@@ -219,6 +300,17 @@ export default function HtChatWidget() {
     },
   });
 
+  const pinMsg = useMutation({
+    mutationFn: (msgId) => api.patch(`/ht-chat/rooms/${activeRoom}/pin`, { msgId }),
+    onSuccess: (_, msgId) => {
+      qc.setQueryData(['ht-rooms'], old =>
+        old?.map(r => r._id === activeRoom
+          ? { ...r, pinnedMessage: msgId ? messages.find(m => m._id === msgId) ?? null : null }
+          : r)
+      );
+    },
+  });
+
   const markRead = useCallback((roomId) => {
     api.put(`/ht-chat/rooms/${roomId}/read`).catch(() => {});
     qc.setQueryData(['ht-rooms'], old => old?.map(r => r._id === roomId ? { ...r, unread: 0 } : r));
@@ -241,7 +333,6 @@ export default function HtChatWidget() {
     }
   };
 
-  // Firebase upload
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -276,7 +367,7 @@ export default function HtChatWidget() {
       }
     }
 
-    sendMsg.mutate({ text: text.trim(), attachments });
+    sendMsg.mutate({ text: text.trim(), attachments, replyTo: replyingTo?._id || null });
   };
 
   const handleSend = (e) => {
@@ -285,10 +376,11 @@ export default function HtChatWidget() {
   };
 
   const activeRoomData = rooms.find(r => r._id === activeRoom);
-  const totalUnread = rooms.reduce((s, r) => s + (r.unread || 0), 0);
-  const classRooms = rooms.filter(r => r.classRef);
-  const dmRooms    = rooms.filter(r => !r.classRef);
-  const showTyping = typingUser && typingUser.roomId === activeRoom;
+  const pinnedMsg      = activeRoomData?.pinnedMessage ?? null;
+  const totalUnread    = rooms.reduce((s, r) => s + (r.unread || 0), 0);
+  const classRooms     = rooms.filter(r => r.classRef);
+  const dmRooms        = rooms.filter(r => !r.classRef);
+  const showTyping     = typingUser && typingUser.roomId === activeRoom;
 
   if (!isGiaoly) return null;
 
@@ -342,6 +434,21 @@ export default function HtChatWidget() {
             </button>
           </div>
 
+          {/* Pinned message banner */}
+          {activeRoom && pinnedMsg && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800 shrink-0">
+              <Pin size={11} className="text-amber-500 shrink-0" />
+              <div className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => document.getElementById(`msg-${pinnedMsg._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 leading-none mb-0.5">Tin nhắn đã ghim</p>
+                <p className="text-[11px] text-gray-600 dark:text-slate-300 truncate">{pinnedMsg.text || '[Tệp đính kèm]'}</p>
+              </div>
+              <button onClick={() => pinMsg.mutate(null)} className="text-gray-400 hover:text-gray-600 transition">
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
           {/* Room list */}
           {!activeRoom && (
             <div className="flex-1 overflow-y-auto">
@@ -359,7 +466,6 @@ export default function HtChatWidget() {
                 </div>
               ) : (
                 <div className="p-2 space-y-3">
-                  {/* Lớp của tôi */}
                   {classRooms.length > 0 && (
                     <div className="space-y-1.5">
                       <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">Lớp của tôi</p>
@@ -377,8 +483,6 @@ export default function HtChatWidget() {
                       ))}
                     </div>
                   )}
-
-                  {/* DM & nhóm tự tạo */}
                   {dmRooms.length > 0 && (
                     <div className="space-y-0.5">
                       {classRooms.length > 0 && (
@@ -422,105 +526,196 @@ export default function HtChatWidget() {
           {/* Messages */}
           {activeRoom && (
             <>
-              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2" onClick={() => setHoveredMsg(null)}>
+              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" onClick={closeMenus}>
                 {msgsLoading ? (
                   <div className="flex items-center justify-center h-full text-gray-300 text-sm">Đang tải...</div>
-                ) : messages.map(msg => {
+                ) : messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-2">
+                    <MessageCircle size={32} className="opacity-30" />
+                    <p className="text-sm">Bắt đầu cuộc trò chuyện</p>
+                  </div>
+                ) : messages.map((msg, idx) => {
                   const isMe = (msg.sender?._id || msg.sender) === user._id;
                   const hasReactions = msg.reactions?.some(r => r.users?.length > 0);
+                  const prevMsg = messages[idx - 1];
+                  const showDate = !prevMsg || !isSameDay(msg.createdAt, prevMsg.createdAt);
+                  const isLast = idx === messages.length - 1;
+
+                  // read receipts: other members who have read this message (only on last message)
+                  const readers = isLast && activeRoomData?.members
+                    ? activeRoomData.members.filter(m =>
+                        m._id !== user._id &&
+                        msg.readBy?.some(r => (r._id || r) === m._id)
+                      )
+                    : [];
 
                   return (
-                    <div key={msg._id}
-                      className={`flex items-end gap-1.5 group ${isMe ? 'flex-row-reverse' : ''}`}
-                      onMouseEnter={() => setHoveredMsg(msg._id)}
-                      onMouseLeave={() => { if (confirmDelete !== msg._id) setHoveredMsg(null); }}
-                    >
-                      {!isMe && <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />}
+                    <Fragment key={msg._id}>
+                      {showDate && <DateSeparator date={msg.createdAt} />}
+                      <div
+                        id={`msg-${msg._id}`}
+                        className={`flex items-end gap-1.5 group mb-1 ${isMe ? 'flex-row-reverse' : ''}`}
+                        onMouseEnter={() => setHoveredMsg(msg._id)}
+                        onMouseLeave={() => {
+                          if (confirmDelete !== msg._id && actionMenu !== msg._id && reactionPicker !== msg._id)
+                            setHoveredMsg(null);
+                        }}
+                      >
+                        {!isMe && <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />}
 
-                      <div className="relative max-w-[75%]">
-                        {/* Reaction bar on hover */}
-                        {hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
-                          <ReactionBar onReact={(emoji) => { reactMsg.mutate({ msgId: msg._id, emoji }); setHoveredMsg(null); }} />
-                        )}
-
-                        {/* Delete button for own messages */}
-                        {isMe && hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
-                          <div className={`absolute top-0 ${isMe ? '-left-7' : '-right-7'} flex items-center`}>
-                            {confirmDelete === msg._id ? (
-                              <div className="flex items-center gap-1">
-                                <button onClick={() => deleteMsg.mutate(msg._id)}
-                                  className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold">Xóa</button>
-                                <button onClick={() => setConfirmDelete(null)}
-                                  className="text-[10px] bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded">Thôi</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => setConfirmDelete(msg._id)}
-                                className="p-1 text-gray-300 hover:text-red-400 transition">
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Bubble */}
-                        <div className={`px-3 py-2 rounded-2xl text-sm ${
-                          isMe ? 'bg-red-700 text-white rounded-br-sm' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-bl-sm'
-                        } ${msg._optimistic ? 'opacity-60' : ''}`}>
-                          {!isMe && msg.sender?.hoTen && (
-                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 mb-0.5">{msg.sender.hoTen}</p>
-                          )}
-
-                          {msg.deleted ? (
-                            <em className="text-xs opacity-50">Tin nhắn đã bị xóa</em>
-                          ) : (
-                            <>
-                              {msg.text && (
-                                <p className="leading-relaxed whitespace-pre-wrap wrap-break-word text-[13px]">{msg.text}</p>
+                        <div className="relative max-w-[75%]">
+                          {/* Unified hover action bar */}
+                          {hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
+                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-0.5 z-10`}>
+                              {reactionPicker === msg._id ? (
+                                <EmojiBar onReact={(e) => {
+                                  reactMsg.mutate({ msgId: msg._id, emoji: e });
+                                  setReactionPicker(null);
+                                  setHoveredMsg(null);
+                                }} />
+                              ) : (
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-md">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                    title="Thả cảm xúc">😀</button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
+                                      setHoveredMsg(null);
+                                      setTimeout(() => inputRef.current?.focus(), 50);
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
+                                    title="Trả lời">
+                                    <CornerUpLeft size={13} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
+                                    title="Tùy chọn">⋯</button>
+                                </div>
                               )}
-                              {msg.attachments?.map((att, i) => (
-                                att.fileType === 'image' ? (
-                                  <img key={i} src={att.url} alt={att.fileName}
-                                    className="max-w-48 rounded-lg mt-1 cursor-pointer hover:opacity-90 transition"
-                                    onClick={() => setLightboxUrl(att.url)} />
-                                ) : (
-                                  <a key={i} href={att.url} target="_blank" rel="noreferrer"
-                                    className={`flex items-center gap-2 mt-1 px-2 py-1.5 rounded-lg ${isMe ? 'bg-white/15 hover:bg-white/25' : 'bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600'} transition`}>
-                                    <FileText size={14} className={isMe ? 'text-white/80' : 'text-gray-500'} />
-                                    <div className="min-w-0">
-                                      <p className="text-xs font-medium truncate max-w-32">{att.fileName}</p>
-                                      <p className="text-[10px] opacity-60">{fmtFileSize(att.fileSize)}</p>
-                                    </div>
-                                  </a>
-                                )
-                              ))}
-                            </>
+                            </div>
                           )}
 
-                          <p className={`text-[10px] mt-0.5 text-right ${isMe ? 'text-red-200' : 'text-gray-400 dark:text-slate-500'}`}>
-                            {fmtTime(msg.createdAt)}
-                          </p>
-                        </div>
+                          {/* Context menu */}
+                          {actionMenu === msg._id && (
+                            <div className={`absolute -top-1 ${isMe ? 'right-full mr-1' : 'left-full ml-1'} z-20`}>
+                              <ContextMenu
+                                isMe={isMe}
+                                isAdmin={isAdmin}
+                                isPinned={pinnedMsg?._id === msg._id}
+                                onPin={() => pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id)}
+                                onCopy={() => navigator.clipboard?.writeText(msg.text || '')}
+                                onDelete={() => setConfirmDelete(msg._id)}
+                                onClose={() => { setActionMenu(null); setHoveredMsg(null); }}
+                              />
+                            </div>
+                          )}
 
-                        {/* Reactions */}
-                        {hasReactions && (
-                          <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            {msg.reactions.filter(r => r.users?.length > 0).map(r => {
-                              const iReacted = r.users?.some(u => (u._id || u) === user._id);
-                              return (
-                                <button key={r.emoji}
-                                  onClick={() => reactMsg.mutate({ msgId: msg._id, emoji: r.emoji })}
-                                  className={`flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-full border transition ${
-                                    iReacted ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/30 dark:border-amber-600 font-bold' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600'
-                                  }`}>
-                                  <span>{r.emoji}</span>
-                                  <span className="text-gray-600 dark:text-slate-300">{r.users.length}</span>
-                                </button>
-                              );
-                            })}
+                          {/* Delete confirm inline */}
+                          {confirmDelete === msg._id && (
+                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-10 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
+                              <button onClick={() => deleteMsg.mutate(msg._id)}
+                                className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
+                              <button onClick={() => setConfirmDelete(null)}
+                                className="text-[10px] bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">Thôi</button>
+                            </div>
+                          )}
+
+                          {/* Bubble */}
+                          <div className={`px-3 py-2 rounded-2xl text-sm ${
+                            isMe ? 'bg-red-700 text-white rounded-br-sm' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-bl-sm'
+                          } ${msg._optimistic ? 'opacity-60' : ''}`}>
+                            {!isMe && msg.sender?.hoTen && (
+                              <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 mb-0.5">{msg.sender.hoTen}</p>
+                            )}
+
+                            {/* Reply quote */}
+                            {msg.replyTo && !msg.replyTo.deleted && (
+                              <div
+                                className={`mb-1.5 px-2 py-1 rounded-lg border-l-2 cursor-pointer text-[11px] ${
+                                  isMe ? 'bg-white/10 border-white/50' : 'bg-black/5 dark:bg-white/5 border-gray-400 dark:border-slate-500'
+                                }`}
+                                onClick={() => document.getElementById(`msg-${msg.replyTo._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                              >
+                                <p className={`font-bold mb-0.5 ${isMe ? 'text-white/80' : 'text-gray-600 dark:text-slate-400'}`}>
+                                  {msg.replyTo.sender?.hoTen}
+                                </p>
+                                <p className={`truncate ${isMe ? 'text-white/70' : 'text-gray-500 dark:text-slate-500'}`}>
+                                  {msg.replyTo.text || '[Tệp đính kèm]'}
+                                </p>
+                              </div>
+                            )}
+
+                            {msg.deleted ? (
+                              <em className="text-xs opacity-50">Tin nhắn đã bị xóa</em>
+                            ) : (
+                              <>
+                                {msg.text && (
+                                  <p className="leading-relaxed whitespace-pre-wrap wrap-break-word text-[13px]">{msg.text}</p>
+                                )}
+                                {msg.attachments?.map((att, i) => (
+                                  att.fileType === 'image' ? (
+                                    <img key={i} src={att.url} alt={att.fileName}
+                                      className="max-w-48 rounded-lg mt-1 cursor-pointer hover:opacity-90 transition"
+                                      onClick={() => setLightboxUrl(att.url)} />
+                                  ) : (
+                                    <a key={i} href={att.url} target="_blank" rel="noreferrer"
+                                      className={`flex items-center gap-2 mt-1 px-2 py-1.5 rounded-lg ${isMe ? 'bg-white/15 hover:bg-white/25' : 'bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600'} transition`}>
+                                      <FileText size={14} className={isMe ? 'text-white/80' : 'text-gray-500'} />
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-medium truncate max-w-32">{att.fileName}</p>
+                                        <p className="text-[10px] opacity-60">{fmtFileSize(att.fileSize)}</p>
+                                      </div>
+                                    </a>
+                                  )
+                                ))}
+                              </>
+                            )}
+
+                            <p className={`text-[10px] mt-0.5 text-right ${isMe ? 'text-red-200' : 'text-gray-400 dark:text-slate-500'}`}>
+                              {fmtMsgTime(msg.createdAt)}
+                            </p>
                           </div>
-                        )}
+
+                          {/* Reactions */}
+                          {hasReactions && (
+                            <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                              {msg.reactions.filter(r => r.users?.length > 0).map(r => {
+                                const iReacted = r.users?.some(u => (u._id || u) === user._id);
+                                return (
+                                  <button key={r.emoji}
+                                    onClick={() => reactMsg.mutate({ msgId: msg._id, emoji: r.emoji })}
+                                    className={`flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-full border transition ${
+                                      iReacted ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/30 dark:border-amber-600 font-bold' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600'
+                                    }`}>
+                                    <span>{r.emoji}</span>
+                                    <span className="text-gray-600 dark:text-slate-300">{r.users.length}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Read receipts — only after last message by me */}
+                      {isLast && isMe && (
+                        <div className="flex justify-end gap-0.5 mt-0.5 mr-1 mb-1">
+                          {msg._optimistic ? (
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500">Đang gửi...</span>
+                          ) : readers.length > 0 ? (
+                            readers.slice(0, 5).map(m => (
+                              <Avatar key={m._id} name={m.hoTen} avatar={m.avatar} size={4} />
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500">Đã gửi</span>
+                          )}
+                        </div>
+                      )}
+                    </Fragment>
                   );
                 })}
                 <div ref={messagesEndRef} />
@@ -530,6 +725,19 @@ export default function HtChatWidget() {
               {showTyping && (
                 <div className="px-4 pb-1 shrink-0">
                   <p className="text-xs italic text-gray-400 dark:text-slate-500">{typingUser.hoTen} đang gõ...</p>
+                </div>
+              )}
+
+              {/* Reply preview bar */}
+              {replyingTo && (
+                <div className="mx-3 mb-1 flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border-l-4 border-red-600 rounded-r-lg shrink-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-red-700 dark:text-red-400">{replyingTo.senderName}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{replyingTo.text || '[Tệp đính kèm]'}</p>
+                  </div>
+                  <button onClick={() => setReplyingTo(null)} className="text-gray-400 hover:text-gray-600 transition shrink-0">
+                    <X size={13} />
+                  </button>
                 </div>
               )}
 
@@ -561,7 +769,7 @@ export default function HtChatWidget() {
                   value={text}
                   onChange={handleTyping}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
-                  placeholder="Nhập tin nhắn..."
+                  placeholder={replyingTo ? `Trả lời ${replyingTo.senderName}...` : 'Nhập tin nhắn...'}
                   className="flex-1 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:border-red-400 transition"
                   maxLength={2000}
                 />

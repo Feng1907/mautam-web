@@ -6,8 +6,9 @@ const htRoomSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isGroup:   { type: Boolean, default: false },
   classRef:  { type: mongoose.Schema.Types.ObjectId, ref: 'Class', default: null },
-  lastMsg:   { type: String, default: null },
-  lastMsgAt: { type: Date,   default: null },
+  lastMsg:       { type: String, default: null },
+  lastMsgAt:     { type: Date,   default: null },
+  pinnedMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'HtMessage', default: null },
 }, { timestamps: true });
 
 htRoomSchema.index({ members: 1 });

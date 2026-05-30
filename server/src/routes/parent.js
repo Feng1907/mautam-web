@@ -91,4 +91,6 @@ router.post(
   ctrl.createAbsenceRequest
 );
 
+router.get('/students/:studentId/absence-requests', checkAuth, ctrl.getAbsenceRequests);
+
 module.exports = router;

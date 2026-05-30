@@ -3,6 +3,9 @@ const QuizAttempt = require('../models/QuizAttempt');
 const Student     = require('../models/Student');
 const NamHoc      = require('../models/NamHoc');
 const { getIO }   = require('../config/socket');
+const ParentStudent = require('../models/ParentStudent');
+const { sendPushToUsers } = require('../utils/pushNotifier');
+const logger      = require('../utils/logger');
 
 // Normalize text để chấm dien_khuyet
 function normalizeText(str) {
@@ -118,6 +121,9 @@ exports.update = async (req, res, next) => {
     const err = await checkGiaolyOwnsQuiz(req.user._id, req.user.vaiTro, req.params.id);
     if (err) return res.status(403).json({ success: false, message: err });
 
+    const before = await Quiz.findById(req.params.id).select('active lop tieuDe').lean();
+    if (!before) return res.status(404).json({ success: false, message: 'Không tìm thấy quiz' });
+
     const { tieuDe, moTa, thoiGianLam, batDauTu, ketThucLuc, active, cauHoi } = req.body;
     const quiz = await Quiz.findByIdAndUpdate(
       req.params.id,
@@ -125,6 +131,31 @@ exports.update = async (req, res, next) => {
       { new: true, runValidators: true }
     );
     if (!quiz) return res.status(404).json({ success: false, message: 'Không tìm thấy quiz' });
+
+    // Notify parents when quiz transitions from active → closed
+    if (before.active === true && active === false) {
+      (async () => {
+        try {
+          const students = await Student.find({ lop: before.lop }).select('_id').lean();
+          const studentIds = students.map(s => s._id);
+          const links = await ParentStudent.find({ student: { $in: studentIds }, trangThai: 'active' }).select('parent').lean();
+          const parentIds = links.map(l => l.parent);
+          if (parentIds.length) {
+            await sendPushToUsers(parentIds, {
+              title: `Quiz "${before.tieuDe}" đã kết thúc`,
+              body: 'Xem kết quả và xếp hạng ngay.',
+              icon: '/favicon.svg',
+              badge: '/favicon.svg',
+              url: `/quiz/${before._id}/leaderboard`,
+              type: 'quiz-closed',
+            });
+          }
+        } catch (e) {
+          logger.warn('quiz-closed push failed', { quizId: before._id, error: e.message });
+        }
+      })();
+    }
+
     res.json({ success: true, data: quiz });
   } catch (err) { next(err); }
 };

@@ -186,7 +186,11 @@ const scrapeTGPSG = async (isoDate) => {
 
   let matchedUrl = null;
   let matchedHtml = null;
-  for (const link of articleLinks.slice(0, 7)) {
+  let fallbackUrl = null;
+  let fallbackHtml = null;
+  let fallbackDate = null;
+
+  for (const link of articleLinks.slice(0, 14)) {
     const artUrl = `https://tgpsaigon.net${link}`;
     logger.info(`[TGPSG] Kiểm tra: ${artUrl}`);
     try {
@@ -201,13 +205,27 @@ const scrapeTGPSG = async (isoDate) => {
         logger.info(`[TGPSG] Tìm thấy bài khớp!`);
         break;
       }
+      // Giữ lại bài gần nhất làm fallback
+      if (!fallbackHtml && artDate) {
+        fallbackUrl = artUrl;
+        fallbackHtml = artRes.data;
+        fallbackDate = artDate;
+      }
     } catch (err) {
       logger.info(`[TGPSG]   Lỗi fetch article: ${err.message}`);
     }
   }
 
+  // Nếu không tìm thấy bài cho ngày yêu cầu, dùng bài gần nhất (thường xảy ra
+  // khi bài hôm nay chưa được đăng, nhưng bài hôm qua / gần đây vẫn có thể dùng)
+  if (!matchedHtml && fallbackHtml) {
+    logger.info(`[TGPSG] Không có bài cho ${isoDate}, dùng bài gần nhất: ${fallbackDate}`);
+    matchedHtml = fallbackHtml;
+    matchedUrl  = fallbackUrl;
+  }
+
   if (!matchedHtml) {
-    logger.info(`[TGPSG] Không tìm thấy bài cho ngày ${isoDate}`);
+    logger.info(`[TGPSG] Không tìm thấy bài nào cho ngày ${isoDate}`);
     return null;
   }
 
@@ -318,6 +336,10 @@ const scrapeTGPSG = async (isoDate) => {
   const phucam   = sections.find(s => s.key === 'phucam');
   const keyVerse = pickKeyVerse(phucam?.noidung || '');
 
+  // Lấy date thực tế từ bài viết (có thể khác isoDate nếu dùng fallback)
+  const $meta = cheerio.load(matchedHtml);
+  const actualDateText = $meta('.article-content-date').text().trim();
+
   return {
     name,
     mauKey,
@@ -326,6 +348,7 @@ const scrapeTGPSG = async (isoDate) => {
     tinMungTen: phucam?.trich || '',
     sourceUrl:  matchedUrl,
     source:     'tgpsaigon.net',
+    actualDate: actualDateText || null,
   };
 };
 

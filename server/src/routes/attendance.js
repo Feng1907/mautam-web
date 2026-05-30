@@ -10,6 +10,7 @@ router.post('/qr-session', checkAuth, checkClassPermission, ctrl.generateQrSessi
 router.get('/qr-verify', ctrl.verifyQrToken);
 router.post('/qr-scan', ctrl.scanQr);
 router.get('/:lopId', checkAuth, ctrl.getByClass);
+router.post('/import', checkAuth, checkClassPermission, ctrl.importBulk);
 router.post('/', checkAuth, checkClassPermission, ctrl.upsert);
 
 module.exports = router;
