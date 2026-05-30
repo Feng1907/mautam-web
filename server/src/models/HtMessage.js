@@ -17,6 +17,7 @@ const htMessageSchema = new mongoose.Schema({
     fileType: { type: String }, // 'image' | 'file'
     fileSize: { type: Number },
   }],
+  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'HtMessage', default: null },
 }, { timestamps: true });
 
 htMessageSchema.pre('validate', function (next) {

@@ -75,6 +75,8 @@ exports.getRooms = async (req, res, next) => {
     const rooms = await HtRoom.find({ members: req.user._id })
       .populate('members', 'hoTen avatar vaiTro')
       .populate('classRef', 'tenLop nhanh')
+      .populate({ path: 'pinnedMessage', select: 'text sender attachments',
+        populate: { path: 'sender', select: 'hoTen' } })
       .sort({ lastMsgAt: -1, updatedAt: -1 })
       .lean();
 
@@ -126,6 +128,8 @@ exports.getMessages = async (req, res, next) => {
     const limit = 40;
     const msgs  = await HtMessage.find({ room: room._id })
       .populate('sender', 'hoTen avatar')
+      .populate({ path: 'replyTo', select: 'text sender attachments deleted',
+        populate: { path: 'sender', select: 'hoTen' } })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -138,7 +142,7 @@ exports.getMessages = async (req, res, next) => {
 // POST /api/ht-chat/rooms/:id/messages — gửi tin (text và/hoặc attachments)
 exports.sendMessage = async (req, res, next) => {
   try {
-    const { text, attachments } = req.body;
+    const { text, attachments, replyTo } = req.body;
     if (!text?.trim() && !attachments?.length)
       return res.status(400).json({ success: false, message: 'Tin nhắn không được trống' });
 
@@ -151,8 +155,12 @@ exports.sendMessage = async (req, res, next) => {
       text: text?.trim() || '',
       attachments: attachments || [],
       readBy: [req.user._id],
+      replyTo: replyTo || null,
     });
-    const populated = await msg.populate('sender', 'hoTen avatar');
+    await msg.populate('sender', 'hoTen avatar');
+    await msg.populate({ path: 'replyTo', select: 'text sender attachments deleted',
+      populate: { path: 'sender', select: 'hoTen' } });
+    const populated = msg;
 
     const preview = text?.trim() || (attachments?.length ? `[${attachments[0].fileType === 'image' ? 'Ảnh' : 'Tệp'}]` : '');
     await HtRoom.updateOne({ _id: room._id }, { lastMsg: preview, lastMsgAt: new Date() });
@@ -195,6 +203,24 @@ exports.deleteMessage = async (req, res, next) => {
     } catch { /* ignore */ }
 
     res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+// PATCH /api/ht-chat/rooms/:id/pin — ghim hoặc bỏ ghim tin nhắn
+exports.pinMessage = async (req, res, next) => {
+  try {
+    const { msgId } = req.body;
+    const room = await HtRoom.findOneAndUpdate(
+      { _id: req.params.id, members: req.user._id },
+      { pinnedMessage: msgId || null },
+      { new: true }
+    ).populate({ path: 'pinnedMessage', select: 'text sender attachments',
+      populate: { path: 'sender', select: 'hoTen' } });
+    if (!room) return res.status(404).json({ success: false });
+    try {
+      getIO().to(`htchat:${room._id}`).emit('htchat:pin', { roomId: room._id, pinnedMessage: room.pinnedMessage });
+    } catch { /* ignore */ }
+    res.json({ success: true, data: room.pinnedMessage });
   } catch (err) { next(err); }
 };
 

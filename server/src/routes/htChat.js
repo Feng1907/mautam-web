@@ -12,5 +12,6 @@ router.post('/rooms/:id/messages',                   ctrl.sendMessage);
 router.put('/rooms/:id/read',                        ctrl.markRead);
 router.delete('/rooms/:roomId/messages/:msgId',      ctrl.deleteMessage);
 router.post('/rooms/:roomId/messages/:msgId/react',  ctrl.reactMessage);
+router.patch('/rooms/:id/pin',                       ctrl.pinMessage);
 
 module.exports = router;
