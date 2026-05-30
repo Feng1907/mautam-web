@@ -267,6 +267,21 @@ exports.createAbsenceRequest = async (req, res, next) => {
   }
 };
 
+// GET /api/parent/students/:studentId/absence-requests
+exports.getAbsenceRequests = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    await assertParentCanAccessStudent(req.user._id, studentId);
+    const requests = await AbsenceRequest.find({ student: studentId, parent: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('date reason status createdAt');
+    res.json({ success: true, data: requests });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/parent/link-request  — phụ huynh tự gửi yêu cầu liên kết
 exports.createLinkRequest = async (req, res, next) => {
   try {

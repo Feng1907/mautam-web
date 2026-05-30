@@ -629,6 +629,17 @@ const LoiChua = () => {
                     className="bg-[#fdfaf5] dark:bg-slate-800 rounded-3xl border border-stone-200 dark:border-slate-700 shadow-md px-6 sm:px-10 py-8">
                     <div className={`h-1 w-16 rounded-full mb-6 ${accent.bar}`} />
 
+                    {/* Thông báo khi bài chưa được đăng cho ngày yêu cầu */}
+                    {data?.actualDate && !data.actualDate.includes(`${String(new Date(date + 'T00:00:00').getDate()).padStart(2,'0')}/${String(new Date(date + 'T00:00:00').getMonth()+1).padStart(2,'0')}`) && (
+                      <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+                        <CalendarDays size={15} className="shrink-0 mt-0.5" />
+                        <span>
+                          Lời Chúa ngày <strong>{fmtDateLabel(date)}</strong> chưa được cập nhật.
+                          Đang hiển thị bài gần nhất: <strong>{data.actualDate}</strong>.
+                        </span>
+                      </div>
+                    )}
+
                     {sections.length > 0 ? (
                       sections.map((sec, i) => <ReadingSection key={sec.key} sec={sec} idx={i} />)
                     ) : (

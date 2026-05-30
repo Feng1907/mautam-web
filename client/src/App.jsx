@@ -68,6 +68,7 @@ const QuizTake = lazy(() => import('./pages/QuizTake'));
 const QuizMonitor = lazy(() => import('./pages/QuizMonitor'));
 const QuizGrade = lazy(() => import('./pages/QuizGrade'));
 const QuizLeaderboard = lazy(() => import('./pages/QuizLeaderboard'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ConditionalFooter = () => {
   const { pathname } = useLocation();
@@ -167,6 +168,7 @@ const AnimatedRoutes = () => {
             <Route path="/quiz/:id/grade" element={withErrorBoundary(<RouteGuard><QuizGrade /></RouteGuard>, 'QuizGrade')} />
             <Route path="/quiz/:id/leaderboard" element={withErrorBoundary(<RouteGuard><QuizLeaderboard /></RouteGuard>, 'QuizLeaderboard')} />
             <Route path="/quiz/manage" element={withErrorBoundary(<RouteGuard roles={['admin','giaoly']}><AdminQuiz /></RouteGuard>, 'QuizManage')} />
+            <Route path="*" element={withErrorBoundary(<NotFound />, 'NotFound')} />
           </Routes>
         </Suspense>
       </PageTransition>
