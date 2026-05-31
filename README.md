@@ -51,7 +51,12 @@
 - ⛪ **Giờ Lễ** — đồng hồ real-time, feast effects, countdown lễ kế tiếp
 - 📸 **Thư viện ảnh** — Firebase Storage, album theo sự kiện, lightbox
 - 🌙 **Dark Mode** — Circular Reveal (View Transitions API)
-- 🗺️ **Lịch sử Cứu độ** — 2 tab CỰU ƯỚC/TÂN ƯỚC, bản đồ SVG, timeline bảo tàng số
+- 🗺️ **Lịch sử Cứu độ** — 2 tab CỰU ƯỚC/TÂN ƯỚC, bản đồ SVG Israel (Tân Ước), timeline bảo tàng số
+- 💬 **HT Chat** — nhắn tin nội bộ kiểu Messenger/Zalo giữa huynh trưởng
+- 📝 **Quiz** — tạo & quản lý bài kiểm tra theo lớp, thông báo push khi kết thúc, bảng kiểm tra lớp
+- 📊 **Báo cáo lớp** — tổng hợp thống kê theo lớp cho huynh trưởng (donut chart + bar chart)
+- 📥 **Import Excel** — nhập điểm và điểm danh hàng loạt từ file `.xlsx`
+- 🏫 **Đăng ký sự kiện** — huynh trưởng đăng ký sĩ số lớp tham dự, admin quản lý xác nhận
 
 ---
 
@@ -269,7 +274,12 @@ Mở trình duyệt: **<http://localhost:5173>**
 | **CI/CD** | GitHub Actions: ESLint → Vitest → integration test (MongoDB service container) |
 | **Dark Mode Circular Reveal** | View Transitions API `clip-path: circle(0%→160%)` từ tâm nút bấm |
 | **Tổng kết công thức** | TBM×80% + Chuyên cần×20% — export Excel đầy đủ 1 lớp hoặc toàn đoàn |
-| **Lịch sử Cứu độ** | BibleMap SVG, InteractiveTimeline zigzag, CharacterCards, ProphecyTable |
+| **Lịch sử Cứu độ** | BibleMap SVG, bản đồ Israel Tân Ước vẽ lại, InteractiveTimeline zigzag, CharacterCards, ProphecyTable |
+| **HT Chat** | Nhắn tin nội bộ kiểu Messenger/Zalo, mutual exclusion với Trợ lý AI widget |
+| **Quiz** | Tạo bài kiểm tra theo lớp (giaoly tự quản), push notify khi kết thúc, bảng kiểm tra lớp |
+| **Import Excel** | Upload `.xlsx` để nhập điểm miệng/15'/1 tiết và điểm danh hàng loạt |
+| **Đăng ký sự kiện** | Huynh trưởng đăng ký sĩ số lớp tham dự sự kiện, admin xác nhận và tổng hợp |
+| **Báo cáo lớp** | Thống kê tổng hợp theo lớp cho huynh trưởng — donut chart + bar chart |
 | **Lên lớp hàng loạt** | Checkbox nhiều em, chuyển lớp + năm học mới, lưu lịch sử xem lại |
 | **Lời Chúa thông minh** | Scraper đa nguồn, cache 6h, màu phụng vụ tự động, MiniCalendar |
 
