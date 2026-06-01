@@ -607,7 +607,7 @@ export default function HtChatWidget() {
 
                           {/* Context menu */}
                           {actionMenu === msg._id && (
-                            <div className={`absolute -top-1 ${isMe ? 'right-full mr-1' : 'left-full ml-1'} z-20`}>
+                            <div className={`absolute top-8 ${isMe ? 'right-0' : 'left-0'} z-20`}>
                               <ContextMenu
                                 isMe={isMe}
                                 isAdmin={isAdmin}
