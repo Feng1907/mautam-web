@@ -414,11 +414,11 @@ export default function HtChatWidget() {
 
       {/* ── Chat panel ── */}
       {open && (
-        <div className="no-print fixed bottom-36 right-4 sm:right-6 z-40 w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col overflow-hidden"
+        <div className="no-print fixed bottom-36 right-4 sm:right-6 z-40 w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col"
           style={{ height: '480px' }}>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ background: '#8B0000' }}>
+          <div className="flex items-center justify-between px-4 py-3 shrink-0 rounded-t-2xl" style={{ background: '#8B0000' }}>
             <div className="flex items-center gap-2">
               {activeRoom && (
                 <button onClick={() => setActiveRoom(null)} className="text-white/70 hover:text-white transition mr-1">
@@ -582,10 +582,14 @@ export default function HtChatWidget() {
                     <Fragment key={msg._id}>
                       {showDate && <DateSeparator date={msg.createdAt} />}
 
-                      {/* ── Message Row — w-full, isMe justify-end với pr-3 ── */}
+                      {/* ══ Message Row ══
+                           isMe  : justify-end  + pr-8  (chừa 32px mép phải — đủ cho "Đã gửi" & tooltip)
+                           !isMe : justify-start + pl-1
+                           KHÔNG dùng overflow-hidden ở đây để popup không bị cắt
+                      */}
                       <div
                         id={`msg-${msg._id}`}
-                        className={`flex w-full items-end gap-1.5 ${isGroupedWithPrev ? 'mb-0.5' : 'mt-2 mb-0.5'} ${isMe ? 'justify-end pr-3' : 'justify-start pl-1'}`}
+                        className={`flex w-full items-end gap-1.5 ${isGroupedWithPrev ? 'mb-0.5' : 'mt-2 mb-0.5'} ${isMe ? 'justify-end pr-8' : 'justify-start pl-1'}`}
                       >
                         {/* Avatar — chỉ non-isMe */}
                         {!isMe && (
@@ -594,14 +598,21 @@ export default function HtChatWidget() {
                             : <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />
                         )}
 
-                        {/* ── Hover Container — relative group, bubble + tooltip cùng trong đây ── */}
+                        {/* ══ Hover Container ══
+                             relative + group  →  tooltip dùng group-hover, không chiếm layout
+                             max-w-[75%]       →  bubble không bao giờ quá rộng
+                        */}
                         <div className="relative group max-w-[75%]">
 
-                          {/* Tooltip — absolute right-full/left-full, KHÔNG chiếm space, KHÔNG đẩy bubble */}
+                          {/* ── Tooltip (Emoji / Reply / ⋯) ──
+                               Nằm PHÍA TRÊN bubble: bottom-full mb-1
+                               Căn lề cùng phía bubble: isMe → right-0, !isMe → left-0
+                               z-50 để nổi trên mọi thứ; không chiếm layout (opacity trick)
+                          */}
                           {!msg.deleted && !msg._optimistic && (
                             <div className={`
-                              absolute top-1/2 -translate-y-1/2 z-20
-                              ${isMe ? 'right-full mr-1.5' : 'left-full ml-1.5'}
+                              absolute bottom-full mb-1 z-50
+                              ${isMe ? 'right-0' : 'left-0'}
                               opacity-0 group-hover:opacity-100
                               pointer-events-none group-hover:pointer-events-auto
                               transition-opacity duration-150
@@ -612,7 +623,7 @@ export default function HtChatWidget() {
                                   setReactionPicker(null);
                                 }} />
                               ) : (
-                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-lg">
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-xl">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
                                     className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
@@ -636,9 +647,9 @@ export default function HtChatWidget() {
                             </div>
                           )}
 
-                          {/* Context menu */}
+                          {/* Context menu — nằm ngay dưới bubble */}
                           {actionMenu === msg._id && (
-                            <div className={`absolute bottom-0 ${isMe ? 'right-0' : 'left-0'} z-30`}>
+                            <div className={`absolute top-full mt-1 ${isMe ? 'right-0' : 'left-0'} z-50`}>
                               <ContextMenu
                                 isMe={isMe}
                                 isAdmin={isAdmin}
@@ -651,9 +662,9 @@ export default function HtChatWidget() {
                             </div>
                           )}
 
-                          {/* Delete confirm */}
+                          {/* Delete confirm — nằm ngay trên tooltip */}
                           {confirmDelete === msg._id && (
-                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-30 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
+                            <div className={`absolute bottom-full mb-10 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
                               <button onClick={() => deleteMsg.mutate(msg._id)}
                                 className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
                               <button onClick={() => setConfirmDelete(null)}
@@ -805,7 +816,7 @@ export default function HtChatWidget() {
               )}
 
               {/* Input */}
-              <form onSubmit={handleSend} className="flex items-center gap-1.5 px-3 py-2.5 border-t border-gray-100 dark:border-slate-700 shrink-0">
+              <form onSubmit={handleSend} className="flex items-center gap-1.5 px-3 py-2.5 border-t border-gray-100 dark:border-slate-700 shrink-0 rounded-b-2xl bg-white dark:bg-slate-900">
                 <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileSelect} />
                 <button type="button" onClick={() => fileInputRef.current?.click()}
                   className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition shrink-0" title="Đính kèm file">
