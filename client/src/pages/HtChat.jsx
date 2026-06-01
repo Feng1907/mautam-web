@@ -575,92 +575,75 @@ export default function HtChatWidget() {
                             : <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />
                         )}
 
-                        {/* ══ Hover Container ══
-                             relative + group  →  tooltip dùng group-hover, không chiếm layout
-                             max-w-[75%]       →  bubble không bao giờ quá rộng
+                        {/* ══ Hover Group — flex ROW chứa [tooltip] + [bubble]
+                             Tooltip là SIBLING của bubble trong cùng group div.
+                             Khi chuột di từ bubble → tooltip vẫn ở trong group → group-hover KHÔNG mất.
+                             isMe  : [tooltip-trái]  [bubble]   (flex-row, bubble bên phải)
+                             !isMe : [bubble] [tooltip-phải]    (flex-row)
+                             max-w-[75%] trên toàn group để bubble + tooltip không quá rộng.
                         */}
-                        <div className="relative group max-w-[75%]">
+                        <div className={`group flex items-end gap-1 max-w-[75%]`}>
 
-                          {/* ── Tooltip (Emoji / Reply / ⋯) ──
-                               Nằm PHÍA TRÊN bubble: bottom-full mb-1
-                               Căn lề cùng phía bubble: isMe → right-0, !isMe → left-0
-                               z-50 để nổi trên mọi thứ; không chiếm layout (opacity trick)
-                          */}
-                          {!msg.deleted && !msg._optimistic && (
-                            <div className={`
-                              absolute bottom-full mb-1 z-50
-                              ${isMe ? 'right-0' : 'left-0'}
-                              opacity-0 group-hover:opacity-100
-                              pointer-events-none group-hover:pointer-events-auto
-                              transition-opacity duration-150
-                            `}>
+                          {/* ── Tooltip isMe — TRÁI bubble ── */}
+                          {isMe && !msg.deleted && !msg._optimistic && (
+                            <div className="shrink-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150">
                               {reactionPicker === msg._id ? (
-                                <EmojiBar onReact={(e) => {
-                                  reactMsg.mutate({ msgId: msg._id, emoji: e });
-                                  setReactionPicker(null);
-                                }} />
+                                <EmojiBar onReact={(e) => { reactMsg.mutate({ msgId: msg._id, emoji: e }); setReactionPicker(null); }} />
                               ) : (
-                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-xl">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
-                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
-                                    title="Thả cảm xúc">😀</button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
-                                      setTimeout(() => inputRef.current?.focus(), 50);
-                                    }}
-                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
-                                    title="Trả lời">
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-lg">
+                                  <button onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform" title="Thả cảm xúc">😀</button>
+                                  <button onClick={(e) => { e.stopPropagation(); setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen }); setTimeout(() => inputRef.current?.focus(), 50); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition" title="Trả lời">
                                     <CornerUpLeft size={13} />
                                   </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
-                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
-                                    title="Tùy chọn">⋯</button>
+                                  <button onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition font-bold text-base leading-none" title="Tùy chọn">⋯</button>
                                 </div>
                               )}
                             </div>
                           )}
 
-                          {/* Context menu:
-                               isMe  → sang TRÁI bubble (top-0 right-full mr-2), không che "Đã gửi"
-                               !isMe → xuống DƯỚI bubble (top-full left-0 mt-1)
-                          */}
-                          {actionMenu === msg._id && (
-                            <div className={`absolute z-50 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm
-                              ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
-                              <button onClick={() => { pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id); setActionMenu(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
-                                <Pin size={12} className="text-amber-500 shrink-0" />
-                                {pinnedMsg?._id === msg._id ? 'Bỏ ghim' : 'Ghim'}
-                              </button>
-                              <button onClick={() => { navigator.clipboard?.writeText(msg.text || ''); setActionMenu(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
-                                <Copy size={12} className="text-blue-500 shrink-0" />
-                                Sao chép
-                              </button>
-                              {(isMe || isAdmin) && (
-                                <button onClick={() => { setConfirmDelete(msg._id); setActionMenu(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left text-red-500">
-                                  <Trash2 size={12} className="shrink-0" />
-                                  Xóa
-                                </button>
-                              )}
-                            </div>
-                          )}
+                          {/* ── Bubble wrapper — relative để context menu/confirm định vị ── */}
+                          <div className="relative min-w-0">
 
-                          {/* Delete confirm — nằm ngay trên tooltip */}
-                          {confirmDelete === msg._id && (
-                            <div className={`absolute z-50 flex items-center gap-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md
-                              ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
-                              <button onClick={() => deleteMsg.mutate(msg._id)}
-                                className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
-                              <button onClick={() => setConfirmDelete(null)}
-                                className="text-[10px] bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">Thôi</button>
-                            </div>
-                          )}
+                            {/* Context menu:
+                                 isMe  → sang TRÁI bubble, không che "Đã gửi"
+                                 !isMe → xuống dưới bubble
+                            */}
+                            {actionMenu === msg._id && (
+                              <div className={`absolute z-50 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm
+                                ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
+                                <button onClick={() => { pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id); setActionMenu(null); }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+                                  <Pin size={12} className="text-amber-500 shrink-0" />
+                                  {pinnedMsg?._id === msg._id ? 'Bỏ ghim' : 'Ghim'}
+                                </button>
+                                <button onClick={() => { navigator.clipboard?.writeText(msg.text || ''); setActionMenu(null); }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+                                  <Copy size={12} className="text-blue-500 shrink-0" />
+                                  Sao chép
+                                </button>
+                                {(isMe || isAdmin) && (
+                                  <button onClick={() => { setConfirmDelete(msg._id); setActionMenu(null); }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left text-red-500">
+                                    <Trash2 size={12} className="shrink-0" />
+                                    Xóa
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Delete confirm */}
+                            {confirmDelete === msg._id && (
+                              <div className={`absolute z-50 flex items-center gap-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md
+                                ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
+                                <button onClick={() => deleteMsg.mutate(msg._id)}
+                                  className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
+                                <button onClick={() => setConfirmDelete(null)}
+                                  className="text-[10px] bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">Thôi</button>
+                              </div>
+                            )}
 
                           {/* ── Bubble ── */}
                           <div className={`px-3 py-2 text-sm ${corners} ${
@@ -745,8 +728,30 @@ export default function HtChatWidget() {
                               })}
                             </div>
                           )}
-                        </div>
-                      </div>
+                          </div>{/* end bubble wrapper (relative min-w-0) */}
+
+                          {/* ── Tooltip !isMe — PHẢI bubble ── */}
+                          {!isMe && !msg.deleted && !msg._optimistic && (
+                            <div className="shrink-0 self-end opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150">
+                              {reactionPicker === msg._id ? (
+                                <EmojiBar onReact={(e) => { reactMsg.mutate({ msgId: msg._id, emoji: e }); setReactionPicker(null); }} />
+                              ) : (
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-lg">
+                                  <button onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform" title="Thả cảm xúc">😀</button>
+                                  <button onClick={(e) => { e.stopPropagation(); setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen }); setTimeout(() => inputRef.current?.focus(), 50); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition" title="Trả lời">
+                                    <CornerUpLeft size={13} />
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition font-bold text-base leading-none" title="Tùy chọn">⋯</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                        </div>{/* end hover group (group flex items-end) */}
+                      </div>{/* end message row */}
 
                       {/* Read receipts — only after last message by me */}
                       {isLast && isMe && (
