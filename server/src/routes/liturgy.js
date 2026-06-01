@@ -92,12 +92,37 @@ const VI_LOOKUP = {
   'Saint Augustine of Canterbury, Bishop':              'Thánh Augustinô Cantêbury, Giám mục',
   'Visitation of the Blessed Virgin Mary':              'Đức Mẹ Thăm Viếng',
   // Tháng 6
-  'Trinity Sunday':                                     'Lễ Chúa Ba Ngôi',
-  'The Most Holy Body and Blood of Christ':             'Lễ Mình Máu Thánh Chúa',
-  'The Most Sacred Heart of Jesus':                     'Lễ Thánh Tâm Chúa Giêsu',
-  'The Immaculate Heart of the Blessed Virgin Mary':    'Trái Tim Vẹn Sạch Đức Mẹ',
-  'The Nativity of Saint John the Baptist':             'Sinh Nhật Thánh Gioan Tẩy Giả',
-  'Saints Peter and Paul, Apostles':                    'Thánh Phêrô và Phaolô, Tông đồ',
+  'Trinity Sunday':                                                         'Lễ Chúa Ba Ngôi',
+  'The Most Holy Body and Blood of Christ':                                 'Lễ Mình Máu Thánh Chúa',
+  'The Most Sacred Heart of Jesus':                                         'Lễ Thánh Tâm Chúa Giêsu',
+  'The Immaculate Heart of the Blessed Virgin Mary':                        'Trái Tim Vẹn Sạch Đức Mẹ',
+  'The Nativity of Saint John the Baptist':                                 'Sinh Nhật Thánh Gioan Tẩy Giả',
+  'Saints Peter and Paul, Apostles':                                        'Thánh Phêrô và Phaolô, Tông đồ',
+  // Tháng 6 — các ngày lễ nhớ / lễ kính
+  'Saint Justin, Martyr':                                                   'Thánh Giustinô, Tử đạo',
+  'Saints Marcellinus and Peter, Martyrs':                                  'Thánh Maccêllinô và Phêrô, Tử đạo',
+  'Saint Charles Lwanga and Companions, Martyrs':                           'Thánh Carôlô Lwanga và các bạn, Tử đạo',
+  'Saint Boniface, Bishop and Martyr':                                      'Thánh Bônifaxiô, Giám mục Tử đạo',
+  'Saint Norbert, Bishop':                                                  'Thánh Nôbêrtô, Giám mục',
+  'Saint Ephrem, Deacon and Doctor of the Church':                          'Thánh Ephrem, Phó tế Tiến sĩ',
+  'Saint Ephrem, Deacon and Doctor':                                        'Thánh Ephrem, Phó tế Tiến sĩ',
+  'Saint Barnabas, Apostle':                                                'Thánh Banaba, Tông đồ',
+  'Saint Anthony of Padua, Priest and Doctor of the Church':                'Thánh Antôn Padua, Linh mục Tiến sĩ',
+  'Saint Anthony of Padua, Priest and Doctor':                              'Thánh Antôn Padua, Linh mục Tiến sĩ',
+  'Saint Romuald, Abbot':                                                   'Thánh Rômualđô, Tu viện trưởng',
+  'Saint John Fisher, Bishop and Martyr/Saint Thomas More, Martyr':        'Thánh Gioan Fisher và Tôma More, Tử đạo',
+  'Saint John Fisher, Bishop, and Saint Thomas More, Martyrs':             'Thánh Gioan Fisher và Tôma More, Tử đạo',
+  'Saint John Fisher, Bishop and Martyr':                                   'Thánh Gioan Fisher, Giám mục Tử đạo',
+  'Saint Thomas More, Martyr':                                              'Thánh Tôma More, Tử đạo',
+  'Saint Aloysius Gonzaga, Religious':                                      'Thánh Alôisiô Gonzaga, Tu sĩ',
+  'Saint Paulinus of Nola, Bishop':                                         'Thánh Paolinô Nola, Giám mục',
+  'Saint John the Baptist':                                                 'Thánh Gioan Tẩy Giả',
+  'Saint Cyril of Alexandria, Bishop and Doctor of the Church':             'Thánh Cyrillô Alexanđria, Giám mục Tiến sĩ',
+  'Saint Cyril of Alexandria, Bishop and Doctor':                           'Thánh Cyrillô Alexanđria, Giám mục Tiến sĩ',
+  'Saint Irenaeus, Bishop and Martyr':                                      'Thánh Irênêô, Giám mục Tử đạo',
+  'The First Martyrs of the Holy Roman Church':                             'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
+  'Saint Peter':                                                            'Thánh Phêrô, Tông đồ',
+  'Saint Paul':                                                             'Thánh Phaolô, Tông đồ',
   // Tháng 7
   'Saint Thomas, Apostle':                              'Thánh Tôma, Tông đồ',
   'Saint James, Apostle':                               'Thánh Giacôbê, Tông đồ',
@@ -144,17 +169,37 @@ const translateName = (name = '', type = '') => {
     return `Chúa Nhật ${week} ${season}`;
   }
 
-  // 4. Lookup từ khóa trong tên
-  const n = name.toLowerCase();
-  if (n.includes('martyr'))     return name.replace(/,?\s*Martyr[s]?/gi, ', Tử đạo');
-  if (n.includes('bishop'))     return name.replace(/,?\s*Bishop/gi,     ', Giám mục');
-  if (n.includes('priest'))     return name.replace(/,?\s*Priest/gi,     ', Linh mục');
-  if (n.includes('pope'))       return name.replace(/,?\s*Pope/gi,       ', Giáo hoàng');
-  if (n.includes('deacon'))     return name.replace(/,?\s*Deacon/gi,     ', Phó tế');
-  if (n.includes('doctor'))     return name.replace(/,?\s*Doctor/gi,     ', Tiến sĩ');
+  // 4. Thay thế tiêu đề chức danh & tiền tố Saints/Saint → Thánh
+  let out = name;
+  // Chức danh (thứ tự quan trọng: xử lý cụm trước)
+  out = out.replace(/,?\s*Bishop and Doctor of the Church/gi, ', Giám mục Tiến sĩ');
+  out = out.replace(/,?\s*Bishop and Doctor/gi,               ', Giám mục Tiến sĩ');
+  out = out.replace(/,?\s*Bishop and Martyr/gi,               ', Giám mục Tử đạo');
+  out = out.replace(/,?\s*Priest and Doctor of the Church/gi, ', Linh mục Tiến sĩ');
+  out = out.replace(/,?\s*Priest and Doctor/gi,               ', Linh mục Tiến sĩ');
+  out = out.replace(/,?\s*Priest and Martyr/gi,               ', Linh mục Tử đạo');
+  out = out.replace(/,?\s*Deacon and Doctor/gi,               ', Phó tế Tiến sĩ');
+  out = out.replace(/,?\s*Deacon and Martyr/gi,               ', Phó tế Tử đạo');
+  out = out.replace(/,?\s*Doctor of the Church/gi,            ', Tiến sĩ Hội Thánh');
+  out = out.replace(/,?\s*Martyr[s]?/gi,                      ', Tử đạo');
+  out = out.replace(/,?\s*Bishop[s]?/gi,                      ', Giám mục');
+  out = out.replace(/,?\s*Priest[s]?/gi,                      ', Linh mục');
+  out = out.replace(/,?\s*Pope/gi,                            ', Giáo hoàng');
+  out = out.replace(/,?\s*Deacon/gi,                          ', Phó tế');
+  out = out.replace(/,?\s*Doctor/gi,                          ', Tiến sĩ');
+  out = out.replace(/,?\s*Apostle[s]?/gi,                     ', Tông đồ');
+  out = out.replace(/,?\s*Abbot/gi,                           ', Tu viện trưởng');
+  out = out.replace(/,?\s*Abbess/gi,                          ', Nữ Tu viện trưởng');
+  out = out.replace(/,?\s*Religious/gi,                       ', Tu sĩ');
+  out = out.replace(/,?\s*Virgin and Martyr/gi,               ', Trinh nữ Tử đạo');
+  out = out.replace(/,?\s*Virgin/gi,                          ', Trinh nữ');
+  out = out.replace(/,?\s*Hermit/gi,                          ', Ẩn sĩ');
+  out = out.replace(/,?\s*Widow/gi,                           ', Góa phụ');
+  // Tiền tố Saints → Các Thánh, Saint → Thánh
+  out = out.replace(/^Saints?\s+/i, (m) => m.toLowerCase().startsWith('saints') ? 'Các Thánh ' : 'Thánh ');
 
-  // 5. Trả nguyên
-  return name;
+  // 5. Trả về nếu đã đổi, nguyên nếu không
+  return out;
 };
 
 // ── Icon theo tên / type ──────────────────────────────────────────────────────
