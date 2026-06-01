@@ -91,14 +91,23 @@ const VI_LOOKUP = {
   'Saint Philip Neri, Priest':                          'Thánh Philipphê Nêri, Linh mục',
   'Saint Augustine of Canterbury, Bishop':              'Thánh Augustinô Cantêbury, Giám mục',
   'Visitation of the Blessed Virgin Mary':              'Đức Mẹ Thăm Viếng',
-  // Tháng 6
+  // Tháng 6 — lễ trọng
   'Trinity Sunday':                                                         'Lễ Chúa Ba Ngôi',
   'The Most Holy Body and Blood of Christ':                                 'Lễ Mình Máu Thánh Chúa',
+  'Most Holy Body and Blood of Christ':                                     'Lễ Mình Máu Thánh Chúa',
+  'Corpus Christi':                                                         'Lễ Mình Máu Thánh Chúa',
   'The Most Sacred Heart of Jesus':                                         'Lễ Thánh Tâm Chúa Giêsu',
+  'Most Sacred Heart of Jesus':                                             'Lễ Thánh Tâm Chúa Giêsu',
+  'Sacred Heart of Jesus':                                                  'Lễ Thánh Tâm Chúa Giêsu',
   'The Immaculate Heart of the Blessed Virgin Mary':                        'Trái Tim Vẹn Sạch Đức Mẹ',
+  'Immaculate Heart of the Blessed Virgin Mary':                            'Trái Tim Vẹn Sạch Đức Mẹ',
+  'Immaculate Heart of Mary':                                               'Trái Tim Vẹn Sạch Đức Mẹ',
   'The Nativity of Saint John the Baptist':                                 'Sinh Nhật Thánh Gioan Tẩy Giả',
+  'Nativity of Saint John the Baptist':                                     'Sinh Nhật Thánh Gioan Tẩy Giả',
+  'The Birth of Saint John the Baptist':                                    'Sinh Nhật Thánh Gioan Tẩy Giả',
   'Saints Peter and Paul, Apostles':                                        'Thánh Phêrô và Phaolô, Tông đồ',
-  // Tháng 6 — các ngày lễ nhớ / lễ kính
+  'Saints Peter and Paul':                                                  'Thánh Phêrô và Phaolô, Tông đồ',
+  // Tháng 6 — lễ nhớ / lễ kính
   'Saint Justin, Martyr':                                                   'Thánh Giustinô, Tử đạo',
   'Saints Marcellinus and Peter, Martyrs':                                  'Thánh Maccêllinô và Phêrô, Tử đạo',
   'Saint Charles Lwanga and Companions, Martyrs':                           'Thánh Carôlô Lwanga và các bạn, Tử đạo',
@@ -107,6 +116,7 @@ const VI_LOOKUP = {
   'Saint Ephrem, Deacon and Doctor of the Church':                          'Thánh Ephrem, Phó tế Tiến sĩ',
   'Saint Ephrem, Deacon and Doctor':                                        'Thánh Ephrem, Phó tế Tiến sĩ',
   'Saint Barnabas, Apostle':                                                'Thánh Banaba, Tông đồ',
+  'Saint Barnabas the Apostle':                                             'Thánh Banaba, Tông đồ',
   'Saint Anthony of Padua, Priest and Doctor of the Church':                'Thánh Antôn Padua, Linh mục Tiến sĩ',
   'Saint Anthony of Padua, Priest and Doctor':                              'Thánh Antôn Padua, Linh mục Tiến sĩ',
   'Saint Romuald, Abbot':                                                   'Thánh Rômualđô, Tu viện trưởng',
@@ -121,6 +131,7 @@ const VI_LOOKUP = {
   'Saint Cyril of Alexandria, Bishop and Doctor':                           'Thánh Cyrillô Alexanđria, Giám mục Tiến sĩ',
   'Saint Irenaeus, Bishop and Martyr':                                      'Thánh Irênêô, Giám mục Tử đạo',
   'The First Martyrs of the Holy Roman Church':                             'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
+  'First Martyrs of the Holy Roman Church':                                 'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
   'Saint Peter':                                                            'Thánh Phêrô, Tông đồ',
   'Saint Paul':                                                             'Thánh Phaolô, Tông đồ',
   // Tháng 7
@@ -187,6 +198,7 @@ const translateName = (name = '', type = '') => {
   out = out.replace(/,?\s*Pope/gi,                            ', Giáo hoàng');
   out = out.replace(/,?\s*Deacon/gi,                          ', Phó tế');
   out = out.replace(/,?\s*Doctor/gi,                          ', Tiến sĩ');
+  out = out.replace(/,?\s*the\s+Apostle[s]?/gi,               ', Tông đồ');
   out = out.replace(/,?\s*Apostle[s]?/gi,                     ', Tông đồ');
   out = out.replace(/,?\s*Abbot/gi,                           ', Tu viện trưởng');
   out = out.replace(/,?\s*Abbess/gi,                          ', Nữ Tu viện trưởng');
