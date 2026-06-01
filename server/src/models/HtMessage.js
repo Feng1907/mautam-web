@@ -20,10 +20,9 @@ const htMessageSchema = new mongoose.Schema({
   replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'HtMessage', default: null },
 }, { timestamps: true });
 
-htMessageSchema.pre('validate', function (next) {
+htMessageSchema.pre('validate', function () {
   if (!this.text?.trim() && !this.attachments?.length)
-    return next(new Error('Tin nhắn phải có nội dung hoặc tệp đính kèm'));
-  next();
+    throw new Error('Tin nhắn phải có nội dung hoặc tệp đính kèm');
 });
 
 module.exports = mongoose.model('HtMessage', htMessageSchema);
