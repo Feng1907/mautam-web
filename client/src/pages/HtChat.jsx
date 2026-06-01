@@ -532,7 +532,7 @@ export default function HtChatWidget() {
           {/* Messages */}
           {activeRoom && (
             <>
-              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" onClick={closeMenus}>
+              <div className="flex-1 overflow-y-auto px-3 pt-8 pb-3 space-y-0.5" onClick={closeMenus}>
                 {msgsLoading ? (
                   <div className="flex items-center justify-center h-full text-gray-300 text-sm">Đang tải...</div>
                 ) : messages.length === 0 ? (
@@ -689,6 +689,41 @@ export default function HtChatWidget() {
                             </p>
                           </div>
 
+                          {/* Action bar — absolute, không chiếm space, không đẩy bubble */}
+                          {hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
+                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-0.5 z-20`}>
+                              {reactionPicker === msg._id ? (
+                                <EmojiBar onReact={(e) => {
+                                  reactMsg.mutate({ msgId: msg._id, emoji: e });
+                                  setReactionPicker(null);
+                                  setHoveredMsg(null);
+                                }} />
+                              ) : (
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-md">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                    title="Thả cảm xúc">😀</button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
+                                      setHoveredMsg(null);
+                                      setTimeout(() => inputRef.current?.focus(), 50);
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
+                                    title="Trả lời">
+                                    <CornerUpLeft size={13} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
+                                    title="Tùy chọn">⋯</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* Reactions */}
                           {hasReactions && (
                             <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -708,43 +743,6 @@ export default function HtChatWidget() {
                             </div>
                           )}
                         </div>
-
-                        {/* Action bar — sau bubble trong DOM:
-                            isMe + flex-row-reverse → hiện bên TRÁI bubble
-                            non-isMe + flex-row → hiện bên PHẢI bubble */}
-                        {hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
-                          <div className="flex items-center gap-0.5 self-end mb-1 shrink-0">
-                            {reactionPicker === msg._id ? (
-                              <EmojiBar onReact={(e) => {
-                                reactMsg.mutate({ msgId: msg._id, emoji: e });
-                                setReactionPicker(null);
-                                setHoveredMsg(null);
-                              }} />
-                            ) : (
-                              <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-md">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
-                                  className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
-                                  title="Thả cảm xúc">😀</button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
-                                    setHoveredMsg(null);
-                                    setTimeout(() => inputRef.current?.focus(), 50);
-                                  }}
-                                  className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
-                                  title="Trả lời">
-                                  <CornerUpLeft size={13} />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
-                                  className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
-                                  title="Tùy chọn">⋯</button>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       {/* Read receipts — only after last message by me */}
