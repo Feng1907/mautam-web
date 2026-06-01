@@ -174,6 +174,7 @@ export default function HtChatWidget() {
     socketRef.current = socket;
 
     socket.on('htchat:message', (msg) => {
+      console.log('[HtChat] socket htchat:message — msg._id:', msg._id, 'room:', msg.room);
       const roomId = msg.room?._id || msg.room;
       qc.setQueryData(['ht-messages', roomId?.toString?.() ?? roomId], old => {
         if (!old) return [msg];
@@ -250,6 +251,7 @@ export default function HtChatWidget() {
     mutationFn: ({ text: t, attachments, replyTo }) =>
       api.post(`/ht-chat/rooms/${activeRoom}/messages`, { text: t, attachments, replyTo }),
     onMutate: ({ text: t, attachments, replyTo: replyToId }) => {
+      console.log('[HtChat] onMutate — activeRoom:', activeRoom, 'text:', t);
       const opt = {
         _id: `opt-${Date.now()}`,
         room: activeRoom,
@@ -273,14 +275,17 @@ export default function HtChatWidget() {
     },
     onSuccess: (res) => {
       const realMsg = res.data.data;
+      console.log('[HtChat] onSuccess — realMsg:', realMsg?._id, 'activeRoom:', activeRoom);
       qc.setQueryData(['ht-messages', activeRoom], old => {
+        console.log('[HtChat] setQueryData — old length:', old?.length, old?.map(m => m._id));
         const filtered = (old || []).filter(m => !m._optimistic);
         if (filtered.some(m => m._id === realMsg._id)) return filtered;
         return [...filtered, realMsg];
       });
       qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     },
-    onError: () => {
+    onError: (err) => {
+      console.error('[HtChat] onError — send failed:', err?.response?.status, err?.response?.data);
       qc.setQueryData(['ht-messages', activeRoom], old => old?.filter(m => !m._optimistic) || []);
     },
   });
