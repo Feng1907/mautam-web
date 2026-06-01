@@ -96,29 +96,6 @@ function EmojiBar({ onReact }) {
   );
 }
 
-function ContextMenu({ isMe, isAdmin, isPinned, onPin, onCopy, onDelete, onClose }) {
-  return (
-    <div className="absolute z-20 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm">
-      <button onClick={() => { onPin(); onClose(); }}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
-        <Pin size={12} className="text-amber-500 shrink-0" />
-        {isPinned ? 'Bỏ ghim' : 'Ghim'}
-      </button>
-      <button onClick={() => { onCopy(); onClose(); }}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
-        <Copy size={12} className="text-blue-500 shrink-0" />
-        Sao chép
-      </button>
-      {(isMe || isAdmin) && (
-        <button onClick={() => { onDelete(); onClose(); }}
-          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left text-red-500">
-          <Trash2 size={12} className="shrink-0" />
-          Xóa
-        </button>
-      )}
-    </div>
-  );
-}
 
 export default function HtChatWidget() {
   const { user } = useAuth();
@@ -647,18 +624,26 @@ export default function HtChatWidget() {
                             </div>
                           )}
 
-                          {/* Context menu — nằm ngay dưới bubble */}
+                          {/* Context menu — nằm ngay dưới bubble, căn cùng lề với bubble */}
                           {actionMenu === msg._id && (
-                            <div className={`absolute top-full mt-1 ${isMe ? 'right-0' : 'left-0'} z-50`}>
-                              <ContextMenu
-                                isMe={isMe}
-                                isAdmin={isAdmin}
-                                isPinned={pinnedMsg?._id === msg._id}
-                                onPin={() => pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id)}
-                                onCopy={() => navigator.clipboard?.writeText(msg.text || '')}
-                                onDelete={() => setConfirmDelete(msg._id)}
-                                onClose={() => setActionMenu(null)}
-                              />
+                            <div className={`absolute top-full mt-1 z-50 ${isMe ? 'right-0' : 'left-0'} w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm`}>
+                              <button onClick={() => { pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id); setActionMenu(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+                                <Pin size={12} className="text-amber-500 shrink-0" />
+                                {pinnedMsg?._id === msg._id ? 'Bỏ ghim' : 'Ghim'}
+                              </button>
+                              <button onClick={() => { navigator.clipboard?.writeText(msg.text || ''); setActionMenu(null); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
+                                <Copy size={12} className="text-blue-500 shrink-0" />
+                                Sao chép
+                              </button>
+                              {(isMe || isAdmin) && (
+                                <button onClick={() => { setConfirmDelete(msg._id); setActionMenu(null); }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left text-red-500">
+                                  <Trash2 size={12} className="shrink-0" />
+                                  Xóa
+                                </button>
+                              )}
                             </div>
                           )}
 
