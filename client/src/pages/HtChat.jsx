@@ -544,10 +544,34 @@ export default function HtChatWidget() {
                   const isMe = (msg.sender?._id || msg.sender) === user._id;
                   const hasReactions = msg.reactions?.some(r => r.users?.length > 0);
                   const prevMsg = messages[idx - 1];
+                  const nextMsg = messages[idx + 1];
                   const showDate = !prevMsg || !isSameDay(msg.createdAt, prevMsg.createdAt);
                   const isLast = idx === messages.length - 1;
 
-                  // read receipts: other members who have read this message (only on last message)
+                  // Message grouping — same sender, < 5 min, no date break
+                  const senderId     = msg.sender?._id || msg.sender;
+                  const prevSenderId = prevMsg?.sender?._id || prevMsg?.sender;
+                  const nextSenderId = nextMsg?.sender?._id || nextMsg?.sender;
+                  const isGroupedWithPrev = !showDate && prevMsg &&
+                    senderId === prevSenderId &&
+                    new Date(msg.createdAt) - new Date(prevMsg.createdAt) < 5 * 60 * 1000;
+                  const isGroupedWithNext = nextMsg &&
+                    isSameDay(msg.createdAt, nextMsg.createdAt) &&
+                    senderId === nextSenderId &&
+                    new Date(nextMsg.createdAt) - new Date(msg.createdAt) < 5 * 60 * 1000;
+
+                  // Bubble corners — Discord/Slack style
+                  const corners = isMe
+                    ? (isGroupedWithPrev && isGroupedWithNext) ? 'rounded-2xl rounded-tr-sm rounded-br-sm'
+                      : isGroupedWithPrev ? 'rounded-2xl rounded-tr-sm'
+                      : 'rounded-2xl rounded-br-sm'
+                    : (isGroupedWithPrev && isGroupedWithNext) ? 'rounded-2xl rounded-tl-sm rounded-bl-sm'
+                      : isGroupedWithPrev ? 'rounded-2xl rounded-tl-sm'
+                      : 'rounded-2xl rounded-bl-sm';
+
+                  const isHuynh = ['admin', 'giaoly'].includes(msg.sender?.vaiTro);
+
+                  // read receipts: only on last message
                   const readers = isLast && activeRoomData?.members
                     ? activeRoomData.members.filter(m =>
                         m._id !== user._id &&
@@ -560,14 +584,19 @@ export default function HtChatWidget() {
                       {showDate && <DateSeparator date={msg.createdAt} />}
                       <div
                         id={`msg-${msg._id}`}
-                        className={`flex items-end gap-1.5 group mb-1 ${isMe ? 'flex-row-reverse' : ''}`}
+                        className={`flex items-end gap-1.5 group ${isGroupedWithPrev ? 'mb-0.5' : 'mt-2 mb-0.5'} ${isMe ? 'flex-row-reverse' : ''}`}
                         onMouseEnter={() => setHoveredMsg(msg._id)}
                         onMouseLeave={() => {
                           if (confirmDelete !== msg._id && actionMenu !== msg._id && reactionPicker !== msg._id)
                             setHoveredMsg(null);
                         }}
                       >
-                        {!isMe && <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />}
+                        {/* Avatar: ẩn khi grouped, giữ spacer để alignment */}
+                        {!isMe && (
+                          isGroupedWithPrev
+                            ? <div className="w-6 h-6 shrink-0" />
+                            : <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />
+                        )}
 
                         <div className="relative max-w-[75%]">
 
@@ -597,11 +626,19 @@ export default function HtChatWidget() {
                           )}
 
                           {/* Bubble */}
-                          <div className={`px-3 py-2 rounded-2xl text-sm ${
-                            isMe ? 'bg-red-700 text-white rounded-br-sm' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-bl-sm'
+                          <div className={`px-3 py-2 text-sm ${corners} ${
+                            isMe ? 'bg-red-700 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100'
                           } ${msg._optimistic ? 'opacity-60' : ''}`}>
-                            {!isMe && msg.sender?.hoTen && (
-                              <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 mb-0.5">{msg.sender.hoTen}</p>
+                            {/* Tên + Senior Badge — chỉ hiện ở tin đầu nhóm */}
+                            {!isMe && !isGroupedWithPrev && msg.sender?.hoTen && (
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <p className="text-[11px] font-semibold text-gray-600 dark:text-slate-300">{msg.sender.hoTen}</p>
+                                {isHuynh && (
+                                  <span className="inline-flex items-center gap-0.5 px-1 py-px rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-300 dark:border-amber-700 leading-none">
+                                    ✦ HT
+                                  </span>
+                                )}
+                              </div>
                             )}
 
                             {/* Reply quote */}
