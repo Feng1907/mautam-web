@@ -138,7 +138,6 @@ export default function HtChatWidget() {
   const [groupName, setGroupName]         = useState('');
   const [isGroup, setIsGroup]             = useState(false);
   const [typingUser, setTypingUser]       = useState(null);
-  const [hoveredMsg, setHoveredMsg]       = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [pendingFile, setPendingFile]     = useState(null);
   const [lightboxUrl, setLightboxUrl]     = useState(null);
@@ -582,27 +581,64 @@ export default function HtChatWidget() {
                   return (
                     <Fragment key={msg._id}>
                       {showDate && <DateSeparator date={msg.createdAt} />}
+
+                      {/* ── Message Row — w-full, isMe justify-end với pr-3 ── */}
                       <div
                         id={`msg-${msg._id}`}
-                        className={`flex items-end gap-1.5 group ${isGroupedWithPrev ? 'mb-0.5' : 'mt-2 mb-0.5'} ${isMe ? 'flex-row-reverse' : ''}`}
-                        onMouseEnter={() => setHoveredMsg(msg._id)}
-                        onMouseLeave={() => {
-                          if (confirmDelete !== msg._id && actionMenu !== msg._id && reactionPicker !== msg._id)
-                            setHoveredMsg(null);
-                        }}
+                        className={`flex w-full items-end gap-1.5 ${isGroupedWithPrev ? 'mb-0.5' : 'mt-2 mb-0.5'} ${isMe ? 'justify-end pr-3' : 'justify-start pl-1'}`}
                       >
-                        {/* Avatar: ẩn khi grouped, giữ spacer để alignment */}
+                        {/* Avatar — chỉ non-isMe */}
                         {!isMe && (
                           isGroupedWithPrev
-                            ? <div className="w-6 h-6 shrink-0" />
+                            ? <div className="w-6 shrink-0" />
                             : <Avatar name={msg.sender?.hoTen} avatar={msg.sender?.avatar} size={6} />
                         )}
 
-                        <div className="relative max-w-[75%]">
+                        {/* ── Hover Container — relative group, bubble + tooltip cùng trong đây ── */}
+                        <div className="relative group max-w-[75%]">
+
+                          {/* Tooltip — absolute right-full/left-full, KHÔNG chiếm space, KHÔNG đẩy bubble */}
+                          {!msg.deleted && !msg._optimistic && (
+                            <div className={`
+                              absolute top-1/2 -translate-y-1/2 z-20
+                              ${isMe ? 'right-full mr-1.5' : 'left-full ml-1.5'}
+                              opacity-0 group-hover:opacity-100
+                              pointer-events-none group-hover:pointer-events-auto
+                              transition-opacity duration-150
+                            `}>
+                              {reactionPicker === msg._id ? (
+                                <EmojiBar onReact={(e) => {
+                                  reactMsg.mutate({ msgId: msg._id, emoji: e });
+                                  setReactionPicker(null);
+                                }} />
+                              ) : (
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-lg">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                    title="Thả cảm xúc">😀</button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
+                                      setTimeout(() => inputRef.current?.focus(), 50);
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
+                                    title="Trả lời">
+                                    <CornerUpLeft size={13} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
+                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
+                                    title="Tùy chọn">⋯</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {/* Context menu */}
                           {actionMenu === msg._id && (
-                            <div className={`absolute top-8 ${isMe ? 'right-0' : 'left-0'} z-20`}>
+                            <div className={`absolute bottom-0 ${isMe ? 'right-0' : 'left-0'} z-30`}>
                               <ContextMenu
                                 isMe={isMe}
                                 isAdmin={isAdmin}
@@ -610,14 +646,14 @@ export default function HtChatWidget() {
                                 onPin={() => pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id)}
                                 onCopy={() => navigator.clipboard?.writeText(msg.text || '')}
                                 onDelete={() => setConfirmDelete(msg._id)}
-                                onClose={() => { setActionMenu(null); setHoveredMsg(null); }}
+                                onClose={() => setActionMenu(null)}
                               />
                             </div>
                           )}
 
-                          {/* Delete confirm inline */}
+                          {/* Delete confirm */}
                           {confirmDelete === msg._id && (
-                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-10 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
+                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-30 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
                               <button onClick={() => deleteMsg.mutate(msg._id)}
                                 className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
                               <button onClick={() => setConfirmDelete(null)}
@@ -625,11 +661,12 @@ export default function HtChatWidget() {
                             </div>
                           )}
 
-                          {/* Bubble */}
+                          {/* ── Bubble ── */}
                           <div className={`px-3 py-2 text-sm ${corners} ${
                             isMe ? 'bg-red-700 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100'
                           } ${msg._optimistic ? 'opacity-60' : ''}`}>
-                            {/* Tên + Senior Badge — chỉ hiện ở tin đầu nhóm */}
+
+                            {/* Tên + Senior Badge — chỉ ở tin đầu nhóm */}
                             {!isMe && !isGroupedWithPrev && msg.sender?.hoTen && (
                               <div className="flex items-center gap-1 mb-0.5">
                                 <p className="text-[11px] font-semibold text-gray-600 dark:text-slate-300">{msg.sender.hoTen}</p>
@@ -663,7 +700,7 @@ export default function HtChatWidget() {
                             ) : (
                               <>
                                 {msg.text && (
-                                  <p className="leading-relaxed whitespace-pre-wrap wrap-break-word text-[13px]">{msg.text}</p>
+                                  <p className="leading-relaxed whitespace-pre-wrap break-all text-[13px]">{msg.text}</p>
                                 )}
                                 {msg.attachments?.map((att, i) => (
                                   att.fileType === 'image' ? (
@@ -688,41 +725,6 @@ export default function HtChatWidget() {
                               {fmtMsgTime(msg.createdAt)}
                             </p>
                           </div>
-
-                          {/* Action bar — absolute, không chiếm space, không đẩy bubble */}
-                          {hoveredMsg === msg._id && !msg.deleted && !msg._optimistic && (
-                            <div className={`absolute -top-8 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-0.5 z-20`}>
-                              {reactionPicker === msg._id ? (
-                                <EmojiBar onReact={(e) => {
-                                  reactMsg.mutate({ msgId: msg._id, emoji: e });
-                                  setReactionPicker(null);
-                                  setHoveredMsg(null);
-                                }} />
-                              ) : (
-                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-1.5 py-1 shadow-md">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setReactionPicker(msg._id); setActionMenu(null); }}
-                                    className="w-6 h-6 flex items-center justify-center text-sm hover:scale-110 transition-transform"
-                                    title="Thả cảm xúc">😀</button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setReplyingTo({ _id: msg._id, text: msg.text, senderName: msg.sender?.hoTen });
-                                      setHoveredMsg(null);
-                                      setTimeout(() => inputRef.current?.focus(), 50);
-                                    }}
-                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-600 transition"
-                                    title="Trả lời">
-                                    <CornerUpLeft size={13} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setActionMenu(actionMenu === msg._id ? null : msg._id); setReactionPicker(null); }}
-                                    className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 transition text-base leading-none font-bold"
-                                    title="Tùy chọn">⋯</button>
-                                </div>
-                              )}
-                            </div>
-                          )}
 
                           {/* Reactions */}
                           {hasReactions && (
