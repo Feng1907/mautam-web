@@ -272,9 +272,12 @@ export default function HtChatWidget() {
       setReplyingTo(null);
     },
     onSuccess: (res) => {
-      qc.setQueryData(['ht-messages', activeRoom], old =>
-        old?.map(m => m._optimistic ? res.data.data : m) || []
-      );
+      const realMsg = res.data.data;
+      qc.setQueryData(['ht-messages', activeRoom], old => {
+        const filtered = (old || []).filter(m => !m._optimistic);
+        if (filtered.some(m => m._id === realMsg._id)) return filtered;
+        return [...filtered, realMsg];
+      });
       qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     },
     onError: () => {
