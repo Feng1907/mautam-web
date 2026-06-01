@@ -579,7 +579,16 @@ export default function HtChatWidget() {
                       : isGroupedWithPrev ? 'rounded-2xl rounded-tl-sm'
                       : 'rounded-2xl rounded-bl-sm';
 
-                  const isHuynh = ['admin', 'giaoly'].includes(msg.sender?.vaiTro);
+                  const senderRole   = msg.sender?.vaiTro;
+                  const senderChucVu = msg.sender?.chucVu;
+                  // Badge: admin → ✦ Admin (đỏ), dutruong → ✦ DT (xanh), huynhtruong → ✦ HT (vàng)
+                  const badge = senderRole === 'admin'
+                    ? { label: '✦ Admin', cls: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-400 dark:border-red-700' }
+                    : senderChucVu === 'dutruong'
+                    ? { label: '✦ DT',    cls: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/40 dark:text-sky-400 dark:border-sky-700' }
+                    : senderChucVu === 'huynhtruong'
+                    ? { label: '✦ HT',    cls: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700' }
+                    : null;
 
                   // read receipts: only on last message
                   const readers = isLast && activeRoomData?.members
@@ -688,9 +697,9 @@ export default function HtChatWidget() {
                             {!isMe && !isGroupedWithPrev && msg.sender?.hoTen && (
                               <div className="flex items-center gap-1 mb-0.5">
                                 <p className="text-[11px] font-semibold text-gray-600 dark:text-slate-300">{msg.sender.hoTen}</p>
-                                {isHuynh && (
-                                  <span className="inline-flex items-center gap-0.5 px-1 py-px rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-300 dark:border-amber-700 leading-none">
-                                    ✦ HT
+                                {badge && (
+                                  <span className={`inline-flex items-center px-1 py-px rounded text-[9px] font-bold border leading-none ${badge.cls}`}>
+                                    {badge.label}
                                   </span>
                                 )}
                               </div>
