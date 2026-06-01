@@ -624,9 +624,13 @@ export default function HtChatWidget() {
                             </div>
                           )}
 
-                          {/* Context menu — nằm ngay dưới bubble, căn cùng lề với bubble */}
+                          {/* Context menu:
+                               isMe  → sang TRÁI bubble (top-0 right-full mr-2), không che "Đã gửi"
+                               !isMe → xuống DƯỚI bubble (top-full left-0 mt-1)
+                          */}
                           {actionMenu === msg._id && (
-                            <div className={`absolute top-full mt-1 z-50 ${isMe ? 'right-0' : 'left-0'} w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm`}>
+                            <div className={`absolute z-50 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg py-1 text-sm
+                              ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
                               <button onClick={() => { pinMsg.mutate(pinnedMsg?._id === msg._id ? null : msg._id); setActionMenu(null); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-left">
                                 <Pin size={12} className="text-amber-500 shrink-0" />
@@ -649,7 +653,8 @@ export default function HtChatWidget() {
 
                           {/* Delete confirm — nằm ngay trên tooltip */}
                           {confirmDelete === msg._id && (
-                            <div className={`absolute bottom-full mb-10 ${isMe ? 'right-0' : 'left-0'} flex items-center gap-1 z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md`}>
+                            <div className={`absolute z-50 flex items-center gap-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-md
+                              ${isMe ? 'top-0 right-full mr-2' : 'top-full left-0 mt-1'}`}>
                               <button onClick={() => deleteMsg.mutate(msg._id)}
                                 className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">Xóa</button>
                               <button onClick={() => setConfirmDelete(null)}
