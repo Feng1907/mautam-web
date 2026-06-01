@@ -127,7 +127,7 @@ exports.getMessages = async (req, res, next) => {
     const page  = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 40;
     const msgs  = await HtMessage.find({ room: room._id })
-      .populate('sender', 'hoTen avatar')
+      .populate('sender', 'hoTen avatar vaiTro')
       .populate({ path: 'replyTo', select: 'text sender attachments deleted',
         populate: { path: 'sender', select: 'hoTen' } })
       .sort({ createdAt: -1 })
@@ -157,7 +157,7 @@ exports.sendMessage = async (req, res, next) => {
       readBy: [req.user._id],
       replyTo: replyTo || null,
     });
-    await msg.populate('sender', 'hoTen avatar');
+    await msg.populate('sender', 'hoTen avatar vaiTro');
     await msg.populate({ path: 'replyTo', select: 'text sender attachments deleted',
       populate: { path: 'sender', select: 'hoTen' } });
     const populated = msg;
