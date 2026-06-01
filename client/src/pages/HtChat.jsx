@@ -468,33 +468,67 @@ export default function HtChatWidget() {
                   {dmRooms.length > 0 && (
                     <div className="space-y-0.5">
                       {classRooms.length > 0 && (
-                        <p className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">Tin nhắn riêng</p>
+                        <p className="px-2 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">Tin nhắn riêng</p>
                       )}
                       {dmRooms.map(room => {
                         const other = !room.isGroup && room.members?.find(m => m._id !== user._id);
+                        const isActive = room._id === activeRoom;
+                        const hasUnread = room.unread > 0;
+                        const displayName = room.isGroup ? (room.name || 'Nhóm') : (other?.hoTen || 'Chat');
+                        const preview = room.lastMsg || 'Bắt đầu trò chuyện';
                         return (
                           <button key={room._id} onClick={() => handleSelectRoom(room._id)}
-                            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition text-left">
-                            {room.isGroup
-                              ? <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                                  <Users size={15} className="text-purple-600 dark:text-purple-400" />
-                                </div>
-                              : <Avatar name={other?.hoTen} avatar={other?.avatar} size={9} />
-                            }
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">
-                                  {room.isGroup ? (room.name || 'Nhóm') : (other?.hoTen || 'Chat')}
-                                </p>
-                                <span className="text-[10px] text-gray-400 shrink-0 ml-1">{fmtTime(room.lastMsgAt)}</span>
-                              </div>
-                              <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{room.lastMsg || 'Bắt đầu trò chuyện'}</p>
+                            className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all duration-150 active:scale-[0.985]
+                              ${isActive
+                                ? 'bg-red-50 dark:bg-red-950/30'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                              }`}>
+
+                            {/* Avatar / Group icon với online dot placeholder */}
+                            <div className="relative shrink-0">
+                              {room.isGroup
+                                ? <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-sm">
+                                    <Users size={15} className="text-white" />
+                                  </div>
+                                : <Avatar name={other?.hoTen} avatar={other?.avatar} size={10} />
+                              }
+                              {/* Unread badge nhỏ trên avatar */}
+                              {hasUnread && (
+                                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-white dark:border-slate-900" />
+                              )}
                             </div>
-                            {room.unread > 0 && (
-                              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                                {room.unread > 9 ? '9+' : room.unread}
-                              </span>
-                            )}
+
+                            {/* Nội dung text */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-1 mb-0.5">
+                                <p className={`text-[13px] truncate leading-tight
+                                  ${hasUnread
+                                    ? 'font-bold text-slate-900 dark:text-white'
+                                    : 'font-semibold text-slate-700 dark:text-slate-200'
+                                  } ${isActive ? 'text-red-800 dark:text-red-300' : ''}`}>
+                                  {displayName}
+                                </p>
+                                <span className={`text-[10px] shrink-0 tabular-nums
+                                  ${hasUnread ? 'text-red-500 font-semibold' : 'text-slate-400 dark:text-slate-500'}`}>
+                                  {fmtTime(room.lastMsgAt)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                <p className={`text-[11.5px] truncate leading-tight
+                                  ${hasUnread
+                                    ? 'font-semibold text-slate-800 dark:text-slate-100'
+                                    : 'text-slate-400 dark:text-slate-500'
+                                  }`}>
+                                  {preview}
+                                </p>
+                                {/* Unread count badge */}
+                                {hasUnread && (
+                                  <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                    {room.unread > 9 ? '9+' : room.unread}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </button>
                         );
                       })}
