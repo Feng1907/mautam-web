@@ -13,7 +13,7 @@ import { formatClassName } from '../utils/formatClassName';
 import api from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || '';
+const SERVER_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '');
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🙏', '😮'];
 
 const avatarBg = (name = '') => {
@@ -174,7 +174,8 @@ export default function HtChatWidget() {
     socketRef.current = socket;
 
     socket.on('htchat:message', (msg) => {
-      qc.setQueryData(['ht-messages', msg.room], old => {
+      const roomId = msg.room?._id || msg.room;
+      qc.setQueryData(['ht-messages', roomId?.toString?.() ?? roomId], old => {
         if (!old) return [msg];
         if (old.some(m => m._id === msg._id)) return old;
         return [...old, msg];
@@ -182,7 +183,8 @@ export default function HtChatWidget() {
       qc.invalidateQueries({ queryKey: ['ht-rooms'] });
     });
     socket.on('htchat:message:deleted', ({ _id, room }) => {
-      qc.setQueryData(['ht-messages', room], old =>
+      const roomId = room?._id || room;
+      qc.setQueryData(['ht-messages', roomId?.toString?.() ?? roomId], old =>
         old?.map(m => m._id === _id ? { ...m, deleted: true, text: '', attachments: [] } : m)
       );
       qc.invalidateQueries({ queryKey: ['ht-rooms'] });
