@@ -111,6 +111,7 @@ const VI_LOOKUP = {
   'Saint Justin, Martyr':                                                   'Thánh Giustinô, Tử đạo',
   'Saints Marcellinus and Peter, Martyrs':                                  'Thánh Maccêllinô và Phêrô, Tử đạo',
   'Saint Charles Lwanga and Companions, Martyrs':                           'Thánh Carôlô Lwanga và các bạn, Tử đạo',
+  'Saints Charles Lwanga and Companions, Martyrs':                          'Thánh Carôlô Lwanga và các bạn, Tử đạo',
   'Saint Boniface, Bishop and Martyr':                                      'Thánh Bônifaxiô, Giám mục Tử đạo',
   'Saint Norbert, Bishop':                                                  'Thánh Nôbêrtô, Giám mục',
   'Saint Ephrem, Deacon and Doctor of the Church':                          'Thánh Ephrem, Phó tế Tiến sĩ',
@@ -132,6 +133,8 @@ const VI_LOOKUP = {
   'Saint Irenaeus, Bishop and Martyr':                                      'Thánh Irênêô, Giám mục Tử đạo',
   'The First Martyrs of the Holy Roman Church':                             'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
   'First Martyrs of the Holy Roman Church':                                 'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
+  'First Martyrs of the Church of Rome':                                    'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
+  'The First Martyrs of the Church of Rome':                                'Các Thánh Tử đạo đầu tiên của Giáo hội Rôma',
   'Saint Peter':                                                            'Thánh Phêrô, Tông đồ',
   'Saint Paul':                                                             'Thánh Phaolô, Tông đồ',
   // Tháng 7
