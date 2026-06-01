@@ -143,10 +143,12 @@ exports.getMessages = async (req, res, next) => {
 exports.sendMessage = async (req, res, next) => {
   try {
     const { text, attachments, replyTo } = req.body;
+    console.log('[sendMessage] body:', { text, replyTo, attachmentsLen: attachments?.length }, 'user:', req.user?._id, 'room:', req.params.id);
     if (!text?.trim() && !attachments?.length)
       return res.status(400).json({ success: false, message: 'Tin nhắn không được trống' });
 
     const room = await HtRoom.findOne({ _id: req.params.id, members: req.user._id });
+    console.log('[sendMessage] room found:', !!room);
     if (!room) return res.status(404).json({ success: false, message: 'Không tìm thấy phòng chat' });
 
     const msg = await HtMessage.create({
@@ -157,18 +159,24 @@ exports.sendMessage = async (req, res, next) => {
       readBy: [req.user._id],
       replyTo: replyTo || null,
     });
+    console.log('[sendMessage] msg created:', msg._id);
     await msg.populate('sender', 'hoTen avatar');
     await msg.populate({ path: 'replyTo', select: 'text sender attachments deleted',
       populate: { path: 'sender', select: 'hoTen' } });
+    console.log('[sendMessage] populated ok');
     const populated = msg;
 
     const preview = text?.trim() || (attachments?.length ? `[${attachments[0].fileType === 'image' ? 'Ảnh' : 'Tệp'}]` : '');
     await HtRoom.updateOne({ _id: room._id }, { lastMsg: preview, lastMsgAt: new Date() });
+    console.log('[sendMessage] room updated');
 
     try { getIO().to(`htchat:${room._id}`).emit('htchat:message', populated); } catch { /* ignore */ }
 
     res.status(201).json({ success: true, data: populated });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('[sendMessage] CATCH:', err.name, err.message, err.stack?.split('\n').slice(0, 3).join(' | '));
+    next(err);
+  }
 };
 
 // PUT /api/ht-chat/rooms/:id/read — đánh dấu đã đọc
