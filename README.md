@@ -48,11 +48,11 @@
 - 📋 **Phân công sự kiện** — tạo bảng lưới (buổi × vai trò), gán người, publish + notify
 - 🗂️ **Audit Log** — nhật ký mọi thao tác nhạy cảm trong hệ thống
 - 📖 **Lời Chúa** — scraper đa nguồn, cache 6h, màu phụng vụ tự động, MiniCalendar
-- ⛪ **Giờ Lễ** — đồng hồ real-time, feast effects, countdown lễ kế tiếp
+- ⛪ **Giờ Lễ** — đồng hồ real-time, feast effects, countdown lễ kế tiếp, dịch đầy đủ lễ tiếng Việt (romcal + fallback translator)
 - 📸 **Thư viện ảnh** — Firebase Storage, album theo sự kiện, lightbox
 - 🌙 **Dark Mode** — Circular Reveal (View Transitions API)
 - 🗺️ **Lịch sử Cứu độ** — 2 tab CỰU ƯỚC/TÂN ƯỚC, bản đồ SVG Israel (Tân Ước), timeline bảo tàng số
-- 💬 **HT Chat** — nhắn tin nội bộ kiểu Messenger/Zalo giữa huynh trưởng
+- 💬 **HT Chat** — nhắn tin nội bộ kiểu Messenger/Zalo: grouping tin nhắn, reply, emoji reaction, ghim, badge Admin/DT/HT, tooltip flex-sibling không bị mất hover, context menu dynamic positioning
 - 📝 **Quiz** — tạo & quản lý bài kiểm tra theo lớp, thông báo push khi kết thúc, bảng kiểm tra lớp
 - 📊 **Báo cáo lớp** — tổng hợp thống kê theo lớp cho huynh trưởng (donut chart + bar chart)
 - 📥 **Import Excel** — nhập điểm và điểm danh hàng loạt từ file `.xlsx`
