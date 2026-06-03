@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Pencil, Trash2, Check, X, Calendar, ToggleLeft, ToggleRight,
-  Users, ChevronDown, Lock, Clock } from 'lucide-react';
+  Users } from 'lucide-react';
 import api from '../../services/api';
 
 const ICON_PRESETS = [
@@ -39,10 +39,6 @@ const fmtDate = (d) => {
   return dt.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const fmtDatetime = (d) => {
-  if (!d) return '—';
-  return new Date(d).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
 
 const isPast = (d) => new Date(d + (d.length === 10 ? 'T23:59:00' : '')) < new Date();
 
@@ -55,10 +51,6 @@ export default function AdminEvents() {
   const [saving,    setSaving]   = useState(false);
   const [delId,     setDelId]    = useState(null);
   const [error,     setError]    = useState('');
-  const [lopPanel,  setLopPanel] = useState(null); // eventId being viewed
-  const [lopList,   setLopList]  = useState([]);
-  const [lopSummary, setLopSummary] = useState(null);
-  const [lopLoading, setLopLoading] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -120,24 +112,6 @@ export default function AdminEvents() {
     } catch { setError('Không cập nhật được.'); }
   };
 
-  const openLopPanel = async (evId) => {
-    if (lopPanel === evId) { setLopPanel(null); return; }
-    setLopPanel(evId);
-    setLopLoading(true);
-    try {
-      const r = await api.get(`/events/${evId}/lop-rsvp`);
-      setLopList(r.data.data);
-      setLopSummary(r.data.summary);
-    } catch { setLopList([]); setLopSummary(null); }
-    finally { setLopLoading(false); }
-  };
-
-  const deleteLopRsvp = async (evId, lopId) => {
-    try {
-      await api.delete(`/events/${evId}/lop-rsvp`, { data: { lopId } });
-      setLopList(prev => prev.filter(r => (r.lop?._id || r.lop) !== lopId));
-    } catch (err) { setError(err.response?.data?.message || 'Không xóa được.'); }
-  };
 
   return (
     <div className="space-y-6">
@@ -336,8 +310,8 @@ export default function AdminEvents() {
         <div className="space-y-2">
           {events.map((ev) => {
             const past = isPast(ev.date);
-            const isLopPanelOpen = lopPanel === ev._id;
             const dangKyCount = ev.dangKyLop?.length || 0;
+            const totalSoLuong = (ev.dangKyLop || []).reduce((s, r) => s + (r.soLuong || 0), 0);
 
             return (
               <div key={ev._id}>
@@ -368,16 +342,9 @@ export default function AdminEvents() {
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">Sắp tới</span>
                     )}
                     {ev.dangKyLopEnabled && (
-                      <button
-                        onClick={() => openLopPanel(ev._id)}
-                        className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold transition ${
-                          isLopPanelOpen
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200'
-                        }`}>
-                        <Users size={9} /> {dangKyCount} lớp đăng ký
-                        <ChevronDown size={9} className={`transition-transform ${isLopPanelOpen ? 'rotate-180' : ''}`} />
-                      </button>
+                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                        <Users size={9} /> {dangKyCount} lớp · {totalSoLuong} bạn
+                      </span>
                     )}
                   </div>
 
@@ -406,76 +373,6 @@ export default function AdminEvents() {
                   </div>
                 </motion.div>
 
-                {/* Panel đăng ký lớp */}
-                <AnimatePresence>
-                  {isLopPanelOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden">
-                      <div className="mx-1 mb-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 rounded-b-xl px-4 py-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-semibold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <Users size={12} /> Danh sách đăng ký lớp
-                          </p>
-                          {lopSummary && (
-                            <div className="flex items-center gap-3 text-xs text-amber-700 dark:text-amber-400">
-                              <span>{lopSummary.tongLop} lớp</span>
-                              <span>·</span>
-                              <span>{lopSummary.tongSoLuong} bạn</span>
-                              <span>·</span>
-                              <span className="flex items-center gap-0.5"><Lock size={10} /> {lopSummary.daChot} đã chốt</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {lopLoading ? (
-                          <div className="space-y-2">
-                            {[1,2,3].map(i => <div key={i} className="h-8 rounded bg-amber-100 dark:bg-amber-900/20 animate-pulse" />)}
-                          </div>
-                        ) : lopList.length === 0 ? (
-                          <p className="text-xs text-amber-600 dark:text-amber-500 text-center py-4">Chưa có lớp nào đăng ký</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {lopList.map((r, i) => {
-                              const lopId = r.lop?._id || r.lop;
-                              return (
-                                <div key={i} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-lg px-3 py-2 text-sm">
-                                  <div className="flex-1 min-w-0">
-                                    <span className="font-medium text-gray-800 dark:text-slate-200">{r.lop?.tenLop || '—'}</span>
-                                    {r.lop?.nganh && <span className="ml-1.5 text-[10px] text-gray-400">{r.lop.nganh}</span>}
-                                  </div>
-                                  <span className="text-gray-600 dark:text-slate-400 text-xs font-medium">{r.soLuong} bạn</span>
-                                  {r.daChot ? (
-                                    <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold">
-                                      <Lock size={8} /> Đã chốt
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">Chờ chốt</span>
-                                  )}
-                                  <span className="text-[10px] text-gray-400 dark:text-slate-500 items-center gap-0.5 hidden sm:inline-flex">
-                                    <Clock size={9} /> {fmtDatetime(r.dangKyLuc)}
-                                  </span>
-                                  {r.ghiChu && <span className="text-xs text-gray-400 italic truncate max-w-32 hidden md:block">{r.ghiChu}</span>}
-                                  <button
-                                    onClick={() => deleteLopRsvp(ev._id, lopId)}
-                                    className="p-1 text-gray-300 dark:text-slate-600 hover:text-red-500 transition">
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {ev.dangKyLopMo && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-3">
-                            Thời gian đăng ký: {fmtDatetime(ev.dangKyLopMo)} → {ev.dangKyLopDong ? fmtDatetime(ev.dangKyLopDong) : 'không giới hạn'}
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             );
           })}
