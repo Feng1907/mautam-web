@@ -31,40 +31,25 @@ export const EVENTS = [
 
 const YEARS = [2026, 2025, 2024, 2023];
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
-const MOCK_PHOTOS = Array.from({ length: 12 }, (_, i) => ({
-  id:          String(i + 1),
-  url:         '/images/DAP_2149.jpg',
-  title:       ['Thánh lễ Phục Sinh','Rước Kiệu','Trại Hè','Lửa Trại','Dâng Hoa',
-                 'Lễ Quan Thầy','Giáng Sinh','Hang Đá','Sinh Hoạt','Khai Giảng',
-                 'Bế Giảng','Cắm Trại'][i],
-  event:       ['phuc-sinh','phuc-sinh','trai-he','trai-he','dang-hoa',
-                 'le-quan-thay','giang-sinh','giang-sinh','sinh-hoat','sinh-hoat',
-                 'sinh-hoat','trai-he'][i],
-  year:        i < 6 ? 2025 : 2024,
-  timestamp:   i < 6 ? '2025-04-20' : '2024-12-25',
-  storagePath: null,
-}));
 
 // ── useGallery hook ───────────────────────────────────────────────────────────
 const useGallery = () => {
   const qc = useQueryClient();
 
-  const { data: fetchedPhotos, isLoading: loading } = useQuery({
+  const { data: fetchedPhotos, isLoading: loading, isError: loadError } = useQuery({
     queryKey: ['gallery'],
-    queryFn: () => fetchPhotos().catch(() => MOCK_PHOTOS),
-    staleTime:   10 * 60 * 1000,  // 10 phút — không refetch nếu data còn mới
-    gcTime:      30 * 60 * 1000,  // 30 phút — giữ cache trong memory
+    queryFn: () => fetchPhotos(),
+    staleTime:   10 * 60 * 1000,
+    gcTime:      30 * 60 * 1000,
     retry: 2,
   });
 
   const photos  = fetchedPhotos || [];
-  const useMock = fetchedPhotos === MOCK_PHOTOS;
 
   const addPhoto    = (p)  => qc.setQueryData(['gallery'], prev => [p, ...(prev || [])]);
   const removePhoto = (id) => qc.setQueryData(['gallery'], prev => (prev || []).filter(p => p.id !== id));
 
-  return { photos, loading, useMock, addPhoto, removePhoto };
+  return { photos, loading, loadError, addPhoto, removePhoto };
 };
 
 // ── Placeholder Thánh Giá khi ảnh đang tải ───────────────────────────────────
@@ -687,7 +672,7 @@ const Gallery = () => {
   const lang      = i18n.language?.startsWith('en') ? 'en' : 'vi';
   const isAdmin   = user?.vaiTro === 'admin';
 
-  const { photos, loading, addPhoto, removePhoto } = useGallery();
+  const { photos, loading, loadError, addPhoto, removePhoto } = useGallery();
 
   const [selectedAlbum, setSelectedAlbum] = useState(null); // { event, year }
   const [showUpload,    setShowUpload]     = useState(false);
@@ -721,6 +706,13 @@ const Gallery = () => {
   }, [albumPhotos]);
 
   if (loading) return <div className="page-container py-8"><CardGridSkeleton count={8} ratio="4/3" /></div>;
+  if (loadError) return (
+    <div className="page-container py-8 text-center text-gray-500 dark:text-slate-400 space-y-2">
+      <p className="text-4xl">⚠️</p>
+      <p className="font-medium">Không thể tải thư viện ảnh</p>
+      <p className="text-sm">Vui lòng kiểm tra kết nối và thử lại.</p>
+    </div>
+  );
 
   const eventLabel = selectedAlbum
     ? (EVENTS.find(e => e.value === selectedAlbum.event)?.label[lang] || selectedAlbum.event)
