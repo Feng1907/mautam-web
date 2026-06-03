@@ -46,6 +46,8 @@ export default function QuizTake() {
   });
 
   // ── Bắt đầu làm bài ────────────────────────────────────
+  const DRAFT_KEY = (aId) => `quiz-draft-${aId}`;
+
   const startMutation = useMutation({
     mutationFn: () => api.post(`/quizzes/${id}/start`, { studentId }),
     onSuccess: (res) => {
@@ -54,13 +56,19 @@ export default function QuizTake() {
       setCauHoi(d.cauHoi);
       const secs = (d.thoiGianLam || 30) * 60;
       setTimeLeft(secs);
-      // Khôi phục câu trả lời cũ nếu có
-      const prev = {};
-      (d.cauTraLoiHienTai || []).forEach(tr => {
-        if (tr.loai === 'trac_nghiem') prev[tr.cauHoiIndex] = tr.dapAnChon;
-        else if (tr.loai === 'dien_khuyet') prev[tr.cauHoiIndex] = tr.noiDungDien;
-        else if (tr.loai === 'tu_luan') prev[tr.cauHoiIndex] = tr.baiViet;
-      });
+      // Ưu tiên draft localStorage (crash recovery), rồi mới đến server
+      let prev = {};
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY(d.attemptId));
+        if (saved) prev = JSON.parse(saved);
+      } catch (_e) { /* ignore */ }
+      if (Object.keys(prev).length === 0) {
+        (d.cauTraLoiHienTai || []).forEach(tr => {
+          if (tr.loai === 'trac_nghiem') prev[tr.cauHoiIndex] = tr.dapAnChon;
+          else if (tr.loai === 'dien_khuyet') prev[tr.cauHoiIndex] = tr.noiDungDien;
+          else if (tr.loai === 'tu_luan') prev[tr.cauHoiIndex] = tr.baiViet;
+        });
+      }
       setAnswers(prev);
       setStarted(true);
     },
@@ -83,10 +91,17 @@ export default function QuizTake() {
     },
     onSuccess: (res) => {
       clearInterval(timerRef.current);
+      try { if (attemptId) localStorage.removeItem(DRAFT_KEY(attemptId)); } catch (_e) { /* ignore */ }
       setResult(res.data.data);
       setSubmitted(true);
     },
   });
+
+  // ── Auto-save câu trả lời vào localStorage ──────────────
+  useEffect(() => {
+    if (!started || submitted || !attemptId) return;
+    try { localStorage.setItem(DRAFT_KEY(attemptId), JSON.stringify(answers)); } catch (_e) { /* ignore */ }
+  }, [answers, started, submitted, attemptId]);
 
   // ── Báo vi phạm ─────────────────────────────────────────
   const reportViolation = useCallback((loai, soGiay = 0) => {
@@ -169,6 +184,7 @@ export default function QuizTake() {
       });
     }, 1000);
     return () => clearInterval(timerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, submitted]);
 
   // ── Chưa bắt đầu ────────────────────────────────────────
@@ -358,7 +374,7 @@ export default function QuizTake() {
                         ? 'border-red-600 bg-red-50 dark:bg-red-900/20 dark:border-red-500'
                         : 'border-gray-200 dark:border-slate-600 hover:border-gray-400 dark:hover:border-slate-400'
                     }`}>
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                       answers[current] === d.chu
                         ? 'bg-red-600 text-white'
                         : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'

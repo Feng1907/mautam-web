@@ -355,8 +355,8 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, myLops = [], onLopRsvp, onCancel
             ) : null}
             <div className="flex items-center gap-1.5">
               <label className="text-xs text-gray-500 dark:text-slate-400">Số lượng:</label>
-              <input type="number" min={0} value={soLuong}
-                onChange={e => setSoLuong(Number(e.target.value))}
+              <input type="number" min={0} max={500} value={soLuong}
+                onChange={e => setSoLuong(Math.max(0, Math.min(500, Number(e.target.value))))}
                 className="input text-sm w-20" />
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-32">
@@ -372,7 +372,7 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, myLops = [], onLopRsvp, onCancel
             </button>
           </div>
         </div>
-      ) : (!isGiaoly || past) && allRegistered.length === 0 ? null : null}
+      ) : null}
 
       {/* Danh sách lớp đã đăng ký (read-only) */}
       {allRegistered.length > 0 && (

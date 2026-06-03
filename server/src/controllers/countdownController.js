@@ -167,6 +167,8 @@ exports.lopRsvp = async (req, res, next) => {
   try {
     const { lopId, soLuong, ghiChu } = req.body;
     if (!lopId) return res.status(400).json({ success: false, message: 'Thiếu lopId' });
+    if (soLuong !== undefined && (typeof soLuong !== 'number' || soLuong < 0 || soLuong > 500))
+      return res.status(400).json({ success: false, message: 'Số lượng không hợp lệ (0–500)' });
 
     const ev = await CountdownEvent.findById(req.params.id);
     if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
