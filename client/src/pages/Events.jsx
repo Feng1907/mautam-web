@@ -119,6 +119,12 @@ export default function Events() {
     return (arr[0]?._id || arr[0])?.toString();
   };
 
+  const getMyLops = () => {
+    if (!user?.lopPhuTrach) return [];
+    const arr = Array.isArray(user.lopPhuTrach) ? user.lopPhuTrach : [user.lopPhuTrach];
+    return arr.map(l => ({ id: (l?._id || l)?.toString(), tenLop: l?.tenLop || null }));
+  };
+
   const events = data || [];
   const upcoming = events.filter(e => !isPast(e.date));
   const past     = events.filter(e => isPast(e.date));
@@ -156,6 +162,7 @@ export default function Events() {
                   myRsvp={getMyRsvp(ev)}
                   myLopRsvp={getMyLopRsvp(ev)}
                   myLopId={getMyLopId()}
+                  myLops={getMyLops()}
                   myStudents={myStudents}
                   isStudentRegistered={(sid) => isStudentRegistered(ev, sid)}
                   onStudentToggle={(sid) => studentRsvpMutation.mutate({ eventId: ev._id, studentId: sid })}
@@ -181,6 +188,7 @@ export default function Events() {
                   myRsvp={getMyRsvp(ev)}
                   myLopRsvp={getMyLopRsvp(ev)}
                   myLopId={getMyLopId()}
+                  myLops={getMyLops()}
                   myStudents={[]}
                   isStudentRegistered={(sid) => isStudentRegistered(ev, sid)}
                   onStudentToggle={() => {}}
@@ -202,10 +210,11 @@ export default function Events() {
   );
 }
 
-function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onChot, loading, isGiaoly, past }) {
+function LopRsvpPanel({ ev, myLopRsvp, myLopId, myLops = [], onLopRsvp, onCancelLopRsvp, onChot, loading, isGiaoly, past }) {
   const [soLuong, setSoLuong] = useState(myLopRsvp?.soLuong ?? 0);
   const [ghiChu, setGhiChu]   = useState(myLopRsvp?.ghiChu ?? '');
   const [editing, setEditing]  = useState(!myLopRsvp);
+  const [selectedLopId, setSelectedLopId] = useState(myLopId);
 
   const now = new Date();
   const inWindow = ev.dangKyLopEnabled &&
@@ -213,6 +222,9 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onCh
     (!ev.dangKyLopDong || now <= new Date(ev.dangKyLopDong));
 
   const canRegister = isGiaoly && !past && inWindow && !myLopRsvp;
+
+  const activeLopId = selectedLopId || myLopId;
+  const activeLopName = myLops.find(l => l.id === activeLopId)?.tenLop || null;
 
   // Tổng hợp danh sách tất cả lớp đăng ký để hiển thị
   const allRegistered = ev.dangKyLop || [];
@@ -246,10 +258,15 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onCh
         <div className={`rounded-xl p-3 border ${myLopRsvp.daChot ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/40' : 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/40'}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {myLopRsvp.daChot
                   ? <span className="text-xs font-semibold text-green-700 dark:text-green-400 flex items-center gap-1"><Lock size={11} /> Đã chốt</span>
                   : <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Đã đăng ký · chờ chốt</span>}
+                {(myLopRsvp.lop?.tenLop || activeLopName) && (
+                  <span className="text-xs text-gray-500 dark:text-slate-400 font-normal">
+                    · {myLopRsvp.lop?.tenLop || activeLopName}
+                  </span>
+                )}
               </div>
               {editing && !myLopRsvp.daChot ? (
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -320,6 +337,22 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onCh
         <div className="rounded-xl p-3 border border-dashed border-amber-300 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/5">
           <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">Lớp bạn chưa đăng ký</p>
           <div className="flex items-center gap-2 flex-wrap">
+            {myLops.length > 1 ? (
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 dark:text-slate-400">Lớp:</label>
+                <select value={activeLopId} onChange={e => setSelectedLopId(e.target.value)}
+                  className="input text-sm">
+                  {myLops.map(l => (
+                    <option key={l.id} value={l.id}>{l.tenLop || l.id}</option>
+                  ))}
+                </select>
+              </div>
+            ) : activeLopName ? (
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 dark:text-slate-400">Lớp:</label>
+                <span className="text-xs font-semibold text-gray-700 dark:text-slate-200">{activeLopName}</span>
+              </div>
+            ) : null}
             <div className="flex items-center gap-1.5">
               <label className="text-xs text-gray-500 dark:text-slate-400">Số lượng:</label>
               <input type="number" min={0} value={soLuong}
@@ -332,8 +365,8 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onCh
                 onChange={e => setGhiChu(e.target.value)}
                 className="input text-sm flex-1" placeholder="Tuỳ chọn..." />
             </div>
-            <button disabled={loading}
-              onClick={() => onLopRsvp(myLopId, soLuong, ghiChu)}
+            <button disabled={loading || !activeLopId}
+              onClick={() => onLopRsvp(activeLopId, soLuong, ghiChu)}
               className="text-xs px-4 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition font-medium">
               Đăng ký
             </button>
@@ -359,7 +392,7 @@ function LopRsvpPanel({ ev, myLopRsvp, myLopId, onLopRsvp, onCancelLopRsvp, onCh
 }
 
 function EventCard({
-  ev, isGiaoly, isParent, myRsvp, myLopRsvp, myLopId, myStudents,
+  ev, isGiaoly, isParent, myRsvp, myLopRsvp, myLopId, myLops = [], myStudents,
   isStudentRegistered, onStudentToggle, studentRsvpLoading,
   onLopRsvp, onCancelLopRsvp, onChot, lopRsvpLoading,
   rsvpMutation, cancelMutation, expanded, setExpanded,
@@ -489,7 +522,7 @@ function EventCard({
       {/* Lop RSVP panel */}
       {isLopPanelOpen && showLopSection && (
         <LopRsvpPanel
-          ev={ev} myLopRsvp={myLopRsvp} myLopId={myLopId}
+          ev={ev} myLopRsvp={myLopRsvp} myLopId={myLopId} myLops={myLops}
           onLopRsvp={onLopRsvp} onCancelLopRsvp={onCancelLopRsvp} onChot={onChot}
           loading={lopRsvpLoading} isGiaoly={isGiaoly} past={past}
         />
