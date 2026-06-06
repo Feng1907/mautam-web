@@ -462,7 +462,8 @@ export default function QuizTake() {
         {current < cauHoi.length - 1 && (
           <div className="text-center">
             <button onClick={() => setShowConfirm(true)}
-              className="text-sm text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 mx-auto">
+              disabled={submitMutation.isPending || submitted}
+              className="text-sm text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 mx-auto disabled:opacity-50">
               <Send size={13} /> Nộp bài ngay
             </button>
           </div>

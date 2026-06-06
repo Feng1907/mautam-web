@@ -375,6 +375,9 @@ exports.getResults = async (req, res, next) => {
       diemTB: attempts.filter(a => a.diem != null).length
         ? (attempts.reduce((s, a) => s + (a.diem || 0), 0) / attempts.filter(a => a.diem != null).length).toFixed(1)
         : null,
+      diemTBTong: attempts.filter(a => a.daChayDuTuLuan).length
+        ? (attempts.filter(a => a.daChayDuTuLuan).reduce((s, a) => s + (a.diem || 0), 0) / attempts.filter(a => a.daChayDuTuLuan).length).toFixed(1)
+        : null,
     };
 
     res.json({ success: true, data: attempts, summary, quiz });
@@ -410,6 +413,14 @@ exports.gradeEssay = async (req, res, next) => {
     const attempt = await QuizAttempt.findById(req.params.attemptId);
     if (!attempt) return res.status(404).json({ success: false, message: 'Không tìm thấy bài làm' });
 
+    const quiz = await Quiz.findById(attempt.quiz).lean();
+    if (!quiz) return res.status(404).json({ success: false, message: 'Không tìm thấy quiz' });
+
+    const cauHoi = quiz.cauHoi[cauHoiIndex];
+    const maxPoints = cauHoi?.diem ?? 1;
+    if (diemDat == null || diemDat < 0 || diemDat > maxPoints)
+      return res.status(400).json({ success: false, message: `Điểm phải từ 0 đến ${maxPoints}` });
+
     const tr = attempt.cauTraLoi.find(t => t.cauHoiIndex === cauHoiIndex && t.loai === 'tu_luan');
     if (!tr) return res.status(400).json({ success: false, message: 'Không tìm thấy câu trả lời' });
 
@@ -425,6 +436,8 @@ exports.gradeEssay = async (req, res, next) => {
       attempt.diemTuLuan = attempt.cauTraLoi
         .filter(t => t.loai === 'tu_luan')
         .reduce((s, t) => s + (t.diemDat || 0), 0);
+      // Cập nhật tổng điểm = auto + tự luận
+      attempt.diem = (attempt.diem || 0) + attempt.diemTuLuan;
     }
 
     attempt.markModified('cauTraLoi');

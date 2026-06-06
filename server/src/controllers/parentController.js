@@ -364,11 +364,12 @@ exports.searchStudentsPublic = async (req, res, next) => {
     if (q.length < 2)
       return res.json({ success: true, data: [] });
 
+    const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const students = await Student.find({
       trangThai: 'active',
       $or: [
-        { hoTen: { $regex: q, $options: 'i' } },
-        { tenThanh: { $regex: q, $options: 'i' } },
+        { hoTen: { $regex: safeQ, $options: 'i' } },
+        { tenThanh: { $regex: safeQ, $options: 'i' } },
       ],
     })
       .select('hoTen tenThanh lop')
