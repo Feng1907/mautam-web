@@ -39,7 +39,7 @@ exports.upsert = async (req, res, next) => {
     } else {
       const vKP = Number(vangKhongPhep) || 0;
       const vCP = Number(vangCoPhep)    || 0;
-      finalDiem = Math.min(10, Math.max(0, 10 - vKP * 1 - vCP * 0.5));
+      finalDiem = Math.round(Math.min(10, Math.max(0, 10 - vKP * 1 - vCP * 0.5)) * 10) / 10;
     }
 
     const record = await ChuyenCan.findOneAndUpdate(

@@ -204,25 +204,8 @@ exports.exportGrades = async (req, res, next) => {
       { key: '1tiet',  label: '1 tiết',  heSo: 2 },
     ];
 
-    const tinhTB = (list) => {
-      if (!list.length) return null;
-      let tongHS = 0, tongD = 0;
-      list.forEach(g => {
-        const hs = LOAI.find(l => l.key === g.loaiDiem)?.heSo || 1;
-        tongHS += hs; tongD += g.diem * hs;
-      });
-      return tongHS ? (tongD / tongHS).toFixed(1) : null;
-    };
-
-    const phanLoai = (tb) => {
-      if (!tb) return '—';
-      const v = parseFloat(tb);
-      if (v >= 9)   return 'Xuất sắc';
-      if (v >= 8)   return 'Giỏi';
-      if (v >= 6.5) return 'Khá';
-      if (v >= 5)   return 'Trung bình';
-      return 'Yếu';
-    };
+    const tinhTB = (list) => tinhTBHocTap(list);
+    const phanLoai = (tb) => phanLoaiTK(tb);
 
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Xứ Đoàn Mẫu Tâm';

@@ -21,14 +21,14 @@ const tinhTBHocTap = (gradeList) => {
     tongHS += hs;
     tongD  += g.diem * hs;
   });
-  return tongHS ? tongD / tongHS : null;
+  return tongHS ? parseFloat((tongD / tongHS).toFixed(1)) : null;
 };
 
 // Điểm tổng kết = TBM×80% + CC×20%
 const tinhTongKet = (tbHT, diemCC) => {
-  if (tbHT === null && diemCC == null) return null;
-  if (tbHT === null)   return parseFloat((diemCC * TI_LE_CC).toFixed(2));
-  if (diemCC == null)  return parseFloat(tbHT.toFixed(2));
+  if (tbHT === null && diemCC === null) return null;
+  if (tbHT === null)  return parseFloat(diemCC.toFixed(2));
+  if (diemCC === null) return parseFloat(tbHT.toFixed(2));
   return parseFloat((tbHT * TI_LE_HT + diemCC * TI_LE_CC).toFixed(2));
 };
 

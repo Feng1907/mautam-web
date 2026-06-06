@@ -7,7 +7,7 @@ const ctrl                     = require('../controllers/chuyenCanController');
 router.get('/:lopId', checkAuth, checkClassPermission, ctrl.getByLop);
 
 // POST upsert điểm chuyên cần 1 em
-router.post('/', checkAuth, ctrl.upsert);
+router.post('/', checkAuth, checkClassPermission, ctrl.upsert);
 
 // DELETE xoá điểm chuyên cần
 router.delete('/:id', checkAuth, ctrl.remove);

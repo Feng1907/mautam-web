@@ -130,18 +130,25 @@ exports.toggleStudentRsvp = async (req, res, next) => {
     if (!lop && req.user.vaiTro !== 'admin')
       return res.status(403).json({ success: false, message: 'Bạn không phụ trách lớp này' });
 
-    const ev = await CountdownEvent.findById(req.params.id);
+    const ev = await CountdownEvent.findById(req.params.id).lean();
     if (!ev) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện' });
 
-    const idx = ev.studentRsvps.findIndex(r => r.student.toString() === studentId.toString());
-    if (idx >= 0) {
-      ev.studentRsvps.splice(idx, 1);
+    const alreadyRsvp = ev.studentRsvps.some(r => r.student.toString() === studentId.toString());
+    let updated;
+    if (alreadyRsvp) {
+      updated = await CountdownEvent.findByIdAndUpdate(
+        req.params.id,
+        { $pull: { studentRsvps: { student: studentId } } },
+        { new: true }
+      ).populate('studentRsvps.student', 'hoTen');
     } else {
-      ev.studentRsvps.push({ student: studentId, lop: student.lop, addedBy: req.user._id });
+      updated = await CountdownEvent.findByIdAndUpdate(
+        req.params.id,
+        { $push: { studentRsvps: { student: studentId, lop: student.lop, addedBy: req.user._id } } },
+        { new: true }
+      ).populate('studentRsvps.student', 'hoTen');
     }
-    await ev.save();
-    await ev.populate('studentRsvps.student', 'hoTen');
-    res.json({ success: true, data: ev.studentRsvps });
+    res.json({ success: true, data: updated.studentRsvps });
   } catch (err) { next(err); }
 };
 
