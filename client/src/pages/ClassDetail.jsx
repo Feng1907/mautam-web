@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { Users, CalendarCheck, BookOpen, ChevronLeft, ShieldCheck, Printer, ClipboardList, ClipboardCheck, BarChart2 } from 'lucide-react';
 import api from '../services/api';
 import { formatClassName } from '../utils/formatClassName';
@@ -90,6 +90,18 @@ const ClassDetail = () => {
 
   const lop     = lopQuery.data ?? null;
   const loading = lopQuery.isLoading || studentsQuery.isLoading;
+
+  // Grade summary — fetch khi ở tab danh sách, dùng để hiển thị badge học lực
+  const { data: gradeSummaryRaw } = useQuery({
+    queryKey: ['grade-summary', id],
+    queryFn: () => api.get(`/grades/${id}/summary`).then(r => r.data.data),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!id,
+  });
+  const gradeSummary = useMemo(() => {
+    if (!gradeSummaryRaw) return null;
+    return Object.fromEntries(gradeSummaryRaw.map(g => [g.studentId, g]));
+  }, [gradeSummaryRaw]);
 
   // Local students state — syncs from query but allows optimistic updates by StudentList
   const [students, setStudents] = useState([]);
@@ -262,6 +274,7 @@ const ClassDetail = () => {
               students={students}
               setStudents={setStudents}
               canEdit={canEdit}
+              gradeSummary={gradeSummary}
             />
           )}
           {tab === 'diemdanh' && (

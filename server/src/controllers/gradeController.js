@@ -25,6 +25,51 @@ exports.getByClass = async (req, res, next) => {
   }
 };
 
+// GET /api/grades/:lopId/summary — TBM theo học sinh (dùng cho badge học lực)
+exports.getSummaryByClass = async (req, res, next) => {
+  try {
+    let namHocId = req.query.namHocId;
+    if (!namHocId) {
+      const namHoc = await NamHoc.findOne({ dangHoatDong: true });
+      if (!namHoc) return res.json({ success: true, data: [] });
+      namHocId = namHoc._id;
+    }
+
+    const filter = { lop: req.params.lopId, namHoc: namHocId };
+    if (req.query.hocKy) filter.hocKy = Number(req.query.hocKy);
+
+    const grades = await Grade.find(filter).lean();
+
+    const LOAI = [
+      { key: 'mieng', heSo: 1 }, { key: '15phut', heSo: 1 }, { key: '1tiet', heSo: 2 },
+    ];
+
+    const byStudent = {};
+    grades.forEach(g => {
+      const sid = g.student.toString();
+      if (!byStudent[sid]) byStudent[sid] = [];
+      byStudent[sid].push(g);
+    });
+
+    const data = Object.entries(byStudent).map(([studentId, gs]) => {
+      let th = 0, td = 0;
+      gs.forEach(g => {
+        const h = LOAI.find(l => l.key === g.loaiDiem)?.heSo ?? 1;
+        th += h; td += g.diem * h;
+      });
+      const tbm = th ? parseFloat((td / th).toFixed(1)) : null;
+      const phanLoai = tbm === null ? null
+        : tbm >= 9 ? 'Xuất sắc' : tbm >= 8 ? 'Giỏi'
+        : tbm >= 6.5 ? 'Khá' : tbm >= 5 ? 'TB' : 'Yếu';
+      return { studentId, tbm, phanLoai, atRisk: tbm !== null && tbm < 5 };
+    });
+
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/grades
 exports.create = async (req, res, next) => {
   try {

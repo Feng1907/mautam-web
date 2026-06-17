@@ -362,8 +362,17 @@ const StudentModal = ({ lopId, initial, onClose, onSaved }) => {
   );
 };
 
+// ── Badge học lực ─────────────────────────────────────────────────────────────
+const HL_BADGE = {
+  'Xuất sắc': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Giỏi':     'bg-blue-50 text-blue-700 border-blue-200',
+  'Khá':      'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'TB':       'bg-gray-100 text-gray-600 border-gray-200',
+  'Yếu':      'bg-red-50 text-red-600 border-red-200',
+};
+
 // ── Component chính ───────────────────────────────────────────────────────────
-const StudentList = ({ lopId, students, setStudents, canEdit }) => {
+const StudentList = ({ lopId, students, setStudents, canEdit, gradeSummary }) => {
   const [modal,        setModal]        = useState(null);
   const [lichSuModal,  setLichSuModal]  = useState(null);
   const [deleting,     setDeleting]     = useState(null);
@@ -536,7 +545,15 @@ const StudentList = ({ lopId, students, setStudents, canEdit }) => {
                   {/* Tên Thánh + Họ tên — xếp dọc */}
                   <td className="px-4 py-3">
                     <TenThanhBadge tenThanh={s.tenThanh} gioiTinh={s.gioiTinh} />
-                    <p className="font-semibold text-[#3d1515] mt-0.5 leading-tight">{s.hoTen}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="font-semibold text-[#3d1515] leading-tight">{s.hoTen}</p>
+                      {gradeSummary?.[s._id] && (
+                        <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${HL_BADGE[gradeSummary[s._id].phanLoai] ?? ''}`}
+                          title={`TBM: ${gradeSummary[s._id].tbm}`}>
+                          {gradeSummary[s._id].tbm} · {gradeSummary[s._id].phanLoai}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   <td className="px-4 py-3 text-gray-500 text-xs tabular-nums whitespace-nowrap">

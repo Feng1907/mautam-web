@@ -66,11 +66,13 @@ exports.update = async (req, res, next) => {
 // GET /api/students/:lopId/:id/lich-su  — Lịch sử điểm qua các năm học
 exports.lichSu = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const [namHocList, grades, ccList] = await Promise.all([
+    const { id, lopId } = req.params;
+    const [namHocList, grades, ccList, allClassGrades] = await Promise.all([
       NamHoc.find().sort('-ngayBatDau').lean(),
       Grade.find({ student: id }).lean(),
       ChuyenCan.find({ student: id }).lean(),
+      // Lấy tất cả điểm cùng lớp để tính TB lớp
+      Grade.find({ lop: lopId }).lean(),
     ]);
 
     const gradesByNam = {};
@@ -86,13 +88,42 @@ exports.lichSu = async (req, res, next) => {
       ccByNam[key].push(c);
     }
 
+    // Tính TB lớp mỗi năm học: gộp điểm của toàn lớp, lấy trung bình đơn giản
+    const LOAI = [
+      { key: 'mieng', heSo: 1 }, { key: '15phut', heSo: 1 }, { key: '1tiet', heSo: 2 },
+    ];
+    const classTBByNam = {};
+    const classByNamStudent = {};
+    for (const g of allClassGrades) {
+      const nhKey = g.namHoc.toString();
+      const sidKey = g.student.toString();
+      if (!classByNamStudent[nhKey]) classByNamStudent[nhKey] = {};
+      if (!classByNamStudent[nhKey][sidKey]) classByNamStudent[nhKey][sidKey] = [];
+      classByNamStudent[nhKey][sidKey].push(g);
+    }
+    for (const [nhKey, byStudent] of Object.entries(classByNamStudent)) {
+      const studentTBs = Object.values(byStudent).map(gs => {
+        let th = 0, td = 0;
+        gs.forEach(g => { const h = LOAI.find(l => l.key === g.loaiDiem)?.heSo ?? 1; th += h; td += g.diem * h; });
+        return th ? td / th : null;
+      }).filter(v => v !== null);
+      classTBByNam[nhKey] = studentTBs.length
+        ? parseFloat((studentTBs.reduce((s, v) => s + v, 0) / studentTBs.length).toFixed(1))
+        : null;
+    }
+
     const result = namHocList
       .map((nh) => {
         const key = nh._id.toString();
         const gs = gradesByNam[key] || [];
         const cs = ccByNam[key] || [];
         if (!gs.length && !cs.length) return null;
-        return { namHoc: { _id: nh._id, ten: nh.ten }, grades: gs, chuyenCan: cs };
+        return {
+          namHoc: { _id: nh._id, ten: nh.ten },
+          grades: gs,
+          chuyenCan: cs,
+          tbLop: classTBByNam[key] ?? null,
+        };
       })
       .filter(Boolean);
 
