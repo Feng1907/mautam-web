@@ -3,16 +3,33 @@ const User = require('../models/User');
 // GET /api/users  (Admin only)
 exports.getAll = async (req, res, next) => {
   try {
-    const { vaiTro, chucVu } = req.query;
+    const { vaiTro, chucVu, page, limit, search } = req.query;
     const filter = {};
-    if (vaiTro) filter.vaiTro = vaiTro;
-    if (chucVu) filter.chucVu = chucVu;
+    if (vaiTro)  filter.vaiTro = vaiTro;
+    if (chucVu)  filter.chucVu = chucVu;
+    if (search?.trim()) {
+      const safeQ = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$or = [
+        { hoTen: { $regex: safeQ, $options: 'i' } },
+        { email: { $regex: safeQ, $options: 'i' } },
+      ];
+    }
 
-    const users = await User.find(filter)
-      .select('-matKhau')
-      .populate('lopPhuTrach', 'tenLop nhanh');
+    const pageNum  = Math.max(1, parseInt(page)  || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const skip     = (pageNum - 1) * limitNum;
 
-    res.json({ success: true, data: users });
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select('-matKhau')
+        .populate('lopPhuTrach', 'tenLop nhanh')
+        .sort('hoTen')
+        .skip(skip)
+        .limit(limitNum),
+      User.countDocuments(filter),
+    ]);
+
+    res.json({ success: true, data: users, total, page: pageNum, pages: Math.ceil(total / limitNum) });
   } catch (err) {
     next(err);
   }

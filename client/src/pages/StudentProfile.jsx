@@ -49,8 +49,8 @@ const GradeTooltip = ({ active, payload, label }) => {
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs shadow-lg">
       <p className="font-bold text-gray-700 mb-1">{label}</p>
-      {payload.map(p => (
-        <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>
+      {payload.map(p => p.value != null && (
+        <p key={p.dataKey} style={{ color: p.color }}>{p.name}: <strong>{p.value}</strong></p>
       ))}
     </div>
   );
@@ -78,7 +78,11 @@ const buildGradeData = (lichSu) => {
     if (!gs.length) continue;
     let sum = 0, cnt = 0;
     gs.forEach(g => { if (g.diem != null) { sum += g.diem; cnt++; } });
-    rows.push({ label, tb: cnt ? parseFloat((sum / cnt).toFixed(2)) : null });
+    rows.push({
+      label,
+      tb:    cnt ? parseFloat((sum / cnt).toFixed(2)) : null,
+      tbLop: nh.tbLop ?? null,
+    });
   }
   return rows.reverse();
 };
@@ -313,8 +317,11 @@ const StudentProfile = () => {
                       <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} stroke="#9ca3af" />
                       <Tooltip content={<GradeTooltip />} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Line type="monotone" dataKey="tb" name="Điểm TB"
+                      <Line type="monotone" dataKey="tb" name="Điểm TB (em)"
                         stroke="#8B0000" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="tbLop" name="TB lớp"
+                        stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 3"
+                        dot={false} activeDot={{ r: 4 }} connectNulls />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

@@ -3,6 +3,7 @@ const ctrl = require('../controllers/gradeController');
 const { checkAuth } = require('../middlewares/checkAuth');
 const checkClassPermission = require('../middlewares/checkClassPermission');
 
+router.get('/:lopId/summary', checkAuth, ctrl.getSummaryByClass);
 router.get('/:lopId', checkAuth, ctrl.getByClass);
 router.post('/import', checkAuth, checkClassPermission, ctrl.importBulk);
 router.post('/', checkAuth, checkClassPermission, ctrl.create);

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Trash2, UserCheck, X, CheckSquare, Square } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Trash2, UserCheck, X, CheckSquare, Square, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../services/api';
 import { formatClassName } from '../../utils/formatClassName';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -236,31 +236,46 @@ const AdminUsers = () => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkRole,    setBulkRole]    = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
+  const [search,      setSearch]      = useState('');
+  const [page,        setPage]        = useState(1);
+  const [pages,       setPages]       = useState(1);
+  const [total,       setTotal]       = useState(0);
+  const searchTimer = useRef(null);
 
-  const tabParams = () => {
+  const LIMIT = 20;
+
+  const tabParams = (pg = page, q = search) => {
     const t = TABS.find(t => t.key === activeTab);
-    if (!t) return {};
-    const p = {};
-    if (t.vaiTro) p.vaiTro = t.vaiTro;
-    if (t.chucVu)  p.chucVu = t.chucVu;
+    const p = { page: pg, limit: LIMIT };
+    if (t?.vaiTro) p.vaiTro = t.vaiTro;
+    if (t?.chucVu) p.chucVu = t.chucVu;
+    if (q.trim())  p.search = q.trim();
     return p;
   };
 
-  const load = useCallback(() => {
+  const load = useCallback((pg = 1, q = search) => {
     setLoading(true);
     setSelectedIds(new Set());
-    api.get('/users', { params: tabParams() })
+    api.get('/users', { params: tabParams(pg, q) })
       .then(r => {
         let data = r.data.data;
-        if (activeTab === 'giaoly_other')
-          data = data.filter(u => !u.chucVu);
+        if (activeTab === 'giaoly_other') data = data.filter(u => !u.chucVu);
         setUsers(data);
+        setTotal(r.data.total ?? data.length);
+        setPages(r.data.pages ?? 1);
+        setPage(pg);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [activeTab]); // eslint-disable-line
+  }, [activeTab, search]); // eslint-disable-line
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(1); }, [activeTab]); // eslint-disable-line
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => load(1, val), 400);
+  };
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
@@ -362,6 +377,17 @@ const AdminUsers = () => {
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h2 className="admin-title text-2xl">Quản lý Người dùng</h2>
         <button onClick={() => setForm({})} className="btn-primary">+ Tạo tài khoản</button>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-4 max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          value={search}
+          onChange={e => handleSearchChange(e.target.value)}
+          placeholder="Tìm theo tên hoặc email..."
+          className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-red-400 focus:outline-none transition"
+        />
       </div>
 
       {/* Tabs lọc */}
@@ -515,6 +541,53 @@ const AdminUsers = () => {
               </div>
             );
           })}
+
+          {/* ── Pagination ── */}
+          {pages > 1 && (
+            <div className="flex items-center justify-between pt-2 mt-1">
+              <p className="text-xs text-gray-500">
+                {total} người dùng · trang {page}/{pages}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => load(page - 1)}
+                  disabled={page <= 1}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: pages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === pages || Math.abs(p - page) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '…' ? (
+                      <span key={`e${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                    ) : (
+                      <button key={p} onClick={() => load(p)}
+                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition border ${
+                          p === page
+                            ? 'bg-red-700 text-white border-red-700'
+                            : 'border-gray-200 text-gray-600 hover:border-red-400'
+                        }`}>
+                        {p}
+                      </button>
+                    )
+                  )
+                }
+                <button
+                  onClick={() => load(page + 1)}
+                  disabled={page >= pages}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
